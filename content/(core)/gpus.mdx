@@ -1,0 +1,41 @@
+---
+title: Running AI models on GPUs
+description: Give services whole NVIDIA GPUs, for AI models and other GPU work.
+---
+
+Pyo can run services on NVIDIA GPUs. Other GPU makers aren't supported.
+
+## Prepare the server
+
+1. Install the NVIDIA driver before you add the server, and reboot if the installer asks. Check that `nvidia-smi` works. Pyo never installs a driver.
+2. [Add the server](/docs/servers) as usual. On Debian, Ubuntu, RHEL and Fedora, the command also installs the NVIDIA Container Toolkit.
+
+On other systems, install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) yourself, then restart k3s.
+
+Pyo then sets up GPU support on that cluster automatically.
+
+## See your GPUs
+
+The **Clusters** page and a cluster's **Servers** tab have a GPU column. A server that isn't ready shows **GPU not ready** and the reason, such as a missing driver. A server's page has a GPU panel with its details.
+
+## GPU servers
+
+By default, a GPU server is reserved for services that use GPUs and shows a **GPU only** tag. Other services run elsewhere.
+
+To let other services use it too, turn on **Run regular services on this server** on the server's page.
+
+A GPU server isn't reserved for GPU services if it's the cluster's <Term tip="The server that runs the cluster itself and decides what runs where. The others only run services.">main server</Term>, or if the cluster has no other ready server.
+
+## Give a service GPUs
+
+Set the number of GPUs in **GPUs**, under **Resources** on the service's **Settings** tab. You can also set it under **Resources** when you deploy. A service gets 1 to 8 whole GPUs, all on one server.
+
+The option shows once the service's cluster has a GPU server.
+
+Models can take minutes to load. Give the [health check](/docs/deploy#health-checks) a long initial delay so Pyo doesn't give up on the new version while it's still loading.
+
+## Limits
+
+- A GPU can't be shared between services.
+- Services with GPUs can't autoscale.
+- A deploy stops the running replica before it starts the new one, so the service is briefly down. This doesn't happen if a spare GPU is free.

@@ -1,0 +1,37 @@
+---
+title: Adding a registry
+description: Run images from private registries.
+---
+
+Public images work with no setup. For private ones, save a login under **Integrations** in the sidebar's **Team** section. In **Container registries**, enter the <Term tip="A server that stores container images, like Docker Hub or GitHub Container Registry.">registry</Term>, your username, and a password or <Term tip="A password-like key you create in the registry's settings. You can limit it or revoke it without changing your password.">access token</Term>.
+
+The password stays on the server, encrypted, and is never shown again.
+
+Pyo checks the login with the registry when you save it. If the installation turns off private networks with [`PYO_ALLOW_PRIVATE_NETWORKS`](/docs/system-reference#installation-settings), as Pyo Cloud does, a login for a registry on a private network is saved without a check.
+
+Pyo's own registry, where it keeps the images it builds, is listed first in **Container registries**. Find it under **Registry** in the sidebar's **Images** menu. Set how many images it keeps with [retention](/docs/images#retention).
+
+If you remove a login, services with private images from that registry can't redeploy until you add it back.
+
+## Push your own images
+
+You can push images you build yourself to Pyo's registry, from a device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>. It's served over HTTPS at `<machine>.<tailnet>.ts.net:5443`, so there's no insecure-registry setting to change. This needs Pyo's machine on Tailscale with HTTPS. See [Reaching Pyo over HTTPS](/docs/tailscale#reaching-pyo-over-https).
+
+Team owners and admins can set this up:
+
+1. Open **Registry**, in the sidebar's **Images** menu, and choose **Connect**.
+2. Pick the project and service the image is for.
+3. Name the token, choose whether it can **Push and pull** or only **Pull**, and when it expires: 30 days, 90 days or never. Then choose **Create token**. It's shown once.
+4. Log in, tag and push with the commands Pyo shows you:
+
+```bash
+echo <token> | docker login <machine>.<tailnet>.ts.net:5443 -u <username> --password-stdin
+docker tag <image> <machine>.<tailnet>.ts.net:5443/<team>/<project>/<service>:<tag>
+docker push <machine>.<tailnet>.ts.net:5443/<team>/<project>/<service>:<tag>
+```
+
+Then deploy the service with that image. A token only works for your own team's images, and only pushes to a project and service that exist.
+
+Every way into Pyo's registry needs a login. Your servers pull with their cluster's own login, which Pyo puts in the command that connects them. Builders push with their own login. Neither can reach another team's images. A service can only run images from Pyo's registry that belong to its own team.
+
+Manage tokens under **Tokens**, on the same page. Revoke a token there to stop all logins with it. Cleanup never removes images you push.

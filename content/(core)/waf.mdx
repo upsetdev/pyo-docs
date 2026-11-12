@@ -1,0 +1,79 @@
+---
+title: Web application firewall
+description: Inspect a service's website requests for common attacks, and add your own rules.
+---
+
+The web application firewall, or <Term tip="A filter that reads each web request and stops ones that look like attacks, such as SQL injection or cross-site scripting.">WAF</Term>, inspects requests to your websites. It runs the [OWASP Core Rule Set](https://coreruleset.org) with [Coraza](https://coraza.io) beside [Pyo Gateway](/docs/gateway), plus custom rules you write.
+
+Where the [firewall](/docs/firewall) decides who may reach a service, the WAF looks at what each request contains. Both live on the service's **Firewall** tab: the firewall under **Access**, the WAF under **Web Application Firewall**.
+
+## Turn it on for a service
+
+The WAF is built into Pyo and set per service. It's off for new services. Open the service's **Firewall** tab and turn on the switch under **Web Application Firewall**, or pick a **Mode**. It applies to all the service's domains. Developers can change it.
+
+- **Off:** requests aren't checked, and custom rules don't run.
+- **Log only:** matching requests go through and show up as findings.
+- **Block:** matching requests get a `403`. Requests are refused if the WAF is unavailable. The switch turns the WAF on in this mode.
+
+Start with **Log only**, add exceptions for false alarms, then switch to **Block**. Changes apply within seconds.
+
+**Strictness** goes from **Standard** (few false alarms) to **Strictest** (many). **Stricter** and **Strictest** need exceptions.
+
+Each setting applies as soon as you change it:
+
+- **Anomaly threshold:** how many matches it takes to block a request. **Standard** blocks on one strong match. **Relaxed**, **Lenient** and **Most lenient** need more. From the API these are `5` (the default), `10`, `20` and `50`.
+- **Exceptions:** rule numbers not applied, like `942100`. Findings show which rules matched.
+
+## On the cluster
+
+Pyo starts the WAF on a service's cluster when the first service there turns it on, and removes it when the last one turns it off or is deleted. While it starts, the service shows **Starting**. If it can't start, or the gateway doesn't accept the service's WAF, the service shows **Not active** and why.
+
+The WAF runs next to the gateway on every server that runs it, and the gateway only ever uses the copy on its own server. Each copy uses about 70 MB of memory, and adds about 2 ms to each request it inspects.
+
+## Custom rules
+
+Add custom rules with **Add rule** under **Web Application Firewall**: a new rule, or a preset like **Block /wp-admin**, **Allow my IP**, **Block a country** or **Skip a path**. While the service's WAF is on, they run top to bottom before the OWASP rules.
+
+A rule has conditions on the request, matched **all** together or **any** one:
+
+| Field | Operators |
+| --- | --- |
+| Path, query string, host, header, user agent, cookie, body | equals, contains, starts with, ends with, is in, matches regex |
+| Method, country | equals, is in |
+| IP address | is in (addresses and ranges) |
+
+Each operator can be negated, like **doesn't contain**. Values compare as written, so they're case-sensitive. Paths are compared decoded. Regexes use [RE2 syntax](https://github.com/google/re2/wiki/Syntax). Add `(?i)` to ignore case. The IP address and country are the visitor's, as the [firewall](/docs/firewall) sees them.
+
+Then the rule's action:
+
+- **Block:** `403`, and no later rules.
+- **Log:** a finding, then on to the next rule.
+- **Allow:** no later custom rules and no OWASP rules.
+- **Skip OWASP:** later custom rules still run, but the OWASP rules don't.
+
+To leave a path out of the OWASP rules, like webhooks that post unusual bodies, add a rule **Path starts with** `/api/webhooks/` with **Skip OWASP**. The **Skip a path** preset sets this up for you.
+
+Each service holds up to 50 rules of up to 10 conditions. The list shows each rule's matches in the last 24 hours. Turn a rule off to keep it without running it.
+
+## Findings
+
+Under **Analytics**, the service's **Firewall** tab shows what the WAF found, together with what the firewall turned away. Pick the last 24 hours, 7 days or 30 days. You see blocked and logged requests over time, and the top rules, countries, addresses and paths. The latest requests show when each came, its address and country, the request, whether it was **Blocked**, **Logged** or **Allowed**, and the rules that matched. Custom rules show by name.
+
+## What it inspects
+
+- Requests to websites, including the first 128 KB of their bodies. Larger uploads still go through, but the rest of the body isn't inspected.
+  - **Block:** the gateway holds each request until the WAF has decided, so nothing reaches your service before then.
+  - **Log only:** requests stream to your service while the WAF reads them, and never wait for the OWASP rules. A custom rule on the body can only stop what's left of it.
+- Rules that don't need the body, like those on the path, query string, headers, IP address or country, decide as soon as the headers arrive.
+- Not responses, and not TCP or UDP ports.
+
+If the WAF is unavailable on a server, or doesn't answer in time:
+
+- **Block:** requests are refused with a `503`, or a `504` after 5 seconds without an answer, so attacks can't get through uninspected.
+- **Log only:** requests go through uninspected after at most half a second.
+
+Updates to the WAF don't interrupt requests.
+
+## From the API and MCP
+
+Turn a service's WAF on or off and set its mode and tuning with [setServiceWaf](/docs/api/reference/firewall/set-service-waf), and manage custom rules with [addWafRule](/docs/api/reference/firewall/add-waf-rule), [updateWafRule](/docs/api/reference/firewall/update-waf-rule), [reorderWafRules](/docs/api/reference/firewall/reorder-waf-rules) and [removeWafRule](/docs/api/reference/firewall/remove-waf-rule). Read findings with [GET /waf/hits](/docs/api/reference/firewall/get-waf-hits). AI assistants use the matching [tools](/docs/mcp/tools).

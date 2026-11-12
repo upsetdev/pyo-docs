@@ -1,0 +1,7 @@
+{
+  "title": "MCP",
+  "description": "Connect AI assistants",
+  "icon": "segment-mcp",
+  "root": true,
+  "pages": ["index", "tools"]
+}

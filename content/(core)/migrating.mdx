@@ -1,0 +1,54 @@
+---
+title: Migrating a database
+description: Move a Postgres or MySQL database from another provider into Pyo.
+---
+
+Pyo can copy a Postgres or MySQL database from another provider into one of its own [databases](/docs/databases), straight from its connection URL or from a dump file. This page shows how to move a database and what to plan for.
+
+## Before you start
+
+- **The source must be reachable from your cluster.** The copy runs on your cluster, not in your browser. If the provider only accepts connections from listed addresses, allow the public addresses your servers connect out from, or use a dump file instead.
+- **Writes during the copy aren't copied.** Pyo takes a consistent snapshot of the source when the copy starts. Anything written after that stays behind. Plan a short window with no writes. Before you import, stop whatever writes to the source, or put it in maintenance mode.
+- **Versions:** a Postgres source can be up to version 18, and the database it goes into must be the same version or newer. A MySQL source can be MySQL 5.7 to 8.4. MariaDB isn't supported.
+- **Extensions (Postgres):** Pyo turns on the ones it manages, and the import creates the others it knows. If the source uses one that Pyo's Postgres doesn't have, the import stops and names it. Drop it from the source first if you don't need it.
+- **One database at a time:** a URL copies the database it names. Users, roles and privileges aren't copied. Your services connect with the new database's own login.
+- **Size:** a copy streams through your cluster. Give the new database enough storage for the data and its indexes.
+
+## Move it
+
+1. **Get a URL that can read everything.** Its user must be able to read every table, view, sequence and routine. For TLS, add `?sslmode=require` to a Postgres URL, or `?ssl-mode=REQUIRED` to a MySQL one. `verify-full` and `VERIFY_IDENTITY` also check the certificate.
+2. **Stop writes** to the source.
+3. **Import:** choose **New → Import database**. Pick the engine, paste the URL under **Connection URL**, and name the new database. Set its size and storage under **Options**. **Check connection** tells you what's wrong if it can't go ahead. Then choose **Import**.
+4. **Wait for it:** the database shows **Importing…** with its current step. Its output is under **Logs → Import**.
+5. **Check the data:** connect with the credentials on its **Connect** tab, and compare row counts with the source.
+6. **Switch your services:** connect them to the new database on its **Connect** tab, deploy them, and start writing again.
+
+From the command line, into an empty database you've created:
+
+```bash
+PYO_IMPORT_URL='postgres://user:password@host:5432/shop?sslmode=require' pyo db import shop
+```
+
+## With a dump file
+
+When the source can't be reached from your cluster, dump it yourself and upload the file:
+
+```bash
+# Postgres: custom format, without owners and privileges
+pg_dump --no-owner --no-acl -Fc "postgres://user:password@host:5432/shop" -f shop.dump
+
+# MySQL
+mysqldump --single-transaction --routines --triggers --events --set-gtid-purged=OFF \
+  -h host -u user -p shop | gzip > shop.sql.gz
+```
+
+Then pick **Dump file** instead of **Connection URL**, or run `pyo db import shop --file shop.dump`. Uploads go through Pyo and are deleted once the import succeeds, or after 24 hours.
+
+## If it fails
+
+The error says why: the source couldn't be reached, refused the login or wanted TLS, or a statement failed while loading. A new database keeps nothing. Choose **Retry** to run the same import again, or delete the database and start over. A database that existed before stays empty. Nothing is ever written to the source.
+
+## What's copied
+
+- **Postgres** copies tables, data, views, functions, triggers, sequences, schemas and extensions. Everything belongs to the new database's role. **MySQL** copies tables, data, views, routines, triggers and events, with `DEFINER` clauses removed, so the new database's user becomes the definer.
+- Sequences and auto-increment counters continue where the source left off.

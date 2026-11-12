@@ -1,0 +1,53 @@
+---
+title: Managing certificates
+description: Upload your own TLS certificates, including wildcards.
+---
+
+Pyo gets Let's Encrypt certificates for public domains automatically. You only need this page to use your own certificate.
+
+## Upload a certificate
+
+Open **Certificates**, in the sidebar's **Domains** menu, and upload a certificate with its <Term tip="The secret half of a certificate. Whoever holds it can use the certificate, so keep it safe.">private key</Term>. One certificate can cover a single domain, or many with a wildcard like `*.example.com`.
+
+The private key is stored encrypted on the server and is only sent to your team's clusters.
+
+## Use it on a domain
+
+Set a domain's HTTPS to your own certificate, then pick one that covers that hostname.
+
+## Replace or remove
+
+Replace a certificate before it expires, using the same page. Domains using it switch to the new one without a redeploy. Removing one deletes its private key from Pyo.
+
+## Mutual TLS (mTLS)
+
+If a <Term tip="A network of servers, like Cloudflare, that sits between visitors and your servers to speed up and protect your sites.">CDN</Term> sits in front of your services, it can present a certificate to prove that a request came through it. This is called mTLS. [Securing Pyo](/docs/securing-pyo#require-the-cdns-certificate-with-mtls) shows how to require it on your servers.
+
+You can create a certificate when you turn on mTLS in a cluster's **Settings** tab. You can also create one ahead of time from **Mutual TLS**, in the sidebar's **Domains** menu. Give it a name, a <Term tip="The name written into the certificate to identify it. Any label you'll recognize works.">common name</Term> and how long it's valid for. Team owners and admins can do this from the dashboard, but not with an API key.
+
+You get a certificate and a private key to upload to your CDN. Pyo installs the matching <Term tip="The certificate that signed your CDN's certificate. Your clusters use it to check that a certificate is genuine.">CA certificate</Term> on your clusters for you.
+
+<Callout type="warn">
+  Save the certificate and private key in a password manager before you close the dialog. Pyo doesn't keep them, so they can't be recovered. Anyone with the private key can pass as your CDN.
+</Callout>
+
+If you lose the private key, create a new certificate and replace the old one.
+
+### Replace a certificate
+
+Pyo warns you in the activity feed 30 days and 7 days before a certificate expires. To replace one without downtime:
+
+1. Create a new certificate.
+2. In your cluster's **Settings** tab, choose **Manage** under **mTLS** and select both certificates, so your cluster accepts either.
+3. Upload the new certificate and key to your CDN.
+4. Choose **Manage** again and clear the old certificate.
+
+You can't remove a certificate while a cluster requires it. Removing one only takes it off this page. Your CDN keeps presenting it until you change it there.
+
+### Turn mTLS off without the dashboard
+
+The dashboard isn't behind mTLS, so you can usually turn mTLS off there. If you've put the dashboard on a domain that mTLS blocks, run this on the server:
+
+```bash
+sudo k3s kubectl -n kube-system delete tlsoption default
+```

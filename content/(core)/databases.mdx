@@ -1,0 +1,295 @@
+---
+title: Databases
+description: Postgres or MySQL with failover, or Redis-compatible KV, run on your own servers.
+---
+
+Pyo can run databases for you on your clusters: **Postgres**, **MySQL** or **KV**. KV is a Redis-compatible key-value store. It runs Valkey, which works with Redis clients. A database belongs to your team, not to one project, so any of the team's services on the same cluster can use it.
+
+| Engine | High availability | Read replicas | Connection pooler | Backups | REST API |
+| --- | --- | --- | --- | --- | --- |
+| Postgres | Yes | Yes | Yes | Point-in-time recovery | No |
+| MySQL | Yes | No | No | Point-in-time recovery, up to the latest backup | No |
+| KV | Yes | Yes | No | Scheduled snapshots | Yes |
+
+Databases are built into Pyo. The first database on a cluster sets them up there, which takes a minute or two. Until then, its status says **Setting up databases on this cluster**. Pyo keeps them up to date when it updates itself.
+
+## Create a database
+
+Open **Databases** in the sidebar, then **Postgres**, **MySQL** or **KV**. Choose **New database** and pick:
+
+- **Engine:** the one you opened, or switch to **Postgres**, **MySQL** or **KV**.
+- **Name** and **Cluster:** any of your connected clusters.
+- **Size**, per instance:
+
+  | Size | CPU | Memory | Storage |
+  | --- | --- | --- | --- |
+  | Small | 0.25 | 512 MiB | 5 GiB |
+  | Medium | 0.5 | 1 GiB | 10 GiB |
+  | Large | 1 | 2 GiB | 20 GiB |
+  | X-Large | 2 | 4 GiB | 50 GiB |
+
+  MySQL needs at least 1 GiB of memory, so it starts at **Medium**.
+
+- **Availability:** **Single server** has no automatic failover. **High availability** runs a primary and some **Replicas**. A replica takes over when the primary's server is lost. Postgres can have 2 to 8 replicas, KV 2 to 4 and MySQL 2 or 4. The default is 2.
+
+  2 replicas are enough for failover. More only help if your service reads from the **Replicas** address, shown on the database's **Overview**. Each replica keeps a full copy of the data, and for KV that copy is in memory. Replicas spread across your servers only as far as there are servers to spread to.
+- **Connection pooler** (Postgres, on by default): many client connections share a few connections to the database, through <Term tip="A small, widely used connection pooler for Postgres.">PgBouncer</Term>. See [the pooler](#the-pooler).
+- **REST API** (KV, off by default): Redis commands over HTTP, for serverless and edge code.
+
+Developers and up can create a database. It's ready in a minute or two and starts empty. To fill it from another database or a dump file, choose **Import** at the top right instead. See [import data](#import-data). To make one from a database's backups, use its [**Restore…**](#restore).
+
+## Import data
+
+You can copy data into a Postgres or MySQL database from another database, or from a dump file. Moving from another provider? See [migrating a database](/docs/migrating).
+
+To open the **Import** page, choose **New → Import database**, or **Import** at the top right of **New database**. From a database, **⋯ → Import…** opens it with that database already picked. Then pick:
+
+- **Engine:** **Postgres** or **MySQL**.
+- **From:** a **Connection URL** or a **Dump file** (see below).
+- **Into:** a **New database** or an **Existing database**. For a new one, set its name and cluster, with size and availability under **Options**. Pyo creates it, then fills it. An existing database must be empty. Pyo checks it first and refuses one that has tables, views, functions, routines or events. Databases Pyo knows aren't empty are marked **Not empty**.
+
+With a URL, **Check connection** runs the checks below without importing. **Import** starts the import and opens the database, which shows its progress.
+
+The source:
+
+- **Connection URL:** the database to copy, like `postgres://user:password@host:5432/database` or `mysql://user:password@host:3306/database`. It must accept connections from your cluster's servers. For TLS, add `?sslmode=require`, or `verify-ca` or `verify-full`. MySQL URLs also take `ssl-mode=REQUIRED`. Pyo copies only the database the URL names.
+- **Dump file:** for Postgres, a `.sql`, `.sql.gz` or custom-format `.dump` (`pg_dump -Fc`). For MySQL, a `.sql` or `.sql.gz` (`mysqldump`). The file is uploaded to Pyo and kept until the import succeeds, or for 24 hours, then deleted. Files can be up to 10 GiB. The installation sets both limits with `PYO_DATABASE_IMPORT_MAX_BYTES` and `PYO_DATABASE_IMPORT_RETENTION_HOURS`. Uploads need Pyo's built-in store, but the database itself can be on any cluster.
+
+### What's checked first
+
+Before anything is created or copied, your cluster connects to the source and to the database you import into. You get a clear error when the source:
+
+- can't be found or reached
+- refuses the user and password
+- requires TLS, or doesn't offer it
+- doesn't have the database
+- has tables its user can't read
+
+Postgres also checks:
+
+- **Version:** the source must not be newer than the database it goes into, and at most Postgres 18. A new database gets the newest version unless you pick one.
+- **Extensions:** the ones Pyo turns on for you, like `vector` or `pg_cron`, are turned on first. The ones the database's role can add, like `citext` or `pgcrypto`, are created by the import. If Pyo's Postgres doesn't have an extension, the error names it. Drop it from the source, then import.
+
+A dump file gives less to check. Pyo reads the version it was dumped from and the extensions it creates from the start of the file.
+
+MySQL sources can be MySQL 5.7 to 8.4. MariaDB isn't supported.
+
+### What's copied
+
+**Postgres:** tables and their data, views, functions, triggers, sequences, schemas, comments and extensions. Owners and privileges aren't copied. Everything belongs to the database's own role. A new database copied from a URL is filled by CloudNativePG's import as it's created. Otherwise Pyo loads `pg_dump`'s output, or your file, in a single transaction, so a failed import leaves nothing behind. Publications, subscriptions and security labels are left out.
+
+**MySQL:** tables and their data, views, routines, triggers and events, through `mysqldump --single-transaction --routines --triggers --events`. `DEFINER` clauses are removed, so the database's own user becomes the definer. Statements only an administrator may run, like `SET @@GLOBAL.GTID_PURGED` and `SQL_LOG_BIN`, are skipped. A dump made with `--databases` or `--all-databases` loads into this one database. If the import fails, Pyo removes what was loaded.
+
+The source's users and roles aren't copied. Services connect with the database's own login.
+
+### Progress
+
+While the import runs, the database's status is **Importing…** and its **Overview** shows the current step. Its output is in the **Logs** tab, under **Import**. The team's activity shows when it started, finished or failed.
+
+If it fails, the **Overview** says why:
+
+- **A new database:** nothing is kept. Choose **Retry** to run it again from the same source, or delete the database. Deletion protection doesn't block deleting a database whose import failed.
+- **An existing database:** it's left empty and usable. Retry, or start another import.
+
+**Retry** reuses the source. The URL's password is kept encrypted until the import succeeds. An uploaded file can be retried for as long as it's kept. To change the URL, start a new import.
+
+Team owners and admins can import. The source's password is encrypted with the team's key. It reaches the cluster only while the import runs, and is removed afterwards.
+
+## Inside a database
+
+A database's page has these tabs:
+
+| Tab | What it shows |
+| --- | --- |
+| Overview | Its state, engine, size, ready instances, the current primary, failovers, and its addresses inside the cluster |
+| Connect | The services it's connected to, and its connection details |
+| Logs | Its [logs and events](#logs-and-events) |
+| Backups | Postgres and MySQL: [backups and restoring](#backups-and-point-in-time-recovery). KV: [scheduled snapshots](#kv-backups) |
+| Extensions | Postgres: its [extensions](#extensions). KV: its [modules](#kv-modules) |
+| Settings | Size, storage, availability, the pooler or REST API, read replicas (not MySQL), and deletion protection |
+
+A database is only reachable from inside its cluster, by the services running there.
+
+## Connect it to a service
+
+On the **Connect** tab, pick a service and connect it. The service must run on the same cluster. Pyo adds the connection variables to the service as [secrets](/docs/encryption):
+
+| Engine | Variables |
+| --- | --- |
+| Postgres | `DATABASE_URL`, through the pooler when it's on, and `DATABASE_URL_DIRECT`, straight to the database, plus `DATABASE_URL_READ` with [read replicas](#read-replicas) on |
+| MySQL | `DATABASE_URL` (`mysql://`), `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` and `MYSQL_DATABASE`, all to the primary. See [MySQL](#mysql) |
+| KV | `REDIS_URL`, through [Pyo's endpoint](#kv-redis_url), plus `KV_REST_API_URL`, `KV_REST_API_TOKEN` and `KV_REST_API_READ_ONLY_TOKEN` with [the REST API](#kv-rest-api) on |
+
+They take effect on the service's next deploy, so redeploy it. If the service already has one of these variables, rename or remove it first. Disconnecting removes them, also on the next deploy.
+
+Two databases can add the same variable. Postgres and MySQL both add `DATABASE_URL`, for example. To connect a service to both, give the second one a **Prefix**. With `MYSQL`, its variables become `MYSQL_DATABASE_URL`, `MYSQL_HOST` and so on.
+
+The **Connection details** show the user and database name. Only team owners and admins can reveal the password and tokens.
+
+### KV: `REDIS_URL`
+
+A KV database's `REDIS_URL` goes through Pyo's endpoint, which runs on two servers:
+
+- It follows a failover within seconds, so clients need no Sentinel support.
+- With [read replicas](#read-replicas), it sends reads to them. Each connection still reads its own writes.
+- Transactions, pub/sub and blocking commands work. After a failover, pub/sub connections reconnect. Messages published during the switch are lost.
+- `WAIT` works, but more slowly.
+- Admin commands are refused: `CONFIG`, `MONITOR`, `CLIENT TRACKING`, `REPLICAOF`, `ACL` and the like.
+
+### KV: REST API
+
+With the REST API on, `KV_REST_API_URL` takes Redis commands over HTTP. Send the token as `Authorization: Bearer <token>`:
+
+```sh
+curl "$KV_REST_API_URL" -H "Authorization: Bearer $KV_REST_API_TOKEN" -d '["SET", "my-key", "hello"]'
+curl "$KV_REST_API_URL/get/my-key" -H "Authorization: Bearer $KV_REST_API_TOKEN"
+```
+
+| Request | Body | Runs |
+| --- | --- | --- |
+| `POST /` | `["SET", "my-key", "hello"]` | One command |
+| `GET /get/my-key`, `GET /set/my-key/hello?EX=60` | None, or for `POST` the last argument | One command, from the path and then the query |
+| `POST /pipeline` | `[["INCR", "n"], ["GET", "n"]]` | Several commands, one reply each |
+| `POST /multi-exec` | The same | Several commands, as a transaction |
+
+The reply is `{"result": ...}`, or `{"error": "..."}` with status 400. `KV_REST_API_READ_ONLY_TOKEN` only runs reads. A write with it gets `NOPERM`. Commands that change the connection's state, admin commands and `MULTI` are refused. Use `/multi-exec` for transactions.
+
+### The pooler
+
+The pooler supports prepared statements, so ORMs like Prisma work through `DATABASE_URL`. Use `DATABASE_URL_DIRECT` for migrations, and for features that need their own session, like `LISTEN`/`NOTIFY` and advisory locks.
+
+## Change it
+
+On the **Settings** tab, you can:
+
+- change the size
+- add storage, up to 1,000 GiB (storage can only grow)
+- switch between a single server and high availability
+- turn the pooler or the REST API on or off
+
+Connected services pick up changed variables on their next deploy.
+
+## Extensions
+
+A Postgres database's **Extensions** tab lists the extensions it can use.
+
+Under **Extensions**, Pyo turns each one on or off for you with its checkbox. These need a library loaded at start, extra settings, or more rights than the database's own role has.
+
+| Extension | What it does |
+| --- | --- |
+| `auto_explain` | Logs the plan of every query that takes over a second |
+| `pg_cron` | Runs SQL on a schedule, inside the database. The database's role can schedule jobs |
+| `pg_hint_plan` | Steers the query planner with hints in SQL comments |
+| `pg_partman_bgw` | Runs pg_partman's partition maintenance every hour, as the database's role. Add `pg_partman` itself with `CREATE EXTENSION` |
+| `pg_stat_statements` | Tracks statistics of every query |
+| `pgaudit` | Writes an audit trail of schema and role changes to the logs |
+| `timescaledb` | Time-series tables and functions, limited to TimescaleDB's Apache 2 Edition features |
+| `vector` | Vector similarity search (pgvector) |
+| `postgres_fdw`, `dblink` | Query other Postgres databases |
+| `bloom`, `earthdistance`, `pg_prewarm`, `pgrowlocks`, `sslinfo`, `xml2` and a few more | Smaller extensions that need more rights than the database's role |
+
+- **Restarts:** the ones that load a library (`auto_explain`, `pg_cron`, `pg_hint_plan`, `pg_partman_bgw`, `pg_stat_statements`, `pgaudit`, `timescaledb`) restart the database when you turn them on or off. The dashboard asks first. With high availability, the instances restart one at a time and the primary hands over to a replica, so the database stays available. A single server is unavailable for a moment.
+- **Turning one off** drops it (`DROP EXTENSION`) along with what belongs to it, such as `pg_cron`'s scheduled jobs. If anything else in the database depends on it, like a column of type `vector`, Postgres refuses. Nothing is dropped, and the tab tells you. Drop or change what depends on it first, then turn it off again.
+- Each extension's status shows whether it's on or waiting for a restart. If it couldn't be turned on or off, the status says why.
+
+**Additional extensions** are ones the database's own role can add. Connect with its credentials and run `CREATE EXTENSION`, for example `CREATE EXTENSION pg_trgm;`. They include `btree_gin`, `btree_gist`, `citext`, `cube`, `fuzzystrmatch`, `hstore`, `intarray`, `isn`, `lo`, `ltree`, `pg_partman`, `pg_trgm`, `pgcrypto`, `seg`, `tablefunc`, `tcn`, `unaccent` and `uuid-ossp`.
+
+[Templates](/docs/templates) can turn extensions on for the databases they make.
+
+Obsolete extensions (`intagg`, `refint`) are listed only while a database has them on.
+
+### KV modules
+
+A KV database's **Extensions** tab lists the official Valkey modules. They need KV 8.1.
+
+| Module | What it does |
+| --- | --- |
+| `valkey-json` | JSON documents, read and changed by path: `JSON.SET`, `JSON.GET` |
+| `valkey-bloom` | Bloom filters: `BF.ADD`, `BF.EXISTS` |
+| `valkey-search` | Vector similarity search over hashes and JSON documents: `FT.CREATE`, `FT.SEARCH` |
+
+- **Restarts:** turning a module on or off restarts the database. Read replicas and replicas restart first, then the primary hands over to a replica. Writes pause for about a second during the handover. The few writes in flight fail with `READONLY`, so retry them. A single server is unavailable for a moment.
+- **Reads:** module reads such as `JSON.GET` and `BF.EXISTS` go to the read replicas, like other reads. `FT.SEARCH` always runs on the primary.
+- **Turning one off** waits until the database has none of the module's data: JSON documents, Bloom filters or Search indexes. Until you delete them, the module stays on and the tab shows how many are left.
+- A module that's off answers the way Valkey does, with `ERR unknown command`.
+
+## Logs and events
+
+The **Logs** tab shows the output of every part of the database: the primary, replicas, read replicas, poolers, an [import](#import-data), and for KV the sentinels and the endpoint (**Proxy**). It shows new lines live. To look back, pick a time range, up to the last 24 hours. Filter by member, level or text. Postgres lines show their level and message. Click one to see its full record. MySQL lines show the level from its error log.
+
+**Events** lists what happened to the database, newest first: failovers, members becoming ready or not, backups, restores, imports and changes. The **Failovers** count on the **Overview** opens it.
+
+Everyone in the team can see a database's logs and events.
+
+## MySQL
+
+MySQL databases run MySQL 8.4, with the user `app` and the database `app`.
+
+- **Size:** Medium and up, since MySQL needs at least 1 GiB of memory per instance. A custom size starts at 1,024 MiB.
+- **Availability:** a single server, or high availability with 2 or 4 replicas (3 or 5 instances). A replica takes over within seconds when the primary stops. If the primary's server stops answering, it takes about two minutes. Either way, no confirmed writes are lost. The instance count can only grow: from 1 to 3 or 5, or from 3 to 5.
+- **Connect:** services get these variables:
+
+  | Variable | Value |
+  | --- | --- |
+  | `DATABASE_URL` | `mysql://app:<password>@<name>-primary.<namespace>.svc.cluster.local:3306/app` |
+  | `MYSQL_HOST` | `<name>-primary.<namespace>.svc.cluster.local` |
+  | `MYSQL_PORT` | `3306` |
+  | `MYSQL_USER` | `app` |
+  | `MYSQL_PASSWORD` | Its password |
+  | `MYSQL_DATABASE` | `app` |
+- **Backups:** a full backup daily, uploaded with every change since the last one. You can restore to any moment up to the latest backup, into a new database. How often it's backed up sets how much data you could lose. Backups are kept for the number of days you choose, in your team's folder with its other database backups. See [backups](#backups-and-point-in-time-recovery).
+- **Limits:** there's no connection pooler, no read replicas and no read-only address. Every connection goes to the primary.
+
+The [WordPress](/templates/wordpress) and [Ghost](/templates/ghost) templates use a MySQL database. When you deploy one, you pick one of your team's databases or Pyo creates a new one, then connects it.
+
+## Read replicas
+
+Read replicas are extra copies of a database that only serve reads. They take load off the primary. They never become the primary, so they don't add failover. Use **High availability** for that.
+
+Turn them on in the **Read replicas** card on the **Settings** tab and pick how many: 1 to 5 for Postgres, 1 to 4 for KV. MySQL doesn't have read replicas. Each one is the same size as the database. The **Overview** shows them as their own group, with the server each one runs on and how far it's behind the primary.
+
+For Postgres, connected services get `DATABASE_URL_READ` on their next deploy, through the read replicas' own pooler. Point your read-only queries at it and keep writes on `DATABASE_URL`. Read replicas can lag a little behind the primary. If a read must see a write you just made, use `DATABASE_URL` for it too. Turning read replicas off removes the variable on the services' next deploy.
+
+For KV there's nothing to change. `REDIS_URL` [sends reads to them](#kv-redis_url) automatically.
+
+With read replicas on, a KV database's REST API also spreads reads automatically. Read-only commands go to a read replica that's healthy and less than a second behind. Writes, transactions and pipelines that mix reads and writes go to the primary. To read something you just wrote, send the header `Pyo-Read-From: primary`. The `Pyo-Served-By` header in each response says which one answered.
+
+## Delete it
+
+Deletion protection is on for every new database. While it's on, the database can't be deleted. Team owners and admins can turn it off under **Danger zone**, on the **Settings** tab.
+
+A database can't be deleted while services are connected to it, so disconnect them first. Deleting it removes its data for good.
+
+## Backups and point-in-time recovery
+
+You can back up Postgres and MySQL databases and restore them to a point in time. Postgres can go back to any moment up to now. MySQL can go back to any moment up to its latest backup. For KV, see [KV backups](#kv-backups).
+
+Turn backups on in the database's **Backups** tab. They go where your team's [backups](/docs/backups) go, so set that up first under **Backups**, in the sidebar's Infrastructure section. That's an <Term tip="Storage that works like Amazon S3. Many providers offer it, like Backblaze B2, Cloudflare R2 and MinIO.">S3-compatible</Term> bucket, or Pyo's built-in store, which only works for databases on the cluster Pyo itself runs on.
+
+Postgres archives every change as it happens, plus a full backup once a day at the hour you pick (UTC, 3:00 by default).
+
+MySQL takes a full backup once a day at the hour you pick, and uploads the changes since the last one with it. A restore reaches the latest backup, not the last second.
+
+For both, choose how long to keep backups, from 1 to 90 days (7 by default). Older backups are deleted, except what's still needed to restore to any moment in those days. They're stored in your team's folder at the destination, under `databases/<namespace>/<name>/`. If the destination has a prefix, this path comes after it. Pyo doesn't encrypt these backups itself, so use a bucket that encrypts what it stores if you need that.
+
+The tab shows:
+
+- the window you can restore to, from the oldest moment the backups cover to now (for MySQL, to its latest backup)
+- when the last full backup and the last archived change happened
+- what went wrong, if the last backup failed
+
+### Restore
+
+On the database's **Backups** tab, choose **Restore…**. Name the new database, and pick **Latest** or a moment in the window, in your local time. Pyo creates a new database on the same cluster, with the same size and availability, and fills it from the backups. The original stays as it is, so a restore never overwrites anything. The new database is ready in a few minutes. Its **Overview** shows which database it was restored from, and to what moment.
+
+Developers and up can turn backups on or off, change their settings, and restore.
+
+## KV backups
+
+KV databases get a snapshot of their data on a schedule. Turn it on in the database's **Backups** tab. Pick **Daily** or **Weekly**, the hour (UTC, 2:00 by default) and how many snapshots to keep (14 by default). They go where your team's [backups](/docs/backups) go, with the same rules as Postgres.
+
+Pyo already has the database's login, so there's nothing else to enter. The database is listed under **Backups** with the team's other databases, marked **KV**. Its tab shows the recent snapshots and lets you back up now. Turning backups off pauses them. Deleting the database stops them, and its snapshots stay in the repository.
+
+Pyo can't restore a KV snapshot for you yet. Each one is a standard restic snapshot holding a `dump.rdb`, so you can [get it with restic](/docs/backups).
+
+Developers and up can turn KV backups on or off and change their schedule.

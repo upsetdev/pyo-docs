@@ -1,0 +1,55 @@
+---
+title: Adding a domain
+description: Put a service on the web, with certificates handled for you.
+---
+
+## Free domains
+
+A free domain needs no <Term tip="The system that points a domain name at a server's address. For your own domain, you add a record at your domain provider.">DNS</Term> setup, so it's the quickest way to get a service online.
+
+## Custom domains
+
+Add your domain to a service, then point its DNS at your cluster. Pyo checks the DNS and tells you when the domain is active.
+
+## Changing domains
+
+Adding or removing a domain, or changing its HTTPS settings, takes effect within seconds. You don't need to redeploy, and the service keeps running. A service that hasn't been deployed yet gets its domains with its first deploy.
+
+Domains belong to the service, not to a deployment, so a [rollback](/docs/deploy/rollbacks) keeps the domains the service has now.
+
+## Certificates
+
+Pyo picks a certificate for you:
+
+- **Public domains** get a <Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificate, issued and renewed automatically.
+- **Private domains**, on a <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term> or LAN, get a <Term tip="A certificate Pyo makes itself. The connection is still encrypted, but browsers show a warning because no public authority vouches for it.">self-signed certificate</Term>.
+
+You can also use [your own certificate](/docs/certificates), including wildcards.
+
+Requests to your domains go through [Pyo Gateway](/docs/gateway) on each server.
+
+## Other kinds of traffic
+
+Services aren't limited to websites. A port can be:
+
+- **Private:** reachable only inside the cluster. Use this for databases and internal APIs.
+- **Website:** an HTTP service on a domain.
+- **Port on every server:** a TCP or UDP port on each server in the cluster.
+- **Public IP:** a public TCP or UDP port, for a game server or a database you reach from outside.
+
+Only private ports are reachable while the cluster's [public traffic](/docs/clusters#public-traffic) is off.
+
+### Public TCP and UDP ports
+
+A **Public IP** port goes **Through the gateway** by default. The [gateway](/docs/gateway#tcp-and-udp-ports) counts its connections in analytics. For TCP, you can add IP rules, a connection limit and PROXY protocol. The [firewall](/docs/firewall) applies to these ports too.
+
+Turn the switch off to open the port directly on the servers instead. Your service then sees each visitor's address itself. Only servers running one of its replicas answer on the port. The port has no analytics or gateway options. Switching a port between the two interrupts it for about 1 to 3 seconds.
+
+Each cluster can have one public port per number and protocol. Inside the gateway, ports below 1024 are moved up by 10000. For example, 123 and 10123 can't both go through the gateway.
+
+Some ports can't be public, because the servers or Pyo use them:
+
+| Protocol | Reserved ports |
+| --- | --- |
+| TCP | 22, 53, 80 and 443 (for websites), 2379, 2380, 6443, 10080, 10443, 10250, 19000 to 19003 |
+| UDP | 53, 8472, 51820, 51821 |

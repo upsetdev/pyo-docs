@@ -1,0 +1,60 @@
+---
+title: API overview
+description: Automate Pyo over HTTP with an API key.
+---
+
+The API is what the dashboard and the CLI use. It works in one simple way. You read everything from a <Term tip="One request that returns everything you can see: teams, projects, clusters, services and recent deployments.">snapshot</Term>, and change anything through one <Term tip="One address in the API that you send requests to.">endpoint</Term>.
+
+## Base URL
+
+The API lives on your own Pyo:
+
+```text
+https://your-pyo/api/v1
+```
+
+## Authentication
+
+Create an API key on the **API keys** page, then send it as a <Term tip="A key sent in the Authorization header of each request. Whoever holds it gets its access.">Bearer token</Term>:
+
+```bash
+curl https://your-pyo/api/v1/state \
+  -H "Authorization: Bearer $PYO_TOKEN"
+```
+
+A key is shown once, so save it when you create it.
+
+A key expires after 30 days, 90 days (the default) or a year, or never. The **API keys** page shows when each key was last used and when it expires, and warns in its last week. An expired key gets a `401`:
+
+```json
+{ "error": "This API key expired. Create a new one." }
+```
+
+## What a key can do
+
+| Access | What it allows |
+| --- | --- |
+| Read | Reading only |
+| Deploy | Reading, plus deploying, cancelling, restarting, stopping and scaling |
+| Full | Anything its owner can do |
+
+A key can also be limited to some of your teams. Whatever its access, a key acts as you, with your role in each team. It can't manage your account or the installation.
+
+## Errors
+
+Failed requests use a standard <Term tip="The number every web response carries, like 200 for success or 404 for not found.">HTTP status</Term>, with the reason in the body:
+
+```json
+{ "error": "This API key can only read." }
+```
+
+<Callout type="warn">
+  Pyo is at version 0.1, so the API can still change between releases.
+</Callout>
+
+## Next
+
+<Cards>
+  <Card icon="book" title="Reading data" href="/docs/api/reading" description="The snapshot, logs, metrics and observability." />
+  <Card icon="rocket" title="Making changes" href="/docs/api/changing" description="Deploy, scale, restart and more." />
+</Cards>

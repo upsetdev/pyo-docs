@@ -1,0 +1,9 @@
+{
+  "name": "pyo-docs",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "generate": "bun run scripts/generate.ts"
+  }
+}

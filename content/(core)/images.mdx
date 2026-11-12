@@ -1,0 +1,16 @@
+---
+title: Browsing images
+description: Every container image your team's services have run.
+---
+
+**All images**, in the sidebar's **Images** menu, lists every image your services have run. They're grouped by <Term tip="The name an image is stored under, without its version, like ghcr.io/acme/api.">repository</Term>, with the versions deployed and the services using them. Images Pyo built also show their size.
+
+## Retention
+
+Pyo keeps the images of your newest successful deployments and removes older ones from its <Term tip="Pyo's own store for the images it builds, running on your cluster.">registry</Term>. Set how many deployments to keep per service under **Cleanup**, on the **Registry** page in the sidebar's **Images** menu.
+
+The **Registry** page also shows the registry's address, its health, the space it uses and its repositories.
+
+Images you [push yourself](/docs/registries#push-your-own-images) are never removed.
+
+You can't [roll back](/docs/deploy/rollbacks) to an image that's been removed.

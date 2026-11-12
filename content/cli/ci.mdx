@@ -1,0 +1,24 @@
+---
+title: Deploy from CI
+description: Use the CLI in a pipeline with an API key.
+---
+
+In <Term tip="Continuous integration: a service like GitHub Actions that runs your tests and deploys on each push.">CI</Term> there's no browser to sign in with, so use an API key. Create one with deploy access and an expiry you'll remember to renew. Then give the CLI your Pyo's URL and the key:
+
+```bash
+export PYO_URL=https://your-pyo
+export PYO_TOKEN=<api-key>
+pyo deploy
+```
+
+You can pass `--url` and `--token` instead. Both work on every command.
+
+If the folder has no `pyo.toml`, say which service to deploy:
+
+```bash
+pyo deploy --service shop/api
+```
+
+## Without the CLI
+
+A [deploy hook](/docs/deploy/hooks) is simpler when all you need is to trigger a deploy.

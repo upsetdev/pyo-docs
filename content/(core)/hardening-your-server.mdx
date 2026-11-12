@@ -1,0 +1,76 @@
+---
+title: Hardening your server
+description: Lock down the machine Pyo runs on, from SSH to system updates.
+---
+
+Anyone with root on your server controls Pyo and everything it runs, so these steps matter as much as the ones in [Securing Pyo](/docs/securing-pyo). Do them on every server in your cluster.
+
+## Lock down SSH
+
+Sign in with keys instead of passwords, and limit who can reach the port.
+
+1. Check that you can sign in with an SSH key.
+2. Add this to `/etc/ssh/sshd_config.d/00-hardening.conf`:
+
+   ```text
+   PasswordAuthentication no
+   KbdInteractiveAuthentication no
+   PermitRootLogin no
+   ```
+
+   `PermitRootLogin no` needs a normal user with `sudo`, so create one first if you sign in as root.
+
+3. Check the file and reload SSH. On Fedora and RHEL, the service is called `sshd`:
+
+   ```bash
+   sudo sshd -t && sudo systemctl reload ssh
+   ```
+
+4. Keep your current session open and test a new one, so a mistake can't lock you out.
+
+Then, in your provider's firewall, allow port 22 only from your own address or your private network. With [Tailscale](/docs/tailscale), you can close it to the internet completely. Once it's closed, tools like <Term tip="A tool that blocks addresses after repeated failed sign-ins.">fail2ban</Term> have little left to do.
+
+## Keep the system patched
+
+Turn on automatic security updates.
+
+On Debian and Ubuntu:
+
+```bash
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades
+```
+
+On Fedora and RHEL, use `dnf-automatic` and set `apply_updates = yes` in its configuration.
+
+Kernel updates need a reboot, so plan for one regularly. Services with a single replica go down until the server is back. For services that can't go down, run [two or more replicas](/docs/scaling) across servers.
+
+## Limit who has root
+
+- Give `sudo` only to the people who manage the server, each with their own account.
+- Remove accounts and SSH keys when people leave.
+- Keep `/etc/rancher/k3s/k3s.yaml` readable by root only. It gives full control of the cluster.
+- Don't add anyone to the `docker` group or run unrelated software on the server. Both make it easier to get root.
+
+## Protect data on disk
+
+Pyo encrypts your [secrets](/docs/encryption), but not what your services write to their [volumes](/docs/volumes), like database files.
+
+- Use your provider's encrypted disks, or full-disk encryption on your own hardware. This matters most on a laptop or a machine in a shared space.
+- Wipe disks before you hand back or retire a server.
+- Don't rely on provider snapshots alone. They hold the same data, so limit who can access them, and keep [backups](/docs/backups) too.
+
+## Limit your cloud account
+
+- Protect your provider account with two-factor sign-in. Whoever controls it controls your servers and firewall, whatever else you've done.
+- Don't give the server cloud credentials or an <Term tip="Permissions your cloud provider gives the server itself, so programs on it can use your cloud account.">instance role</Term> it doesn't need. Pyo doesn't block your provider's <Term tip="An address inside each cloud server that hands out details about it, sometimes including cloud credentials.">metadata service</Term>, so a compromised service could read from it. If your provider's settings allow it, block containers from reaching it.
+
+## Check it from outside
+
+From a different network, scan your server's public address:
+
+```bash
+nmap -Pn your-server-ip
+```
+
+Only the ports you meant to open should show as open. Run this again after any firewall or provider change.

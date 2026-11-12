@@ -1,0 +1,24 @@
+---
+title: Protecting secrets
+description: How Pyo protects what you trust it with.
+---
+
+## Your secrets
+
+Each team has its own key, which encrypts its environment variables. Find it under **Security**, in the sidebar's Infrastructure section.
+
+Rotating a team's key re-encrypts every stored variable. Running services aren't affected.
+
+## The master key
+
+A master key protects the team keys. Keep it locally, or in OpenBao or Vault. Pyo's saved credentials and its own backups use the local master key directly. Read about [rotating it](/docs/system-reference#encryption) before you change it.
+
+## Other credentials
+
+Registry and SMTP passwords, deploy hook tokens and certificate keys are also encrypted <Term tip="Encrypted while stored on disk, not only while being sent.">at rest</Term>.
+
+## On your clusters
+
+New clusters encrypt Kubernetes Secrets at rest. Your services run under the <Term tip="A standard Kubernetes rule set that stops services from doing the riskiest things, like taking over the server they run on.">Pod Security baseline</Term>.
+
+The Pyo agent only changes your projects and Pyo's own parts. It can't read Secrets outside those or run privileged services. It can't use a server's files either, except for Pyo's own builds, metrics and GPU support. You can limit it further with an [agent policy](/docs/system-reference#agent-policy). The team's **Security** settings show whether each cluster's agent is limited.

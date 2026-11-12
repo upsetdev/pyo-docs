@@ -1,0 +1,35 @@
+---
+icon: rocket
+title: Making your first deploy
+description: Go from a fresh install to a live service.
+---
+
+After you set up your account, the dashboard walks you through these steps. Here's what each one does.
+
+## 1. Your server and builder
+
+A cluster is the server, or group of servers, that runs your services. On a fresh install, the server Pyo runs on is already your first cluster. It has a [builder](/docs/builders) for Git deploys. You can add more servers later in [Servers](/docs/servers).
+
+## 2. Choose what to run
+
+Pick one of these sources:
+
+- **Git repository:** Pyo builds it with your <Term tip="A file in your repository with the steps to build your code into a container image.">Dockerfile</Term> or Containerfile, or with zero configuration.
+- **Container image:** any image from a public <Term tip="A server that stores container images, like Docker Hub or GitHub Container Registry.">registry</Term>, or a private one you've saved a login for.
+- **Template:** a ready-to-run database, tool or service from [Templates](/docs/templates).
+- **Compose file:** a project with a service for each Compose service. See [Importing Docker Compose](/docs/deploy/compose).
+
+## 3. Deploy
+
+Pyo builds the image if needed, starts the service and follows the <Term tip="The switch from the old version to the new one, which Pyo watches until the new version is running.">rollout</Term>. You can watch the logs live.
+
+If the deploy fails, Pyo puts the previous version back automatically.
+
+## 4. Put it on the web
+
+Add a domain to the service. A free domain works right away with no <Term tip="The system that points a domain name at a server's address. For your own domain, you add a record at your domain provider.">DNS</Term> setup. You can add your own domain at any time. See [Adding a domain](/docs/domains).
+
+## Next
+
+- Deploy from your terminal with the [`pyo` CLI](/docs/cli).
+- [Deploy on every push](/docs/deploy#deploy-on-every-push) from GitHub.

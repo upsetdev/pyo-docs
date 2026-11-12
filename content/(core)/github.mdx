@@ -1,0 +1,20 @@
+---
+title: Connecting GitHub
+description: Private repositories and deploys on every push.
+---
+
+Pyo connects to GitHub through a <Term tip="A kind of GitHub integration with its own permissions, installed on the accounts and repositories you choose.">GitHub App</Term> that belongs to your own installation.
+
+## Set up the GitHub App
+
+An installation admin creates the GitHub App once, under **Settings → GitHub**. Pyo uses GitHub's own setup flow, so there are no keys to copy.
+
+## Connect a team
+
+Under **Integrations**, in the sidebar's **Team** section, install the GitHub App on a GitHub account or organization. Choose which repositories it can see. GitHub then asks you to authorize it, so Pyo can check that your GitHub account has access to that installation.
+
+An installation belongs to one team. To move it to another team, disconnect it from the first one.
+
+## Deploy
+
+Pick a repository in **New deploy**. Private repositories work. Each push to the service's branch deploys it, and you can turn that off per service.

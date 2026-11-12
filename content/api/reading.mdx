@@ -1,0 +1,51 @@
+---
+title: Reading data
+description: The snapshot, logs, metrics and observability.
+---
+
+Every endpoint here is a `GET` under `/api/v1`.
+
+## Snapshot
+
+`GET /state` returns everything you can see: teams, projects, clusters, servers, services and recent deployments. Most scripts only need this one.
+
+```bash
+curl https://your-pyo/api/v1/state \
+  -H "Authorization: Bearer $PYO_TOKEN"
+```
+
+## Service logs
+
+`GET /services/{id}/logs` returns the recent output of a service's running <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term>.
+
+## Metrics
+
+`GET /metrics` returns CPU and memory over time for a team's servers and services.
+
+| Parameter | Description |
+| --- | --- |
+| `team` | The team (required) |
+| `cluster` | A cluster id, or `all` |
+| `range` | The time range, such as `24h` |
+
+## Observability
+
+`GET /observability` returns traffic for a team's websites: a `summary`, a `series` over time, and the `previous` period to compare with. A read key is enough.
+
+| Parameter | Description |
+| --- | --- |
+| `team` | The team (required) |
+| `project` | A project id, or `all` |
+| `service` | Limit it to one service's domains |
+| `site` | A domain id, or `all` |
+| `range` | `1h`, `24h`, `7d` or `30d` (default `7d`) |
+
+If the installation has no ClickHouse set up, it returns `503`.
+
+## Request logs
+
+`GET /access-logs` returns the requests your sites served, newest first. It takes `team`, `project`, `service`, `site` and `range` like observability, plus `status`, `method`, `limit` and `before` for paging back.
+
+## Images
+
+`GET /images?team=...` lists the container images a team's services have run, with each version deployed.

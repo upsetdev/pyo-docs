@@ -1,0 +1,43 @@
+---
+title: pyo.toml
+description: Keep a service's settings next to its code.
+---
+
+`pyo link` writes this file, and `pyo deploy` applies it. Every setting is optional. What's set here wins, and the rest stays as it is in the dashboard.
+
+Pyo looks in the current folder, then in the folders above it.
+
+```toml title="pyo.toml"
+service = "svc_abc123"  # written by pyo link
+
+# Image services only. A tag or an @sha256 digest.
+image = "ghcr.io/acme/api:1.2"
+
+[build]
+branch = "main"
+dockerfile = "Dockerfile"
+context = "."
+
+[deploy]
+replicas = 2
+port = 8080            # the port it listens on for HTTP
+health = "/healthz"    # checked before traffic moves over
+auto_rollback = true
+
+[resources]
+cpu = "500m"           # limit: "500m" or "1" (cores)
+memory = "512Mi"       # limit: "512Mi" or "1Gi"
+
+[env]
+LOG_LEVEL = "info"
+```
+
+Unknown settings are rejected, so a typo fails instead of being ignored.
+
+## Secrets
+
+`[env]` is for variables, not secrets, because this file is usually <Term tip="Saved to your Git repository, where anyone with access to it can read it.">committed</Term>. Keep secrets in Pyo:
+
+```bash
+pyo env set --secret STRIPE_KEY=sk_live_...
+```

@@ -1,0 +1,86 @@
+---
+title: Firewall
+description: Choose who can reach a service, by address, range or country.
+---
+
+Pyo's firewall decides who can reach a service over public traffic, and how often. You set it per service on the service's **Firewall** tab, under **Access**. With no rules, everyone gets in. Developers can change the rules. The [web application firewall](/docs/waf) has its own section on the same tab.
+
+## Rules
+
+Choose **Add rule**, then say which clients the rule matches:
+
+- **IP address**, like `203.0.113.7`
+- **IP range**, IPv4 or IPv6, like `198.51.100.0/24`
+- **Country**
+- **Any client**
+
+For the first three, pick **is in** or **is not in**, and list up to 50 values. Then pick the action:
+
+- **Block** turns the client away. Websites answer with a plain "access denied" page, status `403`.
+- **Allow** lets the client in.
+- **Rate limit** lets the client in, up to a number of **requests** a second or a minute.
+
+You can give the rule a **Name**. Each service can have up to 500 rules.
+
+## Order
+
+Allow and block rules are checked from the top, in the order they're numbered. The first rule that matches decides, and the rest are skipped. If no rule matches a client, it gets in. Use **Move up** and **Move down** in a rule's menu to change the order. New rules go last.
+
+To let in only some clients, allow them, then block everyone else:
+
+1. **Allow** if client IP is in `203.0.113.0/24`
+2. **Block** any client
+
+Or in one rule: **Block** if client IP is not in `203.0.113.0/24`.
+
+A TCP port's own **IP filter** is checked before the service's rules. It can only narrow them.
+
+## Rate limits
+
+Rate limits apply to websites. They count the requests that got past the allow and block rules. They're listed last, without a number, because their order doesn't matter. Every rate limit that matches a request counts it. Each client IP is counted separately, and each server keeps its own count. Over a limit, the client gets `429 Too Many Requests`.
+
+A rate limit can't match countries. With **is not in**, it takes one address or range. A service's rate limits can have up to 16 values in total. **Any client** uses 2 of them.
+
+## What it covers
+
+| Traffic | Addresses and ranges | Countries | Rate limits |
+| --- | --- | --- | --- |
+| Websites | Yes | Yes | Yes |
+| TCP ports through [Pyo Gateway](/docs/gateway#tcp-and-udp-ports) | Yes | No | No |
+| UDP ports, and ports with the gateway turned off | Yes | No | No |
+
+The firewall doesn't cover **Port on every server** ports, or your servers' own SSH and system ports. For those, see [Hardening your server](/docs/hardening-your-server).
+
+<Callout type="warn">
+  Countries only work for websites. TCP and UDP ports never see a client's country. On those ports, a country is never **in** a list and always **not in** one. So a rule like **Block** if country is not in Germany blocks everyone on those ports. Use address rules for them.
+</Callout>
+
+## Countries
+
+Pyo finds a visitor's country with an IP-location database (GeoLite2 Country) built into the gateway. The gateway doesn't download anything for it.
+
+<Callout type="warn">
+  While any service on a cluster has a country rule, the cluster's websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They don't use the `X-Forwarded-For` header. So behind a tunnel, or a CDN that reaches Pyo over a private link, every visitor looks like the tunnel. Use address rules there instead.
+</Callout>
+
+## See what was turned away
+
+Under **Analytics**, the service's **Firewall** tab shows the requests and TCP connections that were turned away. You see them over time, with the top rules, countries, addresses and paths. The latest ones show the rule that matched:
+
+- the rule's name
+- **A removed rule**, if the rule has since been deleted
+- **A firewall rule** or **Over a rate limit**, if no rule matches the client now
+
+UDP ports and ports with the gateway turned off aren't counted. Findings from the [web application firewall](/docs/waf#findings) show up in the same list.
+
+## Don't lock yourself out
+
+If the dashboard runs on the service's cluster and the change would block your own address, Pyo warns you with **This would block you**. Type `confirm` to apply it anyway.
+
+## From the API and MCP
+
+Change the firewall with the [addFirewallRule](/docs/api/reference/firewall/add-firewall-rule), [updateFirewallRule](/docs/api/reference/firewall/update-firewall-rule), [reorderFirewallRules](/docs/api/reference/firewall/reorder-firewall-rules) and [removeFirewallRule](/docs/api/reference/firewall/remove-firewall-rule) operations. A rule's `action` is `allow`, `block` or `rateLimit`. Its `operator` is `in` or `notIn`. Its `sources` are the addresses, ranges or country codes. Leave `sources` empty to match any client. A rate limit adds `requests` and `per` (`second` or `minute`). AI assistants use the `add_firewall_rule`, `update_firewall_rule`, `reorder_firewall_rules`, `remove_firewall_rule` and `get_firewall_blocked` [tools](/docs/mcp/tools#firewall).
+
+## Web application firewall
+
+To check the content of website requests for attacks like SQL injection, turn on the [web application firewall](/docs/waf) on the service's **Firewall** tab.

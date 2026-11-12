@@ -1,0 +1,79 @@
+---
+title: Importing Docker Compose
+description: Turn a Compose file into a Pyo project, with a service for each Compose service.
+---
+
+If your project already runs with Docker Compose, Pyo can import the file. Each Compose service becomes a Pyo service in a new project. You review the result before anything is created.
+
+## Import a file
+
+### From the dashboard
+
+1. Choose **Deploy new**, then **Docker Compose** under **Import from**.
+2. Under **Where the file is**, choose **Paste or upload** and add your `compose.yaml`, and its `.env` if it has one. Or choose **Repository**, then pick a repository, a branch and the file's path.
+3. Pick the **Cluster** to run on, then choose **Preview**.
+
+### From the CLI
+
+```bash
+pyo deploy -f compose.yml
+```
+
+The CLI reads the `.env` next to the file. It shows what it will create and what it leaves out, then asks before it deploys. Add `--team` or `--cluster` to choose where it goes. Add `--yes` to skip the question, for example in [CI](/docs/cli/ci).
+
+### From the API or MCP
+
+Send the file to [Preview a Docker Compose import](/docs/api/reference/projects/preview-compose) to see the plan. Then create the project with [Import Docker Compose](/docs/api/reference/projects/import-compose). AI assistants use the `preview_compose` and `import_compose` [tools](/docs/mcp/tools).
+
+## Review the import
+
+The preview shows the project and each service, with what changed and what was left out. Before you deploy, you can change:
+
+- the project's name
+- each service's name
+- which ports are public
+- the domain for each public web port
+
+Choose **Deploy** to create the project and deploy its services. Nothing is created from the file until then.
+
+## What converts
+
+| In Compose | In Pyo |
+| --- | --- |
+| `image` | The service runs that image. |
+| `build` | Pyo builds it from the repository. This needs an import from a repository. |
+| `ports` | A published port becomes public. A web port gets a suggested free domain. Other ports become public TCP or UDP ports through the gateway. A [reserved port](/docs/domains#public-tcp-and-udp-ports) stays inside the project, with a warning. Ports that only other services use stay inside the project. |
+| Database images | Well-known images like PostgreSQL, MySQL, Redis and MongoDB get their usual port, even if the file doesn't list it. |
+| `environment`, `env_file` | [Environment variables](/docs/deploy/environment). `${VARIABLE}` and `${VARIABLE:-default}` are filled in from the `.env` file. |
+| Secret-looking variables | Names like `PASSWORD`, `TOKEN` or `API_KEY` become secrets, encrypted like any other secret. |
+| Service names | Kept, so `db:5432` still reaches the database. Underscores become hyphens, and other services' variables are updated to match. |
+| Named and anonymous volumes | [Volumes](/docs/volumes), 10 GB each. |
+| A bind-mounted directory, like `./data` | An empty volume. Its files aren't copied. |
+| `healthcheck` | The service's health check. Without one, Pyo checks its first port. |
+| `deploy` | Replicas, CPU and memory, and [GPUs](/docs/gpus). |
+| `entrypoint`, `command`, `working_dir` | How the service starts. |
+| `user` | A numeric user, like `1000` or `1000:1000`. |
+| `depends_on` | The order services deploy in. |
+
+## What doesn't
+
+Pyo imports the rest of the file and tells you what it left out on each service. One unsupported setting never stops the import.
+
+- **Files from the host:** files in a bind-mounted directory aren't copied. Paths outside the project folder, like `/etc/app`, aren't mounted.
+- **Single-file mounts**, like a config file: build the file into the image, or put its content in a variable.
+- **The Docker socket:** Pyo doesn't run Docker on its servers.
+- **Extra rights:** privileged mode, the host's network or processes, devices, added capabilities and security options aren't applied. GPUs are the exception. Ask for them under `deploy.resources`.
+- **`extends` and `include`:** copy the settings into the file itself.
+- **Compose `secrets` and `configs`:** use secrets instead.
+- **Services in a profile** aren't imported, since Compose doesn't start them by default.
+- **Build targets and build secrets:** Pyo ignores them and builds the Dockerfile's last stage.
+- **A build without a repository:** a pasted file can't be built. A service that also has an image uses that image. A service with only a build is left out. Import from the repository to build it.
+- **Shared volumes:** a volume belongs to one service in Pyo. It stays with the first service that uses it.
+
+<Callout type="warn">
+  Variables that aren't set in the `.env` are left empty. Fill them in on the services before you deploy.
+</Callout>
+
+## After the import
+
+The imported services are ordinary Pyo services. Like any other service, you can [scale](/docs/scaling) them, change their settings, add [domains](/docs/domains) and spread them across [regions](/docs/regions).

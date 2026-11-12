@@ -1,0 +1,31 @@
+---
+icon: cube
+title: Core concepts
+description: The few things you need to know to use Pyo.
+---
+
+## Teams
+
+Everything in Pyo belongs to a team. Invite people as owners, admins, developers or viewers. See [Inviting your team](/docs/teams).
+
+## Projects
+
+A project groups related services, like a website with its API and database. Services in a project share a Kubernetes <Term tip="A named area inside a cluster that keeps one project's services and settings apart from everything else.">namespace</Term>, so they can reach each other by name.
+
+New projects are [isolated](/docs/network-isolation): other projects' services can't reach them.
+
+## Services
+
+A service is one thing you run, like a website, an API, a database or a background worker. It comes from a Git repository, a <Term tip="A packaged, ready-to-run copy of a program and everything it needs. Pyo builds one from your code or pulls an existing one.">container image</Term> or a template.
+
+## Deployments
+
+A deployment is one build and rollout of a service. Pyo keeps the history, so you can see what ran when and go back to an earlier version.
+
+## Clusters and servers
+
+A cluster is a group of servers running <Term tip="A lightweight version of Kubernetes, the standard system for running containers across servers. Pyo sets it up for you.">k3s</Term>. A team can have [several](/docs/clusters), for example `production` and `staging`. Each cluster runs an agent that connects out to Pyo, so you don't have to open anything on the server for Pyo to reach it. See [how Pyo fits together](/architecture).
+
+## Replicas
+
+A replica is one running copy of a service. More replicas handle more traffic, and they can run on different servers. See [Scaling a service](/docs/scaling).

@@ -1,0 +1,74 @@
+---
+title: Setting environment variables
+description: Configure services with variables and encrypted secrets.
+---
+
+Set <Term tip="Named values your service reads when it starts, like a database address or a log level.">variables</Term> on a service in the dashboard, or with the CLI:
+
+```bash
+pyo env set LOG_LEVEL=info
+```
+
+## Secrets
+
+Mark a variable as secret to encrypt it. A secret's value can't be read back afterwards.
+
+```bash
+pyo env set --secret STRIPE_KEY=sk_live_...
+```
+
+Each team's variables are encrypted with its own key. See [Protecting secrets](/docs/encryption).
+
+Already using a secret manager, like Vault, AWS Secrets Manager or Doppler? [Import from it](/docs/external-secrets) instead.
+
+## Connecting services
+
+A variable can use another service's value, written as `${{service.VARIABLE}}`. For example, to give your service the database's address:
+
+```bash
+pyo env set 'DATABASE_URL=${{postgres.DATABASE_URL}}'
+```
+
+A reference can sit inside a longer value, like `${{api.URL}}/v1`. It only works between services in the same project. Pyo fills it in when the service deploys. The browser only ever sees the reference, never the value.
+
+Every service offers:
+
+| Variable | What it holds |
+| --- | --- |
+| `HOST` | Its internal address, which other services use to reach it |
+| `PORT` | Its first port |
+| `URL` | `http://` with its host and port |
+| `PUBLIC_DOMAIN` | Its first domain, if it has one |
+| `PUBLIC_URL` | `https://` with that domain |
+| Its own variables | By name, like `${{api.API_KEY}}` |
+
+The database templates also offer their connection details:
+
+| Template | Variables |
+| --- | --- |
+| MySQL, MariaDB | `USER`, `PASSWORD`, `DATABASE`, `DATABASE_URL` |
+| MongoDB | `USER`, `PASSWORD`, `DATABASE_URL` |
+
+Good to know:
+
+- If a reference names a service or variable that doesn't exist, the deploy stops and says which one.
+- When a value you reference changes, the services that use it keep the old value until they're redeployed. Pyo doesn't redeploy them for you.
+- A reference inside a referenced value isn't filled in.
+- Retrying a deployment uses the values it had the first time.
+
+## Applying changes
+
+Changes apply on the next deploy. To deploy right away, add `--deploy`:
+
+```bash
+pyo env set LOG_LEVEL=debug --deploy
+```
+
+## Working locally
+
+List the variables, or write them to a `.env` file. Secrets stay in Pyo.
+
+```bash
+pyo env list
+pyo env pull
+```

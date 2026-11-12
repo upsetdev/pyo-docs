@@ -1,0 +1,30 @@
+---
+title: Configuring your installation
+description: Settings for your whole installation, set by its admin.
+---
+
+The account you set up after installing owns the installation. These settings apply to every team:
+
+- **[GitHub](/docs/github):** the <Term tip="A kind of GitHub integration with its own permissions, installed on the accounts and repositories you choose.">GitHub App</Term>.
+- **[Email](/docs/email):** the <Term tip="The server that sends email for you. Your email provider gives you its host, port and login.">SMTP server</Term>.
+- **[Backups](/docs/backups#backing-up-pyo-itself):** encrypted copies of Pyo's own data.
+- **Observability:** what Analytics and Logs keep about visitors.
+- **[Updates](/docs/updating-pyo):** new releases of Pyo, by hand or on a schedule.
+
+Everything else is set with environment variables, listed in the [system reference](/docs/system-reference).
+
+## Sign-ups
+
+Only people you invite can sign up. To let anyone with access to the dashboard create an account, run this on the server:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_ALLOW_SIGNUP=true
+```
+
+## Visitor IP addresses
+
+| Setting | What's kept |
+| --- | --- |
+| None | Nothing that identifies a visitor (recommended) |
+| Anonymized | The address without its last part, which points to a network, not a person |
+| Full | The whole address for 180 days, which may need consent under laws like <Term tip="The European Union's data protection law.">GDPR</Term> |

@@ -1,0 +1,21 @@
+---
+title: Rolling back a deploy
+description: Go back to an earlier version, by hand or automatically.
+---
+
+## Automatic rollback
+
+If a deploy fails, Pyo puts the previous version back automatically. This is on by default. You can turn it off per service.
+
+## Roll back by hand
+
+Pick an earlier deployment in the dashboard, or use the CLI:
+
+```bash
+pyo rollback                # the previous version
+pyo rollback <deployment>   # a specific deployment
+```
+
+A rollback keeps the service's current [domains](/docs/domains#changing-domains).
+
+Rolling back needs that version's image. You can't roll back to images removed by <Term tip="Pyo deletes the images it built for older deployments to save space. You choose how many deployments it keeps per service under Images → Registry.">retention</Term>.

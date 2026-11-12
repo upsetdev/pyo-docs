@@ -1,0 +1,56 @@
+---
+title: Scaling a service
+description: Run more replicas, set resources and choose where services run.
+---
+
+## Replicas
+
+Set how many <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term> of a service run, from the dashboard or through [MCP](/docs/mcp). Scaling takes effect without a redeploy.
+
+## Autoscaling
+
+Pyo can choose the number of replicas for you, between a minimum and a maximum, based on CPU use and, optionally, memory use. Open a service, choose **Scale**, turn on **Autoscale** and set:
+
+- **Minimum:** the fewest replicas it runs, even when idle.
+- **Maximum:** the most it can run, up to 50.
+- **CPU target:** the average use to aim for, as a percentage of each replica's <Term tip="The CPU Pyo reserves for each replica. You set it under Resources, below.">CPU request</Term>.
+- **Memory target:** optional. Turn on **Also scale on memory** to aim for a memory use too, as a percentage of each replica's memory request. When both are on, whichever needs more replicas wins.
+
+With a target of 70% and a request of <Term tip="CPU is measured in thousandths of a core, so 100m is a tenth of one core.">100m</Term>, Pyo adds replicas once they average more than 70m each. It removes them a few minutes after use drops, so a short dip doesn't cut capacity.
+
+Deploys keep the current number of replicas, so a deploy during a busy period won't shrink your service. If you turn autoscaling off, the service stays at the size it had reached.
+
+Autoscaling has some limits:
+
+- It follows CPU, and memory if you turn it on, but not requests per second.
+- Many programs don't give memory back once they've used it. With a memory target, such a service may scale up and not come back down, so set it with care.
+- Set realistic [requests](#resources), because use is measured against them. If the request is much lower than what the service needs, it scales up early.
+- It can only add replicas as far as your servers have room. If they're full, new replicas wait until there's space. Pyo doesn't add servers.
+- Services with a volume run as one replica, so they can't autoscale.
+- It needs <Term tip="A small system service that reports how much CPU and memory each replica uses.">metrics-server</Term>, which comes with k3s. Keep it enabled.
+
+## Deploys without downtime
+
+Pyo starts a new replica and waits for it to be ready before stopping an old one, so deploys don't drop traffic. A stopping replica keeps serving briefly while traffic moves away from it.
+
+Services with a <Term tip="A volume that only one copy of a service, on one server, can use at a time.">single-writer volume</Term> are the exception: they restart on deploy, to protect their data.
+
+## Resources
+
+Each service has its own CPU and memory requests and limits. The request is what Pyo reserves for it, and the limit is the most it can use.
+
+## Choosing where services run
+
+By default, a service can run anywhere in its cluster. You can narrow that down by:
+
+- **Region:** servers in one [region](/docs/regions).
+- **Tags:** servers with all of the given tags, like `gpu`.
+- **Server:** specific servers by name.
+
+A service pinned to one server can't move if that server goes down.
+
+Replicas also spread across regions on their own. See [Serving traffic by region](/docs/regions).
+
+## Self-healing
+
+Crashed containers restart on their own. With more than one server, stateless services move to a healthy server if one goes down.

@@ -1,0 +1,229 @@
+---
+title: System reference
+description: The PYO_ environment variables, and everything Pyo runs on your server.
+---
+
+Most of Pyo is configured from the dashboard. This page covers what sits underneath it, for when you run or troubleshoot the installation yourself.
+
+## Change a setting
+
+Pyo reads its environment variables when it starts. Set one on the deployment, and Kubernetes restarts Pyo with the new value:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_ALLOW_SIGNUP=true
+```
+
+To see what's set now:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo --list
+```
+
+Pyo has two deployments, and some settings belong on both. `pyo` serves the dashboard and API, and `pyo-worker` runs deploys, backups and other background work.
+
+<Callout type="warn">
+  Updating Pyo puts back the values it sets in its own <Term tip="The file that describes how Pyo itself is set up on the cluster.">manifest</Term>, like `PYO_REGISTRY_PUSH`. Variables you've added, like `PYO_ALLOW_SIGNUP` and `PYO_COOKIE_SECURE`, are kept.
+</Callout>
+
+## Installation settings
+
+These are the ones you're most likely to change.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PYO_ALLOW_SIGNUP` | `false` | Lets anyone who can reach the dashboard create an account. See [sign-ups](/docs/installation-settings#sign-ups). |
+| `PYO_COOKIE_SECURE` | `false` | Sends the session cookie over HTTPS only. Turn it on when the dashboard is behind HTTPS. |
+| `PYO_PASSKEY_ORIGINS` | Not set | More HTTPS addresses of the dashboard where [passkeys](/docs/passkeys#where-passkeys-work) work, comma-separated, like `https://pyo.example.com`. |
+| `PYO_ADMIN_PASSWORD` | Generated | The first admin's password. It's only read when an installation has no accounts yet, and it has to be replaced on first sign-in. |
+| `PYO_ALLOW_PRIVATE_NETWORKS` | `true` | Lets teams use addresses on private networks, like your LAN or tailnet, for [registry logins](/docs/registries), [backup buckets](/docs/backups) and [secret stores](/docs/external-secrets). Pyo's own server and cluster network are never allowed. Set `false` when people you don't fully trust run teams, as Pyo Cloud does. |
+| `MAXMIND_LICENSE_KEY` | Not set | Your <Term tip="A free database from MaxMind that maps IP addresses to countries and cities.">GeoLite2</Term> license key, to keep visitor location data up to date. Without one, Pyo uses the copy it ships with. |
+
+## Connections
+
+Pyo sets these when it's installed, so you'll rarely need to touch them.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `DATABASE_URL` | Required | The PostgreSQL database that holds Pyo's data. |
+| `DATABASE_POOL_MAX` | `10` | The most database connections each process opens. `pyo-worker` is installed with `15`. |
+| `CLICKHOUSE_URL` | Not set | The ClickHouse server for [observability](/docs/observability). Without it, observability is off. |
+| `CLICKHOUSE_USER` | `default` | The ClickHouse user. |
+| `CLICKHOUSE_PASSWORD` | Empty | The ClickHouse password. |
+| `PYO_AGENT_API_URL` | `http://pyo.pyo-system.svc:8000` | The address agents connect to. |
+| `PYO_LOCAL_URL` | `http://127.0.0.1:8000` | How the install command for **This machine** reaches Pyo, and where it downloads its script. |
+| `PYO_SCRIPTS_URL` | Pyo's own address | Where the commands for connecting other servers download their scripts. When not set, they download from Pyo itself, at the address the command gives the server, like your tailnet or public URL. Without one, they use `https://pyo.dev`. **This machine** always downloads from Pyo on it. |
+| `PYO_AGENT_SELF_UPDATE` | `true` | Lets agents update their own limits when Pyo is updated, on clusters connected while it's on. Set `false` to update them yourself. The cluster's page then shows **Update needed** with the command to run on its server. See [Securing Pyo](/docs/securing-pyo#what-to-keep-in-mind). |
+| `PYO_REGISTRY_PUSH` | This machine's Tailscale address, port 5005 | Where servers and builders on other machines reach Pyo's registry, with a login. Not set without Tailscale. |
+| `PYO_REGISTRY_PULL` | `127.0.0.1:5005` | The registry address servers pull images from. |
+| `PYO_REGISTRY` | `pyo-registry.pyo-system.svc.cluster.local:5000` | The registry itself, which only Pyo reaches. |
+| `PYO_TAILNET_NAME` | Not set | This machine's tailnet name. With it, Pyo is at `https://<name>:8443`, its registry at `<name>:5443`, and sign-in cookies are HTTPS-only. Without it, Pyo is only at `http://localhost:8000`. |
+| `PYO_BACKUP_STORE_URL` | Not set | The backup store on this cluster. |
+| `PYO_BACKUP_STORE_ADMIN_URL` | Not set | The backup store's admin API, where Pyo sets it up and makes each team's bucket and key. |
+| `PYO_BACKUP_STORE_ADMIN_TOKEN` | Not set | The token for the backup store's admin API. |
+| `PYO_BACKUP_STORE_ACCESS_KEY` | Not set | Pyo's own key to the backup store. Teams never get it. |
+| `PYO_BACKUP_STORE_SECRET_KEY` | Not set | Pyo's own secret key to the backup store. |
+
+## Running Pyo
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PYO_ROLE` | `all` | What a process does: `web`, `worker` or `all`. |
+| `LISTEN_ADDR` | `0.0.0.0:8000` | The address Pyo listens on. |
+| `PYO_WEB_DIR` | `dash/dist/client` | Where the built dashboard is. |
+| `PYO_AGENT_IMAGE` | `127.0.0.1:5005/pyo/agent:dev` | The agent image for new clusters. |
+| `PYO_BUILDER_IMAGE` | `127.0.0.1:5005/pyo/builder:dev` | The image for new builders. |
+| `RUST_LOG` | `pyo_api=info,tower_http=info` | How much Pyo writes to its logs. |
+
+## Encryption
+
+These decide how your [secrets](/docs/encryption) are protected.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PYO_SECRET_KEY` | Set by the installer | The master key, as 64 hex characters. [Save a copy](/docs/securing-pyo#4-save-your-master-key). |
+| `PYO_SECRET_KEY_PREVIOUS` | Not set | The old master key, while you rotate it. |
+| `PYO_KMS` | Not set | Set to `openbao` or `vault` to protect team keys with OpenBao or Vault. |
+| `OPENBAO_ADDR` | Not set | Your OpenBao or Vault address. `VAULT_ADDR` works too. |
+| `OPENBAO_TOKEN` | Not set | Your OpenBao or Vault token. `VAULT_TOKEN` works too. |
+| `PYO_KMS_MOUNT` | `transit` | The <Term tip="The part of OpenBao or Vault that encrypts data for other apps without handing out the key.">Transit</Term> secrets engine's mount. |
+| `PYO_KMS_KEY` | `pyo` | The Transit key's name. |
+
+<Callout type="warn">
+  Rotating the master key only moves team variables to the new key. Saved credentials, like your GitHub App, registry and SMTP passwords and certificate keys, and existing backups of Pyo itself can't be opened with a new key. Keep `PYO_SECRET_KEY` as it is, even with OpenBao or Vault, unless the key has leaked. If it has, add those credentials again afterwards and take a new backup.
+</Callout>
+
+## Updates
+
+Set these on both `pyo` and `pyo-worker`.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PYO_UPDATE_CHECK` | On | Set to `off` to stop looking for new releases, for a server that can't reach GitHub. |
+| `PYO_UPDATE_SOURCE` | `https://api.github.com/repos/upsetdev/pyo` | A mirror of GitHub's release API to check instead. |
+
+The install command reads these too, when you run it:
+
+| Variable | What it does |
+| --- | --- |
+| `PYO_VERSION` | The release to install, like `0.1.0`. Takes the place of `--version`. |
+| `PYO_YES` | Set to `1` to update without asking, after you've read the release's notices. Takes the place of `--yes`. |
+| `PYO_UPDATE_SOURCE` | The mirror to get the release from, as above. |
+
+See [Updating Pyo](/docs/updating-pyo).
+
+## CLI
+
+Set these on the machine where you run `pyo`, like in [CI](/docs/cli/ci).
+
+| Variable | What it does |
+| --- | --- |
+| `PYO_URL` | Your Pyo's address. Takes the place of `--url`. |
+| `PYO_TOKEN` | An API key. Takes the place of `--token`. |
+| `PYO_INSTALL_DIR` | Where the CLI installer puts `pyo`. |
+| `NO_COLOR` | Turns off colored output. |
+
+`pyo login` saves your sign-in to `~/.config/pyo/config.toml`.
+
+## Inside your services
+
+Pyo doesn't add `PYO_` variables to your services. It only sets `PORT` to the service's first port, unless you've set `PORT` yourself. Everything else is what you add under [environment variables](/docs/deploy/environment).
+
+## Set by Pyo
+
+Pyo sets these itself, so leave them as they are.
+
+| Variable | What it does |
+| --- | --- |
+| `PYO_API_URL` | The address agents and builders connect to. |
+| `PYO_AGENT_TOKEN` | How an agent signs in to Pyo. |
+| `PYO_BUILDER_TOKEN` | How a builder signs in to Pyo. |
+| `PYO_GEOIP_DB` | Where the visitor location data is kept. |
+| `PYO_TAILNET_API_URL` | Pyo's address on your Tailscale network. |
+
+## What runs on your server
+
+Pyo keeps its own parts in the `pyo-system` namespace:
+
+```bash
+sudo k3s kubectl -n pyo-system get pods
+```
+
+| Name | What it does |
+| --- | --- |
+| `pyo` | The dashboard and API. |
+| `pyo-worker` | Runs deploys, backups and other background work. |
+| `pyo-agent` | Carries out Pyo's instructions on each cluster. It connects out to Pyo, so nothing has to connect in to it. |
+| `pyo-postgres` | Pyo's own data, in the `pyo` database. |
+| `pyo-clickhouse` | Requests and metrics for observability, in the `pyo_observability` database. |
+| `pyo-vector` | Collects request logs on each server and passes them to Pyo. |
+| `pyo-backup-store` | S3-compatible storage on this cluster ([Garage](https://garagehq.deuxfleurs.fr), a single instance), the default destination for [backups](/docs/backups). Each team's key reaches only its own bucket. |
+| `registry` | Holds the images your builds produce. Only Pyo reaches it. |
+| `pyo-host` | Puts the dashboard on port 8000 and the registry on port 5005, on the machine itself and its Tailscale address. On the Tailscale address, the registry needs a login. |
+| `buildkitd` | Builds your images. |
+| `pyo-builder-*` | Any [build servers](/docs/builders) you've added. |
+
+Pyo also relies on these, outside that namespace:
+
+| Name | Where | What it does |
+| --- | --- | --- |
+| k3s | The host | The Kubernetes distribution everything runs on. |
+| Gateway controller (Envoy Gateway) | `pyo-gateway` | Sets up the gateway's proxies, and keeps your sites' certificates. See [Pyo Gateway](/docs/gateway). |
+| Gateway proxy (Envoy) | `pyo-gateway` | One on each server, except build-only servers. Takes traffic on ports 80 and 443, and public TCP and UDP ports, and routes it to your services. Published on the servers only while the cluster [accepts public traffic](/docs/clusters#public-traffic). |
+| `pyo-tailnet` Service | `pyo-gateway` | On the machine Pyo runs on. Takes connections to its tailnet address on ports 8443 and 5443 straight to the gateway, so the gateway sees each device's tailnet address. Written by the machine's daily `pyo-tailnet-cert` timer. |
+| Gateway API | The cluster | The standard routing objects Pyo Gateway reads. k3s 1.37 and later include it. On older k3s, Pyo installs it, and k3s takes it over when you upgrade to 1.37. It stays if you remove Pyo. |
+| `pyo-waf` | `pyo-gateway` | The [web application firewall](/docs/waf), only while a service on the cluster has it on. |
+| cert-manager | `cert-manager` | Issues HTTPS certificates. A certificate's Secret is deleted with it. |
+
+In `pyo-system`, [network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) turn away everything Pyo doesn't need: Pyo's database, ClickHouse, the registry and the backup store's admin API only answer Pyo itself. Your services reach Pyo's dashboard and API, and the backup store's S3 API with a key.
+
+If the gateway fails to install, the cluster's page says so. Its installer's log has the reason:
+
+```bash
+sudo k3s kubectl -n kube-system logs job/helm-install-envoy-gateway
+```
+
+Each project gets its own namespace, named when you create the project. Pyo labels what it creates with `pyo/project-id` and `pyo/service-id`.
+
+<Callout type="warn">
+  Pyo manages everything here. Changes you make with `kubectl` can be overwritten by the next deploy or update.
+</Callout>
+
+## k3s
+
+On a machine without k3s, the installer installs the version that release of Pyo was tested with: **v1.37.2+k3s1** for this release. It downloads k3s from its GitHub release and checks both k3s and its installer against checksums fixed in the release. If one doesn't match, it stops before anything is installed.
+
+Servers you add to a cluster get the cluster's own k3s version, checked against that k3s release's published checksums. Tailscale, and the NVIDIA Container Toolkit for GPUs, come from their vendors' package repositories, whose signing keys are checked by fingerprint.
+
+To use another k3s version, install k3s yourself before installing Pyo. Pyo uses the k3s it finds and doesn't change its version, including when Pyo updates.
+
+## Agent policy
+
+To limit what the agent may do on a cluster, create a `pyo-policy` ConfigMap in `pyo-system` on that cluster. The agent only reads it, so only someone with access to the server can change it.
+
+| Key | Value | Effect |
+| --- | --- | --- |
+| `terminal` | `off` | No terminals into services. |
+| `forceRemoveServers` | `off` | Servers are only removed after their services have moved away. |
+| `readOnly` | `true` | The agent reports, and changes nothing. |
+
+```bash
+sudo k3s kubectl -n pyo-system create configmap pyo-policy --from-literal=terminal=off
+```
+
+The team's **Security** page shows each cluster's policy.
+
+## Secrets
+
+Pyo keeps its keys as Kubernetes Secrets in `pyo-system`.
+
+| Secret | What it holds |
+| --- | --- |
+| `pyo-secrets` | The master key. Back this up, and never delete it. |
+| `pyo-admin` | The password the installer printed. It stops working once you've set up your account. |
+| `pyo-agent` | How this cluster's agent signs in to Pyo. |
+| `pyo-vector` | How log collection connects to Pyo. |
+| `pyo-postgres` | The password and address for Pyo's database. |
+| `pyo-clickhouse` | The ClickHouse password. |
+| `pyo-backup-store` | The backup store's internal secret and admin token, and Pyo's own key to it. Teams' keys are kept in Pyo's database, encrypted. |
+| `pyo-bootstrap` | The key this machine uses to connect itself, and to prove it's the cluster Pyo runs on. Only on that cluster. |
+| `pyo-geoip` | Your GeoLite2 license key, if you've added one. |

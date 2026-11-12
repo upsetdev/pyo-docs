@@ -1,0 +1,38 @@
+---
+title: Deploying a template
+description: Popular software, ready to run.
+---
+
+Templates run popular software with sensible defaults: storage, a health check, resource limits and generated passwords. Open **Templates** in the dashboard, pick one, and deploy it.
+
+Browse them all on the [Templates page](/templates). For Postgres, MySQL or KV, use [databases](/docs/databases) instead.
+
+## WordPress and Ghost
+
+[WordPress](/templates/wordpress) and [Ghost](/templates/ghost) keep their data in a [MySQL database](/docs/databases#mysql) that Pyo runs. When you deploy one, its **Database** section asks which database to use. **New database** creates one on the same cluster. **Existing database** picks one of your team's databases there. Pyo connects it before the first deploy, with the variable names each one expects:
+
+| Template | Variables |
+| --- | --- |
+| WordPress | `WORDPRESS_DB_HOST` (host and port), `WORDPRESS_DB_USER`, `WORDPRESS_DB_PASSWORD`, `WORDPRESS_DB_NAME` |
+| Ghost | `database__connection__host`, `database__connection__port`, `database__connection__user`, `database__connection__password`, `database__connection__database`, with `database__client` set to `mysql` |
+
+These variables show on the database's **Connect** tab like any connection, and follow it if it changes.
+
+- **WordPress** keeps themes, plugins and uploads on its volume (`/var/www/html/wp-content`) and takes uploads up to 64 MB. Its keys and salts are generated once, so sign-ins survive deploys. Add a domain, then finish the setup at its address. It works behind the [Gateway](/docs/gateway) over HTTPS. Turn on the [WAF](/docs/waf) on its **Firewall** tab to block common attacks.
+- **Ghost** needs a domain: its `url` is the service's own address (`${{self.PUBLIC_URL}}`, filled in from the domain). Its content stays on its volume (`/var/lib/ghost/content`). Create the admin account at `/ghost`. Mail is optional: for newsletters and sign-ups, add `mail__transport` (`SMTP`), `mail__options__host`, `mail__options__port`, `mail__options__auth__user`, `mail__options__auth__pass` and `mail__from` as variables.
+
+Both run one replica with their own volume, and restart on each deploy.
+
+## Database extensions
+
+Some templates need a Postgres [extension](/docs/databases#extensions). A new database is made with the ones Pyo turns on. If you pick an existing database that doesn't have them on, the **Database** section asks to turn them on before connecting it. Turning on some of them restarts the database. The service creates any others itself, like `pg_trgm` for Wiki.js.
+
+## Stateful templates
+
+Databases and other <Term tip="A stateful service keeps data on its own disk, like a database does. It can't freely move between servers or run as several copies.">stateful</Term> templates run one <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replica</Term> with their own <Term tip="Storage that keeps a service's files across restarts and deploys.">volume</Term>. <Term tip="Keeping a live copy of the data on a second database server, ready to take over if the first fails.">Replication</Term> isn't set up for you, so plan [backups](/docs/backups) before storing production data.
+
+## Contribute a template
+
+Templates are open source, in [pyo-templates](https://github.com/upsetdev/pyo-templates). Each one is a short YAML file that says what to run. The [contributing guide](https://github.com/upsetdev/pyo-templates/blob/main/CONTRIBUTING.md) shows you how to add yours.
+
+Each template has its own `version`, bumped on every change. Pyo records it on each service it deploys, with the images and your choices in the deploy form. Secret values are never recorded.

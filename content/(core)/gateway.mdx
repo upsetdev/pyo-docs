@@ -1,0 +1,118 @@
+---
+title: Pyo Gateway
+description: How web requests and public TCP and UDP ports reach your services, and why the gateway can't read your secrets.
+---
+
+Every web request to your sites, and every connection to a public TCP or UDP port, goes through Pyo Gateway on the server it reaches. For websites, the gateway picks the certificate for the domain and passes the request to one of the service's replicas. Pyo Gateway is built on [Envoy](https://gateway.envoyproxy.io). Pyo installs and updates it for you.
+
+## How a request travels
+
+1. A visitor's request reaches a server in your cluster. Every server runs the gateway on ports 80 and 443, including GPU servers. Build-only servers don't. A cluster with [public traffic](/docs/clusters#public-traffic) turned off answers on none of them.
+2. The gateway answers on HTTPS with the domain's own certificate. That's a Let's Encrypt certificate, a self-signed one for a private domain, or one you [uploaded](/docs/certificates). Plain HTTP redirects to HTTPS if the domain is set to redirect. Otherwise, plain HTTP gets an answer too.
+3. The gateway sends the request to the service, and the cluster picks a replica. It picks one on the same server, in the same region or anywhere, based on the cluster's [traffic routing](/docs/regions#how-traffic-is-routed).
+
+Deleting a service removes its routes and certificates. Every 10 minutes, Pyo also removes any routes left without a service.
+
+The gateway sees the visitor's real address when traffic arrives on one of the addresses the cluster lists for its servers. On the server Pyo runs on, this also works for its tailnet address. Traffic that reaches a server on any other address seems to come from the cluster's load balancer. Then the firewall, rate limits and analytics can't see the visitor. If Pyo sits behind a tunnel or a CDN that reaches it from a private or Tailscale address, the visitor's address comes from the `X-Forwarded-For` header. Pyo only trusts that header from these addresses: `127.0.0.1/32`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `::1/128` and `fc00::/7`.
+
+### PROXY protocol on websites
+
+If your cluster sits behind your own load balancer or tunnel that sends <Term tip="A short header a load balancer adds at the start of each connection, saying who the visitor really is.">PROXY protocol</Term>, turn on **Accept PROXY protocol on web traffic**. It's in **Traffic** on the cluster's **Settings** tab. Websites then see each visitor's real address, and so do analytics. Connections without the header keep working.
+
+<Callout type="warn">
+  With this on, anyone who can reach your servers directly can claim any address. Only use it when your servers accept traffic from that load balancer and nothing else.
+</Callout>
+
+## TCP and UDP ports
+
+Public TCP and UDP ports, for a game server or a database for example, go through the gateway too, unless you [turn it off for a port](/docs/domains#public-tcp-and-udp-ports).
+
+For both, the gateway counts [connections](/docs/observability#connections) in analytics. For TCP ports, it can also:
+
+- allow or block addresses and ranges
+- limit how many connections a port has open at once
+- send PROXY protocol, version 1 or 2, to your service, so it learns each visitor's address. Your service must expect it.
+- accept PROXY protocol from a load balancer in front of Pyo. This only works for protocols where the client speaks first, like HTTP and TLS. Connections may stall with protocols where the server speaks first, like SSH, SMTP or MySQL, or with very short client messages.
+
+UDP ports go through the gateway and are counted, but have none of these options.
+
+The [firewall](/docs/firewall) works on top of these, per service. It also covers UDP ports and ports outside the gateway.
+
+A port with the gateway turned off is opened directly on the servers. Your service sees each visitor's address itself, but the port has no analytics or options.
+
+## The problem with most proxies
+
+Most web proxies for clusters, including Traefik and ingress-nginx, work the same way by default. Traefik's standard install, which comes with k3s, is one example. Here's why that matters for Pyo:
+
+1. Each site's HTTPS certificate is stored as a <Term tip="Where the cluster stores passwords, keys and certificates.">Secret</Term>. The cluster requires it to be in the same <Term tip="A named area of the cluster. In Pyo, each project has its own.">namespace</Term> as the route that uses it, which in Pyo is the service's project.
+2. Pyo keeps each service's environment variables, like database passwords and API keys, as Secrets in that same project.
+3. The proxy serves every site, so it has to find every certificate. The cluster's permissions can't say "only Secrets that are certificates". So the proxy gets read access to all Secrets in every project it serves, including variables.
+4. That proxy is the one program that handles public traffic. If it ever has a bug, whatever it can see is within reach. That includes every project's variables. In 2025, a bug in ingress-nginx called IngressNightmare (CVE-2025-1974) showed how this can happen.
+5. Narrowing the proxy to fewer projects doesn't help. It still serves every project, and each project keeps certificates and variables side by side.
+
+## A gateway that holds no keys
+
+Pyo should be secure out of the box, without settings you have to know to turn on. So instead of the default most proxies use, Pyo Gateway makes two changes together:
+
+- **Certificates live in one place of their own,** separate from every project. Projects then only hold your services' secrets.
+- **The part that handles public traffic holds no cluster credentials,** so it has no way to read Secrets.
+
+Traefik can do the first with the Gateway API, but not the second. It's one program that both handles public traffic and reads certificates from the cluster. Pyo Gateway is built in two parts, so it does both:
+
+- **A controller,** which never handles public traffic, reads the routes and only the certificates they use.
+- **The proxies,** which handle public traffic, hold no cluster credentials at all. They get their routes and certificates from the controller.
+
+<ProxyDiagram />
+
+The proxies only ever see the certificates they're serving. They can't read Secrets or talk to the cluster.
+
+In Pyo, the controller and the certificates live in their own area, `pyo-gateway`, and the controller only reads there. It can't read a project's Secrets. The **Security** page shows this for each cluster as **Gateway can't read your secrets**.
+
+Pyo Gateway is also built for the <Term tip="The standard way to describe, for a cluster, which domains and paths go to which services.">Gateway API</Term> from the start, not added on later. Each domain of a service gets one route, and certificates are kept in one place. Pyo makes sure a domain belongs to only one service across your whole Pyo, and refuses it for any other.
+
+The trade-off is small. Per server, the gateway uses about as much memory as Traefik. The controller adds about 40 MB, once per cluster.
+
+## Compared with Traefik
+
+<DocsCompare
+  caption="How Pyo Gateway compares with Traefik"
+  first={{ name: "Pyo Gateway", logo: "envoy" }}
+  second={{ name: "Traefik", logo: "traefik" }}
+  highlight="first"
+  groups={[
+    {
+      group: "Security",
+      rows: [
+        { topic: "Part handling public traffic holds cluster credentials", pyo: ["yes", "No"], them: ["no", "Yes"] },
+        { topic: "Can read project secrets", pyo: ["yes", "No"], them: ["no", "Yes, by default, and still in every project it serves when narrowed"] },
+        { topic: "Where certificates live", pyo: ["yes", "In one place, read only by the controller"], them: ["partly", "Next to each service"] },
+      ],
+    },
+    {
+      group: "Resources",
+      rows: [
+        { topic: "Memory", pyo: ["partly", "About 35 MB per traffic server, plus about 40 MB once per cluster. About 20 public ports add about 3 MB."], them: ["yes", "About 40 MB per server"] },
+        { topic: "CPU under load", pyo: ["yes", "Typically lower: about 0.2 of a core at 1,000 HTTPS requests a second"], them: ["partly", "Typically higher"] },
+        { topic: "Comes from", pyo: ["yes", "Pyo, updated with Pyo's releases"], them: ["yes", "Included in k3s"] },
+      ],
+    },
+    {
+      group: "Routing",
+      rows: [
+        { topic: "Gateway API", pyo: ["yes", "Built for it"], them: ["partly", "Partly"] },
+        { topic: "TCP ports", pyo: ["yes", "Yes, with IP rules, connection limits and PROXY protocol"], them: ["yes", "Yes"] },
+        { topic: "UDP ports", pyo: ["yes", "Yes, with firewall rules but no per-port limits"], them: ["yes", "Yes"] },
+      ],
+    },
+  ]}
+/>
+
+## What stays the same
+
+- [Traffic routing](/docs/regions#how-traffic-is-routed): Local, Regional or Global.
+- The visitor's real address, even behind a CDN or another proxy.
+- The [CDN certificate check](/docs/securing-pyo#require-the-cdns-certificate-with-mtls), turned on per cluster.
+- Redirecting HTTP to HTTPS, for domains set to redirect.
+- Let's Encrypt's checks, which reach your server through the gateway.
+- [Free domains](/docs/domains#free-domains), and certificates issued for you.
+- [Analytics](/docs/observability#analytics), read from the gateway's request log.

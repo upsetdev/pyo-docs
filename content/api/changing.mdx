@@ -1,0 +1,58 @@
+---
+title: Making changes
+description: Deploy, scale, restart and more with one endpoint.
+---
+
+Every change is a `POST` to `/api/v1/ops`, with the operation's name in `op` and its fields alongside it:
+
+```bash
+curl -X POST https://your-pyo/api/v1/ops \
+  -H "Authorization: Bearer $PYO_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "op": "scaleService", "id": "<service-id>", "replicas": 3 }'
+```
+
+Find ids in the [snapshot](/docs/api/reading).
+
+## Common operations
+
+These work with a key that has deploy access.
+
+| Operation | Fields | What it does |
+| --- | --- | --- |
+| `deploy` | `serviceId`, `deploymentId`, `trigger` | Deploy a service |
+| `cancel` | `deploymentId` | Cancel a deployment |
+| `scaleService` | `id`, `replicas` | Set the number of replicas |
+| `restartService` | `id` | Restart it, one replica at a time |
+| `stopService` | `id` | Stop it, keeping its settings and data |
+
+## Deploying
+
+You choose the new deployment's id: `dpl_` followed by 4 to 40 lowercase letters, digits, dashes or underscores. It comes back in the snapshot so you can follow it. Set `trigger` to `manual`.
+
+```json
+{
+  "op": "deploy",
+  "serviceId": "<service-id>",
+  "deploymentId": "dpl_<your-id>",
+  "trigger": "manual"
+}
+```
+
+## Rolling back
+
+A rollback is a deploy of an earlier deployment:
+
+```json
+{
+  "op": "deploy",
+  "serviceId": "<service-id>",
+  "deploymentId": "dpl_<your-id>",
+  "trigger": "rollback",
+  "rollbackOf": "<earlier-deployment-id>"
+}
+```
+
+## A simpler way to trigger deploys
+
+If all you need is to start a deploy from <Term tip="Continuous integration: a service like GitHub Actions that runs your tests and deploys on each push.">CI</Term> or a <Term tip="A content management system, like WordPress, where people edit a site's content.">CMS</Term>, use a [deploy hook](/docs/deploy/hooks). It needs no key or JSON.

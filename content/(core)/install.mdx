@@ -1,0 +1,65 @@
+---
+icon: download
+title: Installing Pyo
+description: Run Pyo on a laptop, VPS, dedicated server or homelab.
+---
+
+## Requirements
+
+- **System:** Linux on <Term tip="The 64-bit processor type of most servers and PCs, also called amd64.">x86-64</Term>, with root or `sudo` access.
+- **Resources:** at least 2 CPU cores, 4 GB of memory and 40 GB of disk. Add more for the services you run and the images you build.
+- **Ports:** 8000 and 5005 free, plus 80, 443 and 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services.
+- **Remote access:** [Tailscale](/docs/tailscale) on the machine, with **MagicDNS** and **HTTPS Certificates** turned on in the Tailscale admin console, under **DNS**. Without it, Pyo works only at `http://localhost:8000`, on the machine itself.
+
+<Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificates need a machine that's reachable from the internet. On a private network, like most laptops, free domains get a <Term tip="A certificate Pyo makes itself. The connection is still encrypted, but browsers show a warning because no public authority vouches for it.">self-signed certificate</Term> instead.
+
+## Install
+
+Run this on your machine:
+
+```bash
+curl -fsSL https://pyo.dev/install.sh | bash
+```
+
+It asks for `sudo` if it needs root. It installs k3s if it isn't there yet, then the latest release of Pyo. The first install takes a few minutes.
+
+It installs the k3s version this release of Pyo was tested with, and checks k3s's checksums before running anything. See [k3s](/docs/system-reference#k3s) for the version and how to use another.
+
+When it finishes, the installer prints where Pyo is:
+
+- `https://<machine>.<tailnet>.ts.net:8443`, from any device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>, with the registry on `<machine>.<tailnet>.ts.net:5443`. See [Reaching Pyo over HTTPS](/docs/tailscale#reaching-pyo-over-https).
+- `http://localhost:8000`, on the machine itself.
+
+Without Tailscale, it prints only the second address, and how to turn on remote access. To turn it on, set up Tailscale and run the install command again.
+
+It also prints a one-time login: the email `admin@pyo.local` and a password. Open the dashboard, sign in, and choose your own email and password. The printed login stops working once you do.
+
+Pyo connects its own server as your first cluster, named after its hostname, and sets up a builder on it. Both are ready to use, so the dashboard takes you straight to deploying your first service.
+
+If you lose the printed password before signing in, read it back on the server:
+
+```bash
+sudo k3s kubectl -n pyo-system get secret pyo-admin -o jsonpath='{.data.password}' | base64 -d
+```
+
+## Install a particular release
+
+The installer uses the latest release. To choose one, add `--version`, or set `PYO_VERSION`:
+
+```bash
+curl -fsSL https://pyo.dev/install.sh | bash -s -- --version 0.1.0
+```
+
+To update later, run the install command again. See [Updating Pyo](/docs/updating-pyo). To remove Pyo, see [Uninstalling Pyo](/docs/uninstall).
+
+## Securing Pyo
+
+Pyo's dashboard is only on the machine itself and your tailnet, never on its public address. If your server is on the internet, still follow [Securing Pyo](/docs/securing-pyo) before you put anything real on it.
+
+## Next
+
+<Cards>
+  <Card icon="rocket" title="Making your first deploy" href="/docs/first-deploy" />
+  <Card icon="servers" title="Adding a server" href="/docs/servers" />
+  <Card icon="download" title="Updating Pyo" href="/docs/updating-pyo" />
+</Cards>

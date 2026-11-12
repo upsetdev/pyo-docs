@@ -1,0 +1,57 @@
+---
+title: Serving traffic by region
+description: Spread replicas across regions and keep each region's traffic close to home.
+---
+
+Each server has a region. Pyo spreads a service's <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term> across regions, and answers each request from the closest healthy replica.
+
+## A server's region
+
+Pyo detects each server's region from its address, like Singapore, and shows it with its country's flag.
+
+To group servers your own way, rename the region. For example, call two servers in different US cities `US East`. Choose **Change region** from a server's menu on the cluster's **Servers** tab, or on the server's page. A name can be up to 40 characters, and Pyo suggests regions your team already uses. **Detect automatically** puts the detected region back.
+
+The same region is used everywhere: to spread replicas, to route traffic, in the traffic view, and to [pin a service](/docs/scaling#choosing-where-services-run) to a region.
+
+## How replicas spread
+
+Replicas spread evenly across regions, then across the servers in each region. For example, 4 replicas on servers in Singapore and the US run as 2 in each.
+
+The spread is a preference, not a rule. If a region is full or down, replicas still start in another one.
+
+Existing services pick up regions at their next deploy.
+
+## How traffic is routed
+
+While the cluster [accepts public traffic](/docs/clusters#public-traffic), each server answers the requests that reach it, through [Pyo Gateway](/docs/gateway). Build-only servers don't. Where the server sends them is set on the cluster's **Settings** tab, under **Traffic routing**:
+
+- **Local:** keep traffic on the same server. Requests go to a replica on the server they reached, otherwise to any healthy replica. It needs an agent that supports it, and shows as disabled otherwise.
+- **Regional** (the default): keep traffic within the same region. Requests go to a replica in the region, otherwise to any healthy replica.
+- **Global:** distribute traffic across all servers. Requests go to any healthy replica.
+
+In every mode, replicas are placed across regions the same way. Only where requests go changes. A change applies to the cluster's services straight away, without a redeploy. Team owners and admins can change it, and each change is recorded in **Activity**.
+
+## Point visitors at the right region
+
+Which server a visitor reaches is up to your DNS, or a load balancer in front of your servers. Point each region's domains at the servers in that region. Pyo doesn't do this for you today.
+
+## See where traffic goes
+
+A service's **Overview** has a **Traffic** card, below the **Analytics** card. It shows the path the service's requests take, in three columns from left to right.
+
+- **Domains:** each domain, with a badge saying whether its DNS points at your servers. Hover over a domain to see its DNS records and which server each address belongs to. An address that isn't one of your servers is shown too.
+- **Entry servers:** the servers that answer requests, in a box for each region. A region's box shows how many of its replicas are healthy, its requests, error rate and <Term tip="The time 95 out of 100 requests finished within. The slowest 5 took longer.">p95</Term> response time, and a small chart of requests over the last 24 hours. The numbers need [observability](/docs/observability). Each server shows its share of the requests. Servers that don't answer requests are marked: build-only servers, or every server while the cluster's public traffic is off.
+- **Replicas:** grouped by the server they run on, each marked healthy or not.
+
+Lines show where requests go. A thicker line carries a bigger share. A red line leads to something that isn't healthy, and a dashed amber line leads to an address that isn't one of your servers. A legend in the corner explains them.
+
+The card's header shows whether the cluster's traffic routing is **Local**, **Regional** or **Global**, and links to the cluster's settings. Drag to move around, use the zoom buttons or **Fit**, and click a server to open it.
+
+When something looks wrong, a line above the canvas says how many problems it found. Open it to see the list. For example:
+
+- A domain points at an address that isn't one of the cluster's servers, or at a server that doesn't answer requests.
+- A domain points at one region, but replicas run in several, so visitors everywhere still reach that one region.
+- A region takes traffic but has no healthy replica, so its requests go to another region.
+- Replicas aren't spread evenly, usually because a region was full or offline. Redeploy once it has room.
+
+Cron jobs don't have a **Traffic** card.

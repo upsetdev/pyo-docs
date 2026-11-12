@@ -1,0 +1,151 @@
+---
+title: Securing Pyo
+description: What to do right after installing, before you put anything real on it.
+---
+
+Pyo is safe to try on a private network as it is. If your server is on the internet, do these first, in this order.
+
+## 1. Take the dashboard off the public internet
+
+Pyo already does most of this for you. Its dashboard is at `https://<machine>.<tailnet>.ts.net:8443`, and only addresses on your [Tailscale](/docs/tailscale#reaching-pyo-over-https) network get in. Plain HTTP on port 8000 only listens on the machine itself and its Tailscale address, never its public one.
+
+Keep it that way, and don't put the dashboard on a public address.
+
+## 2. Close the ports you don't need
+
+Only ports 80 and 443 need to be open to the world, for your services.
+
+| Port | What it is | Who should reach it |
+| --- | --- | --- |
+| 80, 443 | Your services | Everyone |
+| 8000 | Pyo's dashboard and API, over plain HTTP. It only listens on the machine itself and its Tailscale address. | You and your agents, on your tailnet |
+| 5005 | Pyo's registry for your servers and builders, over plain HTTP. It only listens on the machine itself and its Tailscale address, and on the Tailscale address every request needs a login. | Your servers, on your tailnet |
+| 8443, 5443, 3443 | Pyo over HTTPS: the dashboard, the registry, and object storage. Pyo turns away anything but tailnet addresses and the cluster's own servers. | You, on your tailnet |
+| 6443 | The Kubernetes API | Only your servers |
+| 22 | SSH | Only you |
+
+<Callout type="warn">
+  Use your provider's firewall, in front of the server. Firewalls on the machine itself, like `ufw`, may not cover these ports, because k3s forwards the traffic before those rules apply.
+</Callout>
+
+Then check from a different network. These should time out:
+
+```bash
+curl -m 5 http://your-public-ip:8000
+curl -m 5 -k https://your-public-ip:8443
+```
+
+The provider's firewall guards the server itself. To choose who can reach your services, by address, range or country, use Pyo's [firewall](/docs/firewall). To inspect website requests for attacks, add the [web application firewall](/docs/waf).
+
+## 3. Put a CDN in front of your services
+
+A CDN hides your server's address and absorbs attacks before they reach it. It only protects you if nobody can go around it, so lock the server down in the same step. This matters most for public services. If yours are private, skip it.
+
+The examples use Cloudflare, but any CDN with published IP ranges and client certificates works the same way.
+
+### Point your domains at the CDN
+
+1. Add your domains to the CDN with <Term tip="Visitors connect to the CDN and the CDN connects to your server, instead of visitors reaching it directly.">proxying</Term> on, and set its connection to your server to verify certificates. In Cloudflare, that's **Full (strict)**.
+2. Create an <Term tip="A certificate your CDN issues for the link between it and your server. Only the CDN trusts it, not browsers.">origin certificate</Term> with your CDN and upload it under [Certificates](/docs/certificates).
+3. Set each domain's HTTPS to that certificate.
+
+Let's Encrypt can also work, as long as its validation requests reach port 80 through the CDN. An origin certificate is simpler, because it doesn't depend on that.
+
+### Allow only the CDN through your firewall
+
+In your provider's firewall, block all inbound traffic to ports 80 and 443, then allow only your CDN's IP ranges. Cloudflare publishes its [IPv4](https://www.cloudflare.com/ips-v4) and [IPv6](https://www.cloudflare.com/ips-v6) ranges. These lists change, so check them from time to time.
+
+| Port | Allow from |
+| --- | --- |
+| 80, 443 | Your CDN's IP ranges only |
+| 8000, 5005, 8443, 5443, 3443 | Your tailnet only |
+| 6443 | Your servers only |
+| 22 | You only |
+
+Then check from a different network, using your server's own address. This should time out:
+
+```bash
+curl -m 5 -k https://your-server-ip
+```
+
+### Require the CDN's certificate with mTLS
+
+CDN IP ranges are shared, so anyone with an account on the same CDN can still reach your server through them. mTLS closes that gap. Your server then only accepts HTTPS connections from a client that holds the certificate your CDN presents.
+
+Pyo creates the certificate and turns this on for you. Move all your domains behind the CDN first, then open your cluster's **Settings** and turn on **mTLS**:
+
+1. Choose a certificate, or create one.
+2. Save the certificate and private key in a password manager. You only see them once, and Pyo doesn't keep them.
+3. Upload both to your CDN and turn the feature on there. In Cloudflare, it's called [Authenticated Origin Pulls](https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/).
+4. Check the list of domains it affects, confirm your CDN is presenting the certificate, and turn on mTLS.
+
+The switch comes on once the cluster has applied it. Do this for each cluster. Requests through your CDN keep working. A direct HTTPS connection now fails during the <Term tip="The opening exchange of an HTTPS connection, where certificates are checked before any data is sent.">handshake</Term>.
+
+<Callout type="warn">
+  This applies to every HTTPS domain on the cluster. Anything not behind your CDN stops working, including [free domains](/docs/domains#free-domains). If something goes wrong, turn **mTLS** off in the cluster's **Settings**.
+</Callout>
+
+mTLS doesn't cover plain HTTP on port 80, so keep the firewall rule as well.
+
+Pyo warns you 30 days before the certificate expires. Replace it before then, because your CDN can't reach your services once it expires. See [Mutual TLS](/docs/certificates#mutual-tls-mtls) for how.
+
+### What changes behind a CDN
+
+- [Observability](/docs/observability) records the CDN's address instead of the visitor's, so visitor locations and IP-based counts won't be accurate. Use your CDN's own analytics for real visitor data.
+- Services see the CDN as their client. To get the visitor's address, read the header your CDN sets, like `CF-Connecting-IP`. Only trust it once the firewall and mTLS are in place.
+- The CDN decrypts your traffic to do its job, so choose one you trust with it.
+
+## 4. Save your master key
+
+Your secrets and your backups can only be opened with Pyo's master key. If you lose this server and the key with it, they're gone. Copy it somewhere safe, like a password manager:
+
+```bash
+sudo k3s kubectl -n pyo-system get secret pyo-secrets \
+  -o jsonpath='{.data.secret-key}' | base64 -d
+```
+
+Keep it away from your backups: anyone with both can read them.
+
+## 5. Turn on backups
+
+Set up [backups](/docs/backups) for your databases and volumes, and for Pyo's own data, in a bucket off this server. A backup on the same machine won't survive losing it.
+
+## 6. Give people only what they need
+
+- Invite teammates with the lowest [role](/docs/teams) that works for them.
+- Use read or deploy [API keys](/docs/api) rather than full ones, and limit them to the teams they need. Let them expire, and revoke the ones you no longer use.
+- Disconnect [AI assistants](/docs/mcp) you no longer use.
+
+## 7. Harden the server itself
+
+Pyo can only be as safe as the machine it runs on. Follow [Hardening your server](/docs/hardening-your-server) to lock down SSH, keep the system patched and limit who has root.
+
+## 8. Keep what's on by default
+
+These protect you out of the box, so leave them on unless you have a reason:
+
+- [Closed sign-ups](/docs/installation-settings#sign-ups), so only people you invite can join
+- [Network isolation](/docs/network-isolation) between projects
+- Visitor IP addresses not being kept, in [installation settings](/docs/installation-settings)
+- [Encrypted secrets](/docs/encryption): mark passwords and tokens as secret, so they aren't stored as variables
+- Limits on sign-in attempts. After 10 wrong passwords for one email, or 30 failed sign-ins from one IP address, within 15 minutes, Pyo answers "Too many attempts" until the 15 minutes are up. Signing in resets the email's count. Other attempts are limited too: 30 failed passkey sign-ins per IP address, 10 wrong passwords per account when adding a passkey, and 20 sign-ups per IP address an hour.
+- For these limits, the IP address is the connection's own, or the one Pyo Gateway reports for it. A forwarded address from anywhere else, your tailnet included, is ignored. If you put another proxy in front of Pyo, list its addresses in `PYO_TRUSTED_PROXIES` as comma-separated ranges. This replaces the default, `10.42.0.0/16,2001:cafe:42::/56`.
+- Sessions: you're signed out after 7 days without using Pyo, and 30 days after signing in.
+- Invite links: people join a team with the link from their invite, not by signing up with the invited address. See [Inviting your team](/docs/teams#invite-people).
+
+## What to keep in mind
+
+- The part of [Pyo Gateway](/docs/gateway) that handles public traffic holds no cluster credentials, so it can't read your secrets.
+- On the cluster Pyo runs on, Pyo's own database, ClickHouse and registry only answer Pyo itself, not your services. The [backup store](/docs/backups#where-backups-go) answers only signed requests, each team's key reaches only that team's bucket, and only Pyo can make buckets and keys.
+- Pyo knows which cluster it runs on by a key only that server has. Another cluster can't pose as it to get a backup store key or Pyo's updates.
+- Everything the agent runs must meet Kubernetes' baseline Pod Security: no added Linux capabilities, no host ports, and no unconfined seccomp or AppArmor. Only Pyo's own builder, log collector and GPU components get the host access they need.
+- The Pyo agent only changes what Pyo manages, but anyone with admin access to a server, or to Pyo, still controls what runs there.
+- When Pyo is updated, each agent updates its own limits to match, so new versions of databases and the firewall can install. This is on by default. It means someone who takes over Pyo could also loosen those limits on your connected clusters. To update them yourself instead, set `PYO_AGENT_SELF_UPDATE=false` before connecting clusters, or on a connected cluster run `sudo k3s kubectl delete clusterrolebinding pyo-agent-self-update` on its server. After an update of Pyo, that cluster's page shows **Update needed** and the command to run on its server.
+- Pyo connects to registries, backup buckets and secret stores from its own network. So it never lets them point at its own server, its cluster's network or cloud metadata addresses. Private networks, like your LAN or tailnet, are allowed. When people you don't fully trust run teams, set `PYO_ALLOW_PRIVATE_NETWORKS=false`, as Pyo Cloud does. See [system reference](/docs/system-reference#installation-settings).
+- What Pyo's install scripts download as root is checked first: k3s against checksums fixed in each release, and Tailscale and the NVIDIA Container Toolkit by their repositories' signing keys. See [k3s](/docs/system-reference#k3s).
+- Each release's `release.json`, which says what an install or [update](/docs/updating-pyo) applies, is signed by Pyo's release workflow. The installer and the dashboard check that signature before using it.
+- Pyo has no two-factor sign-in yet. Sign in with a [passkey](/docs/passkeys), and use a long, unique password.
+- Agents get their token and their commands, secrets included, from Pyo's address. A public address must be `https://`. Plain `http://` only works on a private network or your tailnet.
+- Developers can't turn a secret into a variable without entering its value again. An admin can, and it shows in [Activity](/docs/activity), the same way revealing a secret does.
+- If Pyo is reached at its own domain, set `PYO_PUBLIC_URL` to that address, like `https://pyo.example.com`. Pyo uses it as the sign-in address it gives [AI assistants](/docs/mcp) and the CLI, and never takes it from request headers.
+- A template runs someone else's software on your server. Only use ones you trust.

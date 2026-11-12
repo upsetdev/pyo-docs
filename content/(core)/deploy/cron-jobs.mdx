@@ -1,0 +1,54 @@
+---
+title: Running cron jobs
+description: Run a task on a schedule, like a cleanup or a nightly report.
+---
+
+A cron job runs on a schedule, finishes and stops. It doesn't serve traffic, so it has no port or domain.
+
+## Add one to a service
+
+Most cron jobs belong to a service, like a cleanup task for your website. Choose **New → Cron job**, or **Add cron job** under **Cron Jobs**, and pick the service. The job runs with that service's latest image and environment variables, so every deploy keeps it up to date. Changes to the job take effect without a redeploy.
+
+Give it a name, a schedule and a command. A service can't have cron jobs if it has a <Term tip="Storage that keeps a service's files across restarts and deploys.">volume</Term> that only one server can use. Each run would need that volume too.
+
+## Create a standalone one
+
+Deploy a new service from your repository or image. Under **Cron job**, choose **Add cron job**. Then set:
+
+- **Schedule:** when it runs, in <Term tip="Five fields for the minute, hour, day of the month, month and day of the week. An asterisk means every.">cron syntax</Term>. Times are in UTC, so `0 3 * * *` runs at 03:00 UTC every day.
+- **Command:** what to run, like `npm run cleanup`. It runs through `sh`, so the image needs a shell. Leave it empty to use the image's default command.
+
+| Schedule | Runs |
+| --- | --- |
+| `*/15 * * * *` | Every 15 minutes |
+| `0 * * * *` | Every hour |
+| `0 3 * * *` | Every day at 03:00 |
+| `0 9 * * 1` | Every Monday at 09:00 |
+
+Cron jobs use the same [environment variables](/docs/deploy/environment) and [imported secrets](/docs/external-secrets) as any other service.
+
+## Watch its runs
+
+Open **Cron Jobs** and choose a job to see its last 50 runs. For each run, you see when it started, how long it took, whether it succeeded, its <Term tip="The number a program returns when it stops. Zero means it succeeded, and anything else means it failed.">exit code</Term> and the end of its output.
+
+When a run fails, Pyo adds it to your team's activity with the exit code or the reason. For example, `OOMKilled` means it ran out of memory. Set up [notifications](/docs/activity) to hear about it.
+
+Output is the last 60 lines a run printed, up to 8 KB. Pyo reads it when the run finishes, so a run that's still going shows its output once it's done.
+
+## How runs behave
+
+- A new run doesn't start while the last one is still going. Pyo skips that scheduled run.
+- A failed run isn't retried. It waits for the next scheduled run.
+- The last three successful and three failed runs are kept, so you can read their logs.
+
+## Run it now
+
+Under **Cron Jobs**, choose **Run now** from the job's menu. This starts a run right away and doesn't change the schedule.
+
+## Pause it
+
+Under **Cron Jobs**, choose **Pause** from the job's menu. Choose **Resume** to schedule it again.
+
+## Change the schedule
+
+Change it in the cron job's **Settings** tab, under **Schedule**, then redeploy. A service can't switch between being a cron job and running all the time. Create a new service instead.

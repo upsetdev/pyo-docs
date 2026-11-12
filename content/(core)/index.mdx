@@ -1,0 +1,71 @@
+---
+icon: book
+title: Introduction
+description: An open-source, self-hosted PaaS for running services and databases on your own servers.
+---
+
+Pyo is an open-source, self-hosted <Term tip="Platform as a service: you hand it your code or image, and it builds, runs and serves it, so you don't manage servers by hand.">PaaS</Term>. It works like a modern cloud platform, on hardware you own or rent.
+
+Deploy anything: websites and APIs, background workers, cron jobs, databases, and services that speak plain TCP or UDP, like game servers and DNS servers. Start from a Git repository, a container image, a template or a Docker Compose file, and Pyo builds it, runs it and puts it on the web with HTTPS.
+
+Pyo aims to be secure out of the box, without settings you have to know to turn on.
+
+Pyo runs on <Term tip="A lightweight version of Kubernetes, the standard system for running containers across servers. Pyo sets it up for you.">k3s</Term>, but you never have to touch Kubernetes. Your services keep running if Pyo itself is down, and everything it deploys is standard Kubernetes, so you're never locked in.
+
+## Where to start
+
+<Cards>
+  <Card icon="download" title="Installing Pyo" href="/docs/install" description="Get Pyo running on your machine." />
+  <Card icon="rocket" title="Making your first deploy" href="/docs/first-deploy" description="Go from nothing to a live service." />
+  <Card icon="cube" title="Core concepts" href="/docs/concepts" description="Teams, projects, services and clusters." />
+  <Card icon="templates" title="Deploying a template" href="/docs/templates" description="Popular software, ready to run." />
+</Cards>
+
+## What makes Pyo different
+
+**Scales and stays up**
+
+- Autoscaling on CPU and memory, with replicas spread across servers. See [Scaling a service](/docs/scaling).
+- Services move to a healthy server when one fails. See [Making Pyo highly available](/docs/high-availability).
+- Several clusters, with regions. Keep traffic on the same server or within its region, or send it across all servers. See [Serving traffic by region](/docs/regions).
+
+**Secure by default**
+
+- All public traffic goes through [Pyo Gateway](/docs/gateway). It's the one part every visitor reaches, so it's kept apart from your secrets and can't read your services' passwords and keys.
+- The Pyo agent on your servers only has the rights it needs, and follows a policy that only you can change.
+- Projects are [isolated](/docs/network-isolation) from each other by default.
+- Secrets are [encrypted](/docs/encryption) with each team's own key, which you can keep in OpenBao or Vault.
+- Sign in with [passkeys](/docs/passkeys), with limits on failed sign-ins, and give scripts [API keys](/docs/api) that expire.
+- The team's **Security** page shows every protection for each of your clusters. See [Securing Pyo](/docs/securing-pyo) for what to do after installing.
+- A [firewall](/docs/firewall) for each service, by address, range or country, with rate limits.
+- An optional [web application firewall](/docs/waf) for each service's websites.
+
+**Sees what's happening**
+
+- Website [analytics](/docs/observability#analytics) with no script to add.
+- CPU, memory, disk and network for every server and service. See [Monitoring your services](/docs/observability).
+
+**Runs your databases**
+
+- [Postgres, MySQL and KV](/docs/databases), created in one click.
+- High availability with automatic failover.
+- Backups with point-in-time recovery. MySQL restores to any moment up to its latest backup.
+- Read replicas for Postgres and KV.
+- Live logs and events, and one click to connect a service.
+
+**Keeps your data safe**
+
+- [Backups](/docs/backups) of volumes and databases, to the backup store built into Pyo or your own S3-compatible storage. Volume backups are encrypted.
+
+**Automates everything**
+
+- A full [API](/docs/api), with a reference for every operation.
+- The [`pyo` CLI](/docs/cli), for your terminal and CI.
+- [MCP](/docs/mcp) for AI assistants. It can do everything the API can, with **Read only**, **Deploy** or **Full** access.
+
+**And more**
+
+- [GPUs](/docs/gpus) for AI models.
+- [External secret stores](/docs/external-secrets), like Vault, AWS, GCP, Azure and Doppler.
+- [Docker Compose import](/docs/deploy/compose).
+- TCP and UDP ports go through the gateway, with connection analytics. Turn the gateway off for a port to send its traffic straight to your service. See [public TCP and UDP ports](/docs/domains#public-tcp-and-udp-ports).

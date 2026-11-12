@@ -1,0 +1,26 @@
+---
+title: Setting up builders
+description: Where Pyo builds images from your Git code.
+---
+
+Builds run on a builder. You need one to deploy from Git. Manage them under **Builders**.
+
+On a fresh install, Pyo adds a builder on the server it runs on, named after that server. You can remove or replace it like any other builder.
+
+## Where a builder can run
+
+Choose **Add builder**, then where it runs:
+
+- **This machine:** the server Pyo runs on, alongside Pyo.
+- **In a cluster:** another server in one of your clusters, sharing that machine with your services.
+- **New server:** a dedicated build server. Run the command Pyo shows on the machine, and it joins a cluster as a build-only server. Nothing else runs there, so heavy builds don't slow your services down.
+
+Each server runs at most one builder.
+
+## Remove a builder
+
+Choose **Remove builder** from its menu. A builder in a cluster takes its build cache with it, and builds running on it fail. On a build-only server, the builder stops and the server stays in its cluster. [Remove the server](/docs/uninstall#remove-a-server) too if you don't need it.
+
+## How it works
+
+A builder runs <Term tip="The build engine behind Docker. It turns your code or Dockerfile into an image.">BuildKit</Term> and connects out to Pyo with its own token. It picks up build jobs, streams the logs and hands back the finished image.

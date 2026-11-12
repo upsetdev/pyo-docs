@@ -1,0 +1,7 @@
+{
+  "title": "API",
+  "description": "Automate Pyo with HTTP",
+  "icon": "segment-api",
+  "root": true,
+  "pages": ["index", "reading", "changing"]
+}

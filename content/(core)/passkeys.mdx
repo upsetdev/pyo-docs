@@ -1,0 +1,33 @@
+---
+title: Passkeys
+description: Sign in with your fingerprint, face or security key instead of a password.
+---
+
+A passkey signs you in with your device's screen lock or a security key. There's nothing to type, and it can't be phished, because it only works on the site it was made for.
+
+## Add a passkey
+
+Go to **Profile** and choose **Add passkey** under **Passkeys**. Enter your password. Your browser then asks where to save the passkey, like your password manager, your phone or a security key. Add one on each device you use. You can rename or delete them under **Passkeys** too.
+
+Your password keeps working, so deleting a passkey never locks you out.
+
+## Sign in
+
+On the sign-in page, choose **Sign in with passkey**. Where the browser supports it, your passkeys are also offered when you click the email field.
+
+## Where passkeys work
+
+A passkey belongs to the address you added it at. One added at `https://<machine>.<tailnet>.ts.net:8443` doesn't work at `http://localhost:8000`, and the other way around. Your passkeys list shows the address of any that belong somewhere else.
+
+Pyo offers passkeys at:
+
+- `localhost`, on any port
+- its [Tailscale address](/docs/tailscale#reaching-pyo-over-https)
+- the dashboard address in [Email settings](/docs/email)
+- any address in `PYO_PASSKEY_ORIGINS`, for a domain of your own:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_PASSKEY_ORIGINS=https://pyo.example.com
+```
+
+Other addresses, and plain HTTP anywhere but `localhost`, only offer password sign-in.

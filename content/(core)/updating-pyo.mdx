@@ -1,0 +1,85 @@
+---
+title: Updating Pyo
+description: Install new releases from the dashboard, by hand or on a schedule.
+---
+
+An installation admin updates Pyo under **Settings → Updates**. Your services keep running while it updates.
+
+## Check for updates
+
+Pyo checks GitHub for a new stable release every 6 hours. The **Version** panel shows the version that's running, the latest release and when Pyo last checked. Choose **Check now** to look straight away.
+
+When a new release is out, admins see a dot on **Settings** and on **Updates**.
+
+Pyo only uses a release whose `release.json` is signed by Pyo's own release workflow (a [Sigstore](https://www.sigstore.dev) signature). If the signature is missing or doesn't match, the check fails and nothing is installed. A mirror set with `PYO_UPDATE_SOURCE` has to serve the release's signature too.
+
+To stop checking, turn off **Look for new releases**. On a server that can't reach GitHub, set `PYO_UPDATE_CHECK=off`, or point `PYO_UPDATE_SOURCE` at a mirror. See the [system reference](/docs/system-reference#updates).
+
+## Update now
+
+[Back up Pyo itself](/docs/backups#backing-up-pyo-itself) first. Database changes can't be undone by going back a version.
+
+Choose **Update now** to see the release before it starts:
+
+- **Before you update:** anything you need to know first, if the release has it.
+- **What changes:** Pyo itself, each cluster's agent, your builders, any database changes and the platform services.
+- When Pyo's own data was last backed up, with a link to **Settings → Backups**.
+- The release notes.
+
+Then confirm the update.
+
+## What happens
+
+1. Pyo moves to the new version one replica at a time, so the dashboard stays up.
+2. Then every cluster with an older agent updates on its own. Each agent first checks that it can pull and start the new version, then switches to it.
+
+Your services keep running the whole time. If Pyo's update fails, the old version keeps running.
+
+The result shows in **Activity** and under **Recent updates**. An update is partial when some agents didn't move.
+
+## Agents on other clusters
+
+Pyo updates every cluster's agent for you. There's no button per cluster.
+
+- **An agent that doesn't come back:** if it isn't on the new version within 10 minutes, it's marked failed.
+- **An offline agent:** it's skipped, and catches up on the next update.
+
+When some agents are behind, **Settings → Updates** shows **Some agents aren't on** the new version, with **Update now**. This updates only the agents. With automatic updates, it also happens in the maintenance window.
+
+## Update from the server
+
+You can also update by running the install command again on the server Pyo runs on:
+
+```bash
+curl -fsSL https://pyo.dev/install.sh | bash
+```
+
+It updates to the latest release. To choose one, add `--version`, like `bash -s -- --version 0.1.0`, or set `PYO_VERSION`.
+
+- If the release can't update straight from your version, it tells you which version to install first.
+- If the release has notices, it shows them and asks before it updates. Add `--yes`, or set `PYO_YES=1`, once you've read them. In a script, or anywhere without a terminal, the update won't start without it.
+- It won't go back to an older version.
+- If that release is already installed, it changes nothing.
+- It keeps your data and secrets as they are.
+- It checks the release's signature first, with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/). If cosign isn't installed, it downloads a pinned version and checks that against its checksum.
+
+It also updates the agent on this machine's cluster, if it's connected. Agents on other clusters stay as they are until you choose **Update now** under **Settings → Updates**. See [Agents on other clusters](#agents-on-other-clusters).
+
+## Automatic updates
+
+Set **Updates** to **Automatic** to install new releases in a maintenance window. Choose the **Days** and the time under **At**, both in UTC. By default, that's Sunday at 03:00.
+
+Automatic updates never:
+
+- install a release that needs manual steps,
+- install a release that can't update straight from the version you run,
+- retry a version that failed before,
+- run outside the window.
+
+You can still install those yourself with **Update now**.
+
+## Requirements
+
+Pyo updates itself through the agent on the cluster it runs on. Connect the machine Pyo runs on as a cluster, and keep its agent online.
+
+If a release can't update straight from your version, the dialog tells you which version to update to first.

@@ -1,0 +1,27 @@
+---
+title: Adding a server
+description: Add machines to a cluster and look after them.
+---
+
+## Add a server
+
+Open a cluster and add a server. Pyo gives you a command to run on the new machine, which joins it to the cluster over [Tailscale](/docs/tailscale).
+
+## Tags
+
+Add tags to servers, like `gpu`. You can then [place](/docs/scaling#choosing-where-services-run) services by tag, region or server name.
+
+## Regions
+
+Pyo detects each server's region from its address. To group servers your own way, rename it with **Change region** in the server's menu. Replicas spread across regions, and each region's traffic is answered there by default. See [Serving traffic by region](/docs/regions).
+
+Every server answers requests for your sites through [Pyo Gateway](/docs/gateway), except build-only servers. Whether the cluster takes public traffic at all is a [cluster setting](/docs/clusters#public-traffic).
+
+## Maintenance
+
+From a server's page you can:
+
+- **Pause scheduling**, so no new replicas land on it.
+- **Mark it for maintenance.**
+- **Drain it**, moving its services to other servers.
+- **Remove it** from the cluster. Then uninstall k3s on the machine, as in [Remove a server](/docs/uninstall#remove-a-server).

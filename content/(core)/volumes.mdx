@@ -1,0 +1,74 @@
+---
+title: Adding a volume
+description: Keep files across restarts and deploys.
+---
+
+Without a volume, a service's files are lost on restart or deploy. A volume keeps them.
+
+## Add a volume
+
+Open the service's **Settings** tab, then **Volumes**, and give it a name, a <Term tip="The folder inside your service where the volume's files appear, like /data.">mount path</Term> and a size from 1 to 1000 GB. Deploy to create and mount it.
+
+## Where volumes are listed
+
+- **Clusters → Volumes** lists all of the team's volumes. Filter them by cluster, and by **All**, **Attached** or **Not attached**.
+- A project's **Settings → Volumes** lists that project's volumes.
+- A service's **Settings → Resources** lists the volumes it mounts.
+- A cluster's **Storage** tab lists the volumes on that cluster.
+
+Each volume's **…** menu has what you can do with it:
+
+- **Open service**, for an attached volume.
+- **Turn on backups**, **Turn off backups** and **Back up now**. See [backups](/docs/backups#back-up-volumes).
+- **Restore** and **Resize**, for team owners and admins.
+- **Attach** and **Delete**, for a volume that isn't attached.
+
+## Detach and attach
+
+**Detach** a volume on the service's **Volumes** page. It's unmounted on the next deploy. The volume and its data stay.
+
+**Attach** mounts a detached volume in a service, from that service's next deploy. Pick the project, then the service. The list only shows projects with services on the volume's cluster, because a volume can't move to another cluster.
+
+Picking a service in another project moves the volume into that project first. Its data, its id and its backups stay with it. The volume shows **Moving…** until its cluster is done, then it's attached. Deploy the service to mount it. If a service still uses the volume because it hasn't been deployed since the volume was detached, deploy that service first. Pyo also waits for any of its replicas that are still stopping. The other project can't already have a volume with the same name.
+
+A volume on a one-server storage class keeps its data on that server, so the service has to be able to run there.
+
+Deleting a service or a project detaches its volumes, unless you tick **Also delete its volumes**. A volume whose project was deleted shows **Deleted project**. You can attach it to a service in any project on its cluster, back it up, restore it or delete it.
+
+## Restore a volume
+
+Team owners and admins can put a backup back into a volume. Choose **Restore** in its menu, pick a backup from the list, and confirm. Backups are listed newest first, with when each was made and its size.
+
+Pyo stops the volume's service, restores the backup and starts the service again. The volume and its service show **Restoring…** until the service is back up, and the team's activity records the start and the result. The backup is restored next to the current data on the same disk and only swapped in once it's complete, so the volume needs free space for it while it runs. If the restore fails, the data stays as it was, the service is started again, and the volume shows why.
+
+Restoring needs [backups](/docs/backups) set up for the team. Volumes that aren't attached can be restored too.
+
+## Delete a backup
+
+Team owners and admins can delete one of a volume's backups: choose **Restore** in its menu, then the trash icon beside the backup, and confirm. It's deleted for good, and the space it held is freed shortly after. The team's activity records it. From the CLI: `pyo volume delete-backup <volume> <snapshot>`.
+
+## Resize a volume
+
+Team owners and admins can grow a volume with **Resize**. Volumes only grow, never shrink. The volume shows **Resizing…** until its cluster reports the new size. Some storage classes finish when the service next starts.
+
+Resize is only offered when the volume's storage class can grow volumes. A `local-path` volume has no size limit of its own: it can use all the free disk on its server, so there's nothing to resize.
+
+## Delete a volume
+
+Delete a detached volume from its **…** menu, by typing its name. This deletes its data for good. An attached volume has to be detached first. Team owners and admins can delete volumes.
+
+The volume shows as deleting until its cluster confirms it's gone. If a service still uses it because it hasn't been deployed since the volume was detached, the volume waits until that service is deployed.
+
+A cluster's **Storage** tab also lists volumes on it that aren't in Pyo, under **Not in Pyo**. Pyo never deletes them on its own, but you can delete them there.
+
+## Storage classes
+
+Whether data can move to another server depends on the storage class. With the default `local-path`, a volume lives on one server, so it doesn't survive losing that server. You can see each cluster's volumes and storage classes on its **Storage** tab.
+
+The space a volume uses is shown while a service mounts it, for storage classes that give each volume its own disk. A `local-path` volume is a folder on the server's disk with no size limit of its own, so its use isn't shown. Check the server's disk use instead.
+
+## Deploys
+
+Services with a <Term tip="A volume that only one copy of a service, on one server, can use at a time.">single-writer volume</Term> restart on deploy instead of rolling over, to protect their data.
+
+Protect what matters with [backups](/docs/backups).

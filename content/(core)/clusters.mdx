@@ -1,0 +1,60 @@
+---
+title: Connecting a cluster
+description: The groups of servers that run your services.
+---
+
+A cluster is one or more servers running <Term tip="A lightweight version of Kubernetes, the standard system for running containers across servers. Pyo sets it up for you.">k3s</Term>. A team can have several, such as `production` and `staging`, all in one dashboard.
+
+## The server Pyo runs on
+
+On a fresh install, the server Pyo runs on is connected for you as your first cluster, named after its hostname. Rename it in its **Settings** tab.
+
+## Add a cluster
+
+Choose **Add cluster** to get a command that sets up k3s and the Pyo agent on a new machine:
+
+```bash
+curl -fsSL https://pyo.dev/connect.sh | sudo bash -s -- --api <pyo-address-for-servers> --token <token>
+```
+
+Copy the command from the dashboard, which fills in these values. The `--api` address is where the new machine reaches Pyo. It can differ from the address you use in your browser. On a tailnet, it's Pyo's tailnet name on port 8000, like `http://pyo.tail1234.ts.net:8000`. If the tailnet has no MagicDNS, use Pyo's tailnet IP instead. A public address must use `https://`. Plain `http://` works only for a private network or tailnet address. The token is shown once. The agent connects out to Pyo, so you don't have to open anything on the machine.
+
+## Inside a cluster
+
+Open a cluster from **Clusters**. Its tabs are:
+
+| Tab | What it shows |
+| --- | --- |
+| Overview | Its state at a glance |
+| Servers | The machines in it |
+| Workloads | Everything running, down to the server it's on |
+| Networking | HTTP routes and ports |
+| Storage | Volumes and storage classes |
+| Settings | Its details, public traffic, how traffic is routed, mTLS, its connection and removal |
+
+## Public traffic
+
+**Accept public traffic**, on a cluster's **Settings** tab, decides whether the cluster answers visitors. It's on by default.
+
+- **On:** every server runs [Pyo Gateway](/docs/gateway) on ports 80 and 443 and your public TCP and UDP ports, except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Ports a service opens directly on the servers are open too. These are a **Port on every server**, or a [public port](/docs/domains#public-tcp-and-udp-ports) with the gateway turned off.
+- **Off:** nothing in the cluster is public. No server answers on the gateway's ports or on the ports services open directly. Services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until it's back on.
+
+Turning it back on opens the same ports again. A **Port on every server** keeps the number it had.
+
+Pyo doesn't check whether a server can be reached from the internet. A server with only a private or tailnet address runs the gateway too. It answers anyone who can reach that address.
+
+Team owners and admins can change it, and each change is recorded in **Activity**.
+
+## Reconnecting
+
+Rotating a cluster's token from its **Settings** tab stops the current token from working. Run the new command to reconnect the agent.
+
+## Disconnecting
+
+**Remove cluster**, on its **Settings** tab, deletes nothing on the cluster. To also remove what Pyo put into it, see [Disconnect a cluster](/docs/uninstall#disconnect-a-cluster).
+
+Pyo removes a cluster once its services are deleted or moved. If a cluster has been unreachable for 10 minutes, you can remove it with its services. Choose **Remove anyway** and type its name. Pyo forgets the cluster and its services, databases and volumes. Anything still running there is left alone.
+
+## High availability
+
+Extra servers only run services, so a cluster has one <Term tip="The server that runs the cluster itself and decides what runs where. The others only run services.">main server</Term>. If that server goes down, services on other servers keep running. Deploys and <Term tip="Moving services from a failed server to healthy ones.">rescheduling</Term> stop until it's back.

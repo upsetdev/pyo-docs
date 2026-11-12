@@ -1,0 +1,102 @@
+---
+title: The pyo CLI
+description: Deploy and manage your services from a terminal or CI.
+---
+
+The CLI is separate from Pyo itself. Pyo runs on your server, and the CLI runs on your computer or in <Term tip="Continuous integration: a service like GitHub Actions that runs your tests and deploys on each push.">CI</Term>.
+
+## Install
+
+Your Pyo serves the CLI, pointed at itself:
+
+```bash
+curl -fsSL https://your-pyo/install/cli.sh | sh
+```
+
+It installs to `/usr/local/bin` when that's writable, and `~/.local/bin` otherwise. Set `PYO_INSTALL_DIR` to choose another folder.
+
+<Callout type="warn">
+  For now, the installer only supports Linux on x86-64. On other systems, build it from source with `cargo build --release -p pyo-cli`.
+</Callout>
+
+## Sign in
+
+```bash
+pyo login
+```
+
+It asks for your Pyo's URL the first time, then opens your browser to approve the sign-in. This makes an API key for this computer that lasts a year. Run `pyo login` again for a new one. Use `--expires` to choose 30d, 90d, 1y or never.
+
+## Link a folder
+
+Choose which service this folder deploys. This writes [`pyo.toml`](/docs/cli/pyo-toml).
+
+```bash
+pyo link
+```
+
+## Deploy
+
+```bash
+pyo deploy
+```
+
+This applies `pyo.toml`, deploys and follows the <Term tip="The switch from the old version to the new one, which Pyo watches until the new version is running.">rollout</Term> to the end. Use `--detach` to start it and exit.
+
+## Everyday commands
+
+```bash
+pyo status            # state, live version and domains
+pyo logs --follow     # follow the logs
+pyo env set KEY=value # set a variable
+pyo rollback          # put back the previous version
+pyo exec              # open a shell in the service
+pyo open              # open it on the dashboard
+```
+
+## Volumes
+
+```bash
+pyo volume list                          # your teams' volumes
+pyo volume snapshots shop/web-data       # its backups, newest first
+pyo volume restore shop/web-data         # pick a backup and restore it
+pyo volume delete-backup shop/web-data   # pick a backup and delete it
+pyo volume resize shop/web-data 50       # grow it to 50 GB
+pyo volume attach web-data -s blog/api   # attach it, moving it to blog if needed
+```
+
+`pyo volume restore` stops the volume's service, restores the backup and starts the service again. It waits until the restore is done, and so does `pyo volume attach` when it moves a volume. Add `--detach` to not wait. Team owners and admins can restore, delete backups and resize.
+
+## Variables from a .env file
+
+```bash
+pyo env push                     # set the variables in .env
+pyo env push .env.production --secret STRIPE_KEY
+pyo env push --dry-run           # see what would change
+```
+
+New keys are saved as variables. Pass `--secret KEY` to save one as a secret, or `--secrets` for all of them. A secret you overwrite stays a secret. For keys that are already set, it asks you on a terminal. In CI, pass `--overwrite` or `--skip-existing`. Changes apply on the next deploy, or add `--deploy` to deploy now.
+
+## Domains
+
+```bash
+pyo domain list                      # domains, their status and HTTPS
+pyo domain add shop.example.com      # prints the DNS record to create
+pyo domain add --free                # a free nip.io domain, no DNS needed
+pyo domain add shop.example.com --wait
+pyo domain remove shop.example.com
+```
+
+Domains apply right away, without a redeploy. `--wait` waits until the domain is live.
+
+## Backups
+
+```bash
+pyo backup now                     # the service's volume
+pyo backup now --volume shop/web-data --wait
+pyo backup now --db cache          # a KV database, or one added under Backups
+```
+
+Backups go to the team's backup destination, set up under **Backups** on the dashboard. `--wait` follows the backup and prints its size and time.
+
+See every command in the [command reference](/docs/cli/commands).

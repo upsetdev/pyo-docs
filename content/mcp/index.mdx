@@ -1,0 +1,76 @@
+---
+title: MCP for AI assistants
+description: Let Claude, Cursor and other assistants use Pyo as you.
+---
+
+Pyo includes a [Model Context Protocol](https://modelcontextprotocol.io) server. MCP is a standard way for AI assistants to use other apps, so an assistant can check on your services, read logs, deploy and roll back for you.
+
+Assistants sign in with OAuth, so there's no key to paste. You approve them in your browser, and they act as you.
+
+## Connect an assistant
+
+Your server's address is your Pyo's URL with `/api/mcp` on the end. Open **MCP** in the dashboard and choose your client under **Connect an assistant**. It shows the address, ready to copy.
+
+For Claude Code:
+
+```bash
+claude mcp add --transport http pyo https://your-pyo/api/mcp
+```
+
+For other <Term tip="The app you use the assistant in, like Claude Desktop or Cursor.">clients</Term>, add it to their MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "pyo": {
+      "type": "http",
+      "url": "https://your-pyo/api/mcp"
+    }
+  }
+}
+```
+
+Some clients name these settings differently. Check your client's docs for where an HTTP MCP server goes.
+
+The first time the assistant uses Pyo, your browser opens a **Connect an assistant** page. Sign in if you need to, choose its **Access**, and choose **Allow**. Then ask things like "Why did my last deploy fail?"
+
+## Choose what it can do
+
+When you approve an assistant, you pick its **Access**, like for an [API key](/docs/api#what-a-key-can-do):
+
+| Access | What the assistant can do |
+| --- | --- |
+| Read only | See your teams, services, servers, logs and metrics. It changes nothing. |
+| Deploy | The same, plus deploy, roll back, restart, stop and scale services. Nothing is created or deleted. |
+| Full | Everything you can do in Pyo with your role, including creating, changing and deleting projects, services, clusters and servers. |
+
+An assistant only sees the tools its access allows. See the [full tool list](/docs/mcp/tools).
+
+Whatever its access, an assistant acts as you, with your [role](/docs/teams#roles) in each team and the same permission checks as the dashboard. It can't change your account or the installation's settings. Unlike an API key, it can't be limited to some of your teams. It works in every team you're in.
+
+<Callout type="warn">
+  `reveal_secret`, `reveal_deploy_hook` and `reveal_backup_password` return a secret in plain text. They need **Full** access, and assistants are told to use them only when you ask. Each one is recorded in the team's **Activity**.
+</Callout>
+
+## Stay in control
+
+The **MCP** page lists your **Connected assistants**, with each one's access and when it was last used. **Disconnect** one and it loses access right away.
+
+Under **Activity**, you see your last 100 <Term tip="One action an assistant took through Pyo, like reading logs or deploying.">tool calls</Term>, which assistant made them, and whether they worked. Secret values in what the assistant sent, like passwords and environment variables, are hidden there.
+
+## How sign-in works
+
+Most clients handle this for you. If you're building one, Pyo follows the MCP authorization spec:
+
+- **Discovery:** a request without a token gets a `401` pointing to `/.well-known/oauth-protected-resource/api/mcp`. The authorization server's details are at `/.well-known/oauth-authorization-server`.
+- **Registration:** clients register themselves, with no client secret.
+- **Authorization:** the authorization code flow with <Term tip="A check that proves the app finishing sign-in is the same one that started it. Pyo requires the S256 method.">PKCE</Term>, approved by you in the dashboard.
+- **Tokens:** an access token lasts 1 hour. A refresh token lasts 30 days and is replaced each time it's used.
+
+The MCP server only accepts these tokens. API keys work with the [API](/docs/api), not with MCP.
+
+## Limits
+
+- Pyo speaks MCP over HTTP, and answers each request with plain JSON. It doesn't stream or send messages of its own.
+- It offers tools only, not resources or prompts. The tool list comes 50 at a time, and clients fetch the rest on their own.
+- Deploys and rollbacks run in the background. The tool returns a deployment id, and the assistant checks on it with another call.

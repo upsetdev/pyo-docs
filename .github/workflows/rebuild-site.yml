@@ -1,0 +1,18 @@
+# Rebuilds pyo-web, which renders these docs at pyo.dev/docs. It needs a token
+# that can dispatch to that repo, saved as PYO_WEB_DISPATCH_TOKEN.
+name: Rebuild the site
+
+on:
+  push:
+    branches: [main]
+    paths: ["content/**"]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - run: >-
+          gh api repos/upsetdev/pyo-web/dispatches
+          -f event_type=docs-updated
+        env:
+          GH_TOKEN: ${{ secrets.PYO_WEB_DISPATCH_TOKEN }}

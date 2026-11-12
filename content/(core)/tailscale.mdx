@@ -1,0 +1,29 @@
+---
+title: Connecting with Tailscale
+description: Connect servers securely, wherever they are.
+---
+
+Pyo uses [Tailscale](https://tailscale.com) to link servers across networks, so one cluster can span data centers, providers and your <Term tip="Servers you run at home.">homelab</Term>.
+
+Save a Tailscale <Term tip="A key from Tailscale that lets a machine join your Tailscale network without signing in by hand.">auth key</Term> on the **Tailscale** card under **Integrations**, in the sidebar's **Team** section. Use a reusable, <Term tip="Machines that join with it don't wait for an admin to approve them in Tailscale.">pre-approved</Term> key from Tailscale's **Settings → Keys**. Once it's saved, the command to add a [server](/docs/servers) can connect the new machine on its own.
+
+## Reaching Pyo over HTTPS
+
+Pyo uses HTTPS by default, with a certificate from Tailscale. To get it, turn on **MagicDNS** and **HTTPS Certificates** in the Tailscale admin console, under **DNS**, before you [install](/docs/install) Pyo. Without them, Pyo works only at `http://localhost:8000`, on its own machine.
+
+With them on, from any device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>:
+
+| Address | What it is |
+| --- | --- |
+| `https://<machine>.<tailnet>.ts.net:8443` | The dashboard and API |
+| `<machine>.<tailnet>.ts.net:5443` | Pyo's [registry](/docs/registries#push-your-own-images), over HTTPS |
+
+Port 3443 is reserved for object storage. Pyo only lets in your tailnet's devices and the cluster's own servers on these ports. If you open Pyo over plain HTTP on the tailnet, your browser is sent on to port 8443.
+
+A daily timer on the machine renews the certificate. It also hands connections to the machine's tailnet address straight to Pyo Gateway, so Pyo sees each device's own tailnet address and lets it in.
+
+On Pyo's own machine, the tailnet name works too, and so does `http://localhost:8000`.
+
+<Callout type="warn">
+  HTTPS certificates are public. Your machine's and your tailnet's names show up in public <Term tip="Public logs of every certificate issued, so anyone can check which ones exist.">Certificate Transparency</Term> logs. Pyo stays reachable only from your tailnet. Still, to keep the names from giving much away, give your tailnet a random name with **Rename tailnet** under **DNS** in the admin console, and give the machine a generic name.
+</Callout>

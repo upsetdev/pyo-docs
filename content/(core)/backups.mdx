@@ -1,0 +1,57 @@
+---
+title: Backing up data
+description: Back up volumes and databases to your own storage.
+---
+
+Set up backups under **Backups**, in the Infrastructure section. They run daily or weekly at the hour you choose. They go to Pyo's built-in backup store or an <Term tip="Storage that works like Amazon S3. Many providers offer it, like Backblaze B2, Cloudflare R2 and MinIO.">S3-compatible</Term> bucket of your own.
+
+The bucket's endpoint needs `https://`. On a private network, plain `http://` works too. The exception is when the installation turns off private networks with [`PYO_ALLOW_PRIVATE_NETWORKS`](/docs/system-reference#installation-settings), as Pyo Cloud does.
+
+## Where backups go
+
+- **This server:** Pyo's built-in backup store, on the cluster Pyo runs on. It runs [Garage](/docs/system-reference#what-runs-on-your-server), an S3-compatible store. Each team has its own bucket there, with a key that reaches only that bucket. Only that cluster can reach the store, so services and databases on other clusters need a bucket of your own. The store is on the same disks as your data, so keep a copy somewhere else too. Deleting a team deletes its bucket and the backups in it.
+- **An S3-compatible bucket** of your own.
+
+## What's backed up
+
+- **Databases:** PostgreSQL, MySQL, MariaDB, MongoDB and Redis or Valkey are <Term tip="Exported with the database's own backup tool, like pg_dump, instead of copying its files while it runs.">dumped</Term> with their own tools, so each backup is consistent.
+- **Other volumes:** backed up as files.
+
+### Supported versions
+
+| Database | Versions | Dumped with |
+| --- | --- | --- |
+| PostgreSQL | 9.2 to 18 | pg_dump 18 |
+| MySQL | 5.7 to 8.4 | mysqldump 8.4 |
+| MariaDB | 10.3 to 11.8 | mariadb-dump 11.8 |
+| MongoDB | 4.2 and newer | mongodump |
+| Redis or Valkey | Redis 6 and newer, any Valkey | valkey-cli |
+
+Redis needs version 6 or newer for its <Term tip="Access control lists: Redis users with their own passwords and permissions.">ACLs</Term>, which the backup user relies on.
+
+Postgres databases that Pyo runs for you have their own continuous backups, with point-in-time recovery. See [Databases](/docs/databases#backups-and-point-in-time-recovery).
+
+## Back up volumes
+
+Choose **Add backup**, then **Volume**, and pick the volumes to back up. Then pick when:
+
+- **Daily** or **Weekly**, at an hour in UTC. Pyo keeps the last 7, 14, 30 or 90 backups.
+- **Off**, to back up only by hand.
+
+**Also back up new volumes** includes the volumes of services you add later. Team owners and admins choose these settings.
+
+The **Volumes** list on **Backups** shows each volume's last backup. **Back up now** starts one right away. Developers can use it too. Owners and admins can leave a volume out with **Stop backing up**.
+
+The same actions are in each volume's menu under **Clusters → Volumes**: **Turn on backups**, **Turn off backups** and **Back up now**, with a **Backup** column showing how the last backup went. Volumes that aren't attached are backed up too, once a service has used them. This includes volumes of a deleted project.
+
+## Restoring
+
+Team owners and admins restore a volume from its **…** menu: **Restore**, pick a backup, confirm. Pyo stops the volume's service, puts the backup back and starts the service again. See [restore a volume](/docs/volumes#restore-a-volume). A backup you no longer want can be [deleted](/docs/volumes#delete-a-backup) there too.
+
+Backups are made with [restic](https://restic.net) and encrypted. You can reveal the <Term tip="The password restic encrypts your backups with. Without it, they can't be read.">repository password</Term> in the dashboard, so you can restore with restic even without Pyo. **Restore** on **Backups** shows the repository and the commands.
+
+Restore a PostgreSQL dump with pg_restore 18 or newer. Restore it into a server of the same major version as the source, or newer.
+
+## Backing up Pyo itself
+
+An installation admin can also back up Pyo's own data on a schedule. Backups go to the server's backup store, or to a bucket elsewhere for off-site copies. That bucket can be on a private network.

@@ -1,0 +1,22 @@
+---
+title: Creating a project
+description: Group related services, like a website with its API and database.
+---
+
+A project groups services that belong together. Each one has its own Kubernetes <Term tip="A named area inside a cluster that keeps one project's services and settings apart from everything else.">namespace</Term>, so services in a project can reach each other by name.
+
+## Create a project
+
+You create a project while you deploy a service. Under **Project**, choose **New project**. It's created when the service deploys. See [Deploying a service](/docs/deploy).
+
+Each project has a slug, the lowercase name used in service addresses. The slug also appears in the project's dashboard URLs, so it can't be a name the dashboard uses for its own pages.
+
+## Inside a project
+
+A project's **Overview** shows its services and where they run. Its other tabs are **Deployments** and **Settings**, which has **General**, **Networking** and **Volumes**.
+
+New projects are isolated from other projects. See [Isolating projects](/docs/network-isolation).
+
+## Deleting a project
+
+Delete a project from its **Settings** tab, in the danger zone. Its services are deleted with it. Its volumes are kept, detached, unless you tick **Also delete volumes**. See [volumes](/docs/volumes#delete-a-volume).

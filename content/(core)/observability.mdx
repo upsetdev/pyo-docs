@@ -1,0 +1,42 @@
+---
+title: Monitoring your services
+description: See traffic, logs and resource use without adding another tool.
+---
+
+## Analytics
+
+**Analytics**, in the sidebar's **Observability** menu, measures your sites from the web server's own logs, so there's no script to add. You get visitors, pages, <Term tip="The sites visitors came from, like a search engine or a link on social media.">referrers</Term>, countries, devices and browsers.
+
+Visitors are counted with a <Term tip="A one-way code made from the visitor's IP address, browser and your site, mixed with a value that changes daily. It tells visits apart but can't be traced back to anyone.">hash</Term> that changes daily. Visitor IP addresses aren't kept by default. An admin can change what's kept under **Settings → Observability**.
+
+## Connections
+
+A service with public TCP or UDP ports has a **Connections** card on its **Overview**, for the ports that go through [Pyo Gateway](/docs/gateway#tcp-and-udp-ports). It shows connections, clients and data over time. Each connection shows its country, bytes, duration and outcome: ok, blocked, limited or unreachable. Blocked means the [firewall](/docs/firewall) or a port's IP rule stopped it.
+
+A TCP connection is counted when it closes. A UDP exchange is counted once it's been quiet for a minute, and its duration includes that minute. Ports that skip the gateway aren't counted.
+
+## Logs
+
+**Logs**, in the sidebar's **Observability** menu, shows the web server's log of every request your sites served: the time, method, URL, status, response time and size, with the visitor's browser and country. Search and filter them to find a request. Sensitive values in query strings are hidden. Logs are kept for 180 days.
+
+These are request logs, not your service's own output. For that, open its logs in the dashboard or use the CLI:
+
+```bash
+pyo logs --follow
+```
+
+## Metrics
+
+See CPU and memory for each server and service, and for [Pyo Gateway](/docs/gateway), which handles all web traffic into each cluster. The gateway has no limit of its own, so its use is shown against the cluster's total capacity.
+
+## Terminal
+
+Open a <Term tip="A command line inside the running service, where you can type commands as you would on a server.">shell</Term> in any running service from the dashboard, or from your terminal:
+
+```bash
+pyo exec
+```
+
+## Activity
+
+**Activity**, in the same menu, records who deployed or changed what, and when.

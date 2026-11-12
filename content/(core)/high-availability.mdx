@@ -1,0 +1,103 @@
+---
+title: Making Pyo highly available
+description: What keeps running when a server fails, and how to make Pyo itself more resilient.
+---
+
+High availability covers two things: your services, and Pyo itself. Your services matter most, and they don't depend on Pyo to keep running.
+
+## If Pyo goes down
+
+Pyo is the <Term tip="The part that manages everything and applies your changes. Your services don't need it to keep serving.">control plane</Term>. If it stops, your services keep serving traffic, because they run on your clusters and not inside Pyo. You can't deploy or change anything until it's back.
+
+## Your services
+
+To keep a service up through a server failure:
+
+1. Add at least two more [servers](/docs/servers) to the cluster.
+2. Run two or more [replicas](/docs/scaling), or turn on autoscaling with a minimum of two.
+3. Keep services <Term tip="A stateless service keeps nothing on its own disk or in memory between requests, like uploads or sessions. Any copy of it can answer, so it can move freely.">stateless</Term> where you can. Replicas spread across servers, and stateless services move to a healthy server if one fails.
+4. Point your domain at more than one server, through a <Term tip="A network of servers, like Cloudflare, that sits between visitors and your servers to speed up and protect your sites.">CDN</Term> or a load balancer. If DNS points at one server's address, traffic stops when that server does.
+
+[Volumes](/docs/volumes) stay on the server that created them, so a service with a volume can't move to another server. For data that has to survive losing a server, use one of Pyo's [databases](/docs/databases) with high availability, or your database's own replication.
+
+## What Pyo runs today
+
+| Part | Runs as | If its server fails |
+| --- | --- | --- |
+| Dashboard and API | 2 replicas, on different servers when there are two or more | Keep running on another server |
+| Background workers | 2 replicas | Keep running on another server |
+| Agent | 1 replica on each cluster | Restarts on another server |
+| PostgreSQL | 1 replica, with a local volume | Down until that server returns |
+| ClickHouse | 1 replica, with a local volume | Observability pauses |
+| Image registry | 1 replica | No new images until it returns |
+| Backup store | 1 replica, with a local volume | Backups to it stop |
+
+Updates don't cause downtime, because replicas update one at a time. The limits above are about losing a whole server.
+
+## Make Pyo more resilient
+
+These steps remove the biggest single points of failure. Try them on a spare cluster first.
+
+### 1. Run three k3s servers
+
+By default, a cluster has one k3s server. Three keep the cluster's control plane running if one fails. Use an odd number, and at least three.
+
+On the first server, turn on the embedded <Term tip="The database that stores a Kubernetes cluster's state. With it embedded, several k3s servers share that state.">etcd</Term> datastore. Add this to `/etc/rancher/k3s/config.yaml`, then restart k3s:
+
+```yaml
+cluster-init: true
+```
+
+```bash
+sudo systemctl restart k3s
+```
+
+Read the join token from the first server:
+
+```bash
+sudo cat /var/lib/rancher/k3s/server/token
+```
+
+Then add two more servers, using the same settings as the first, including `secrets-encryption`:
+
+```bash
+curl -sfL https://get.k3s.io | K3S_TOKEN=<token> sh -s - server \
+  --server https://<first-server>:6443
+```
+
+The command Pyo gives you for adding a server adds a worker, not a k3s server, so run these by hand. See the [k3s documentation](https://docs.k3s.io/datastore/ha-embedded) for details.
+
+### 2. Use a hosted PostgreSQL
+
+Pyo keeps everything that matters in PostgreSQL, so this is the most important step. Move it to a hosted database with its own <Term tip="Switching to a standby copy automatically when the main one fails.">failover</Term>:
+
+1. Create the database, then take a final copy of Pyo's database:
+
+   ```bash
+   sudo k3s kubectl -n pyo-system exec statefulset/pyo-postgres -- \
+     pg_dump -U pyo pyo > pyo.sql
+   ```
+
+2. Restore `pyo.sql` into the new database.
+3. Point Pyo at it and restart:
+
+   ```bash
+   sudo k3s kubectl -n pyo-system patch secret pyo-postgres --type merge \
+     -p '{"stringData":{"url":"postgres://user:password@host:5432/pyo"}}'
+   sudo k3s kubectl -n pyo-system rollout restart deployment/pyo deployment/pyo-worker
+   ```
+
+Don't deploy while you do this, because changes made after the copy aren't moved. Updating Pyo keeps this setting.
+
+### 3. Keep backups off the cluster
+
+[Back up Pyo itself](/docs/backups#backing-up-pyo-itself) to a bucket outside your cluster, and keep your [master key](/docs/securing-pyo#4-save-your-master-key) somewhere safe. With both, you can rebuild Pyo on new servers even if you lose the whole cluster.
+
+## What isn't highly available yet
+
+Even with these steps, some parts still depend on one server:
+
+- **Image registry:** if its server is down, new builds can't be stored. Servers can't pull images they don't already have.
+- **ClickHouse:** there's no replica. Losing its server loses observability history, but nothing else.
+
+For most teams, this is a good trade-off. Your services stay up, and Pyo can be rebuilt from a backup.

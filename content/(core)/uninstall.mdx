@@ -1,0 +1,151 @@
+---
+title: Uninstalling Pyo
+description: Remove a server, disconnect a cluster, or remove Pyo from your machine.
+---
+
+There are three ways to take Pyo off your machines:
+
+- [Remove a server](#remove-a-server) from a cluster.
+- [Disconnect a cluster](#disconnect-a-cluster) that already had Kubernetes, and keep the cluster.
+- [Uninstall Pyo](#uninstall-pyo) from the machine you installed it on.
+
+## Before you start
+
+<Callout type="warn">
+  Each of these can delete services, volumes and databases for good. Back them up first.
+</Callout>
+
+- [Back up your volumes and databases](/docs/backups) to a bucket of your own, not Pyo's built-in store. That store runs on the machine Pyo is on, so it goes with Pyo.
+- Export each database you want to keep with its own tool, like `pg_dump` or `mysqldump`, from a service connected to it.
+- Before you uninstall Pyo itself, [back up Pyo's own data](/docs/backups#backing-up-pyo-itself) to a bucket elsewhere.
+
+## Remove a server
+
+1. In Pyo, open the server and choose **Remove server** from its menu. Pyo moves its services to the other servers.
+2. When the server shows **Drained: uninstall k3s on the machine to finish**, run this on that machine:
+
+   ```bash
+   sudo /usr/local/bin/k3s-agent-uninstall.sh
+   ```
+
+3. Once the machine goes offline, Pyo removes it from the cluster.
+
+This deletes k3s and everything it kept on that machine, including the files of any volumes there. A server whose volumes keep data on its disk can't be drained, so move or delete those services first, and delete detached volumes that are on it. A server that's already offline is removed with **Remove by force** instead.
+
+The machine stays on your tailnet. If [`join.sh`](/docs/servers) installed the NVIDIA Container Toolkit, it stays too. To remove the firewall rules it added, find the ones marked `Pyo ingress` or `k3s over Tailscale` and delete them by number:
+
+```bash
+sudo ufw status numbered
+sudo ufw delete <number>
+```
+
+If the first line of `/etc/apparmor.d/cri-containerd.apparmor.d` is `# Managed by Pyo`, it's Pyo's AppArmor profile, which k3s no longer needs:
+
+```bash
+sudo apparmor_parser -R /etc/apparmor.d/cri-containerd.apparmor.d
+sudo rm /etc/apparmor.d/cri-containerd.apparmor.d
+```
+
+## Disconnect a cluster
+
+This removes everything Pyo put into a cluster and leaves the cluster itself, with k3s, running.
+
+1. In Pyo, delete or move the cluster's services. Pyo only removes a cluster with no services left.
+2. On the cluster's **Settings** tab, choose **Remove cluster**. This deletes nothing on the cluster.
+3. On the cluster's first server, run:
+
+   ```bash
+   curl -fsSL https://pyo.dev/connect.sh | sudo bash -s -- --uninstall
+   ```
+
+It lists what it will remove, and asks you to type `yes`. It stops the agent first, so nothing is put back, then removes:
+
+| What | Where |
+| --- | --- |
+| The Pyo agent, its roles and its admission policy | `pyo-system` |
+| Your projects, with their services, volumes and databases | Their namespaces, and `pyo-db-*` |
+| The databases system and the WAF | `pyo-databases`, `pyo-waf` |
+| Pyo Gateway | `pyo-gateway` |
+| cert-manager, if Pyo installed it and nothing else uses it | `cert-manager` |
+| Join tokens, the GPU device plugin and a DNS disruption budget | Pyo's own objects in `kube-system` |
+
+It only deletes objects Pyo made, found by their names and Pyo's labels. Other namespaces, the Gateway API and k3s's own components stay. A volume with a `Retain` policy keeps its data on the server's disk. The script lists those with their paths.
+
+| Option | What it does |
+| --- | --- |
+| `--keep-data` | Keeps your projects' namespaces, databases and volumes, with the databases system and cert-manager that run them. The volumes of what it removes keep their data on disk too (see below). |
+| `--dry-run` | Only lists what it would delete. |
+| `--yes` | Doesn't ask first, for scripts. |
+
+With `--keep-data`, the volumes in the namespaces it removes, like Pyo's own database, registry and backup store when Pyo itself goes, are set to `Retain` first. Their data and their PersistentVolumes stay. When it's done, the script lists each one with its directory and server, for example `/var/lib/rancher/k3s/storage/pvc-…`, and `--dry-run` lists them beforehand. To delete them later:
+
+```bash
+sudo k3s kubectl delete pv <name> …
+sudo rm -rf <directory>   # on the server it's on
+```
+
+With `--keep-data`, run the script before you remove the cluster in Pyo. Your services stay on the cluster, and it shows as unreachable. After 10 minutes, choose **Remove anyway** on its **Settings** tab. Pyo then forgets the cluster, its services, databases and volumes, and leaves everything on the cluster as it is.
+
+The script uses k3s's `kubectl`. To run it from another machine against any cluster, set `KUBECONFIG`, and leave out `sudo`.
+
+The machine Pyo itself runs on is disconnected by [uninstalling Pyo](#uninstall-pyo).
+
+If `connect.sh` installed k3s and you don't need the cluster any more, remove it in Pyo, then run `sudo /usr/local/bin/k3s-uninstall.sh` on its first server and `sudo /usr/local/bin/k3s-agent-uninstall.sh` on the others. That deletes the whole cluster with its data.
+
+## Uninstall Pyo
+
+Run this on the machine you installed Pyo on:
+
+```bash
+curl -fsSL https://pyo.dev/install.sh | bash -s -- --uninstall
+```
+
+It lists what it will remove, and asks you to type `yes`. It removes:
+
+- Pyo's timers and scripts: `pyo-connect`, `pyo-tailnet-cert`, `/usr/local/lib/pyo` and `/etc/pyo`.
+- k3s, with Pyo and all your services, volumes and databases in it, through k3s's own `k3s-uninstall.sh`. Before that, it moves the files of Pyo's own database and registry, your volumes and your databases to `/var/lib/pyo-kept/<time>/storage`.
+- Pyo's AppArmor profile, if it installed one, and the firewall rules it added (`Pyo ingress` and `k3s over Tailscale`).
+
+When it's done, it prints where it kept the files, and the cluster's other servers. Run `sudo /usr/local/bin/k3s-agent-uninstall.sh` on each of those.
+
+| Option | What it does |
+| --- | --- |
+| `--purge` | Deletes the volumes' files too, instead of keeping them. |
+| `--keep-k3s` | Keeps k3s, and removes Pyo from it. |
+| `--remove-k3s` | Removes the k3s Pyo installed even when other things run in it, with them. |
+| `--dry-run` | Only lists what it would do. |
+| `--yes` | Doesn't ask first, for scripts. |
+
+k3s is removed only if Pyo's installer installed it, and nothing but Pyo and k3s's own components runs in it. A k3s that was there before stays, and Pyo is removed from it the same way as when you [disconnect a cluster](#disconnect-a-cluster), Pyo itself included. Unless you add `--purge`, no data is deleted. Your projects' namespaces, databases and volumes stay in it. Pyo's own volumes, for its database, registry and backup store, keep their data on disk, as with `--keep-data`. The uninstaller lists where, and how to delete it later.
+
+### When k3s runs other things
+
+Before it removes k3s, the uninstaller looks for anything in it that isn't Pyo's or k3s's own:
+
+- Pyo's: `pyo-system`, `pyo-gateway`, `pyo-waf`, `pyo-databases`, `cert-manager` when Pyo installed it, your projects' namespaces and `pyo-db-*`, and Pyo's charts and objects in `kube-system`.
+- k3s's own: `default`, `kube-system`, `kube-public` and `kube-node-lease`, with CoreDNS, the local-path provisioner, metrics-server, ServiceLB and k3s's own charts.
+
+Anything else means k3s is kept: another namespace with workloads, volume claims or Helm releases, another HelmChart or Helm release, other workloads in `kube-system` or `default`, and volumes not claimed in Pyo's namespaces. Then k3s stays, and Pyo is removed from it as if k3s had been there before:
+
+```text
+These aren't Pyo's: namespace monitoring, Helm release grafana (namespace monitoring)
+k3s was kept. Run again with --remove-k3s to remove it anyway.
+```
+
+Other namespaces with nothing in them are listed, but don't keep k3s. If k3s doesn't answer, nothing is changed. Start it with `sudo systemctl start k3s` and run the uninstaller again, or choose `--keep-k3s` or `--remove-k3s`.
+
+`--remove-k3s` removes k3s with everything in it, after the same confirmation (or `--yes`), and lists what isn't Pyo's first. You can also run it later, because `/etc/pyo/k3s-installed` stays when k3s does. `--dry-run` shows the same list, and whether k3s would stay.
+
+Tailscale stays as it is, and the machine stays on your tailnet. Remove it in the Tailscale admin console if you no longer need it.
+
+## On your computer
+
+To remove the [Pyo CLI](/docs/cli), sign out, then delete it and its settings:
+
+```bash
+pyo logout
+sudo rm "$(command -v pyo)"
+rm -rf ~/.config/pyo
+```
+
+Revoke its [API key](/docs/api) in Pyo if you won't use it again.
