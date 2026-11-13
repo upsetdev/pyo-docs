@@ -1,0 +1,54 @@
+---
+title: Importing from another platform
+description: Move your services, Compose stacks and databases from Coolify or Dokploy into Pyo.
+---
+
+Pyo can bring your services over from Coolify or Dokploy. It reads them through the platform's API, shows you what each one becomes, and imports the ones you pick. Owners and admins can import.
+
+## Before you start
+
+Make a token on the platform:
+
+- **Coolify:** in **Keys & Tokens**, make an API token with `read` and `read:sensitive`. Without `read:sensitive`, Coolify doesn't share variable values. If the API is off, turn it on in **Settings**.
+- **Dokploy:** in your profile's **API/CLI** section, generate an API key.
+
+Pyo uses the token only while it reads, and never stores it.
+
+## Import
+
+### From the dashboard
+
+1. Choose **New → Import from a platform**.
+2. Pick the **Platform**, enter its **Address** and **API token**, and pick the **Cluster** to run on. Then choose **Preview**.
+3. Check what each project, service and database becomes. Notes say what doesn't carry over.
+4. Pick what to bring. Turn on **Deploy services once imported** to deploy them now. Otherwise they're saved stopped, ready to deploy.
+5. Choose **Import**. Each item shows **Created**, **Copying data**, **Imported before**, **Not imported** or **Failed**. One failure doesn't stop the others.
+
+### From the CLI
+
+```bash
+pyo import coolify --from https://coolify.example.com --source-token <token>
+```
+
+The CLI shows what it will create and asks before it imports. Use `dokploy` for Dokploy. Add `--team` or `--cluster` to choose where it goes, `--deploy` to deploy the services, and `--yes` to skip the question.
+
+### From the API
+
+Send the platform's address and token to [Preview an import from another platform](/docs/api/reference/projects/preview-platform-import) to see the plan. Then import the items you pick with [Import from another platform](/docs/api/reference/projects/start-platform-import).
+
+## What comes over
+
+- **Projects:** each project becomes a Pyo project. An environment other than production becomes a project of its own, named after both.
+- **Applications:** each becomes a service, built from its repository (with its Dockerfile, or with zero config) or run from its image. A GitHub repository builds through your team's [GitHub App](/docs/github) when it can reach it.
+- **Variables:** with secret ones encrypted. Values that are locked in Coolify can't be read: they come over empty, so set them in Pyo.
+- **Domains:** they go live once the service is deployed. Point their DNS at Pyo when you're ready to switch. Domains the platform made up for you, like `sslip.io` ones, are left out.
+- **Ports:** published ports become public TCP or UDP ports through the [gateway](/docs/gateway), when Pyo allows that port.
+- **Volumes:** they start empty. Copy their data yourself.
+- **Compose stacks:** each becomes a project of its own, as with a [Docker Compose import](/docs/deploy/compose). A Compose file from a repository isn't imported: use the Compose import from the repository.
+- **Databases:** Postgres and MySQL databases the platform makes reachable from outside are copied into new Pyo [databases](/docs/databases), as in [Migrating a database](/docs/migrating). Others are made empty, with how to move their data. Redis, KeyDB and Dragonfly become empty KV databases. MariaDB, MongoDB, ClickHouse and libSQL aren't imported.
+
+Start, build and install commands, build secrets, file mounts, deploy keys, preview environments, labels and custom Docker options don't carry over. Each one is a note on its item.
+
+## Run it again
+
+You can import again at any time. What was imported before is left alone, and new services join the project the first import made.
