@@ -7,6 +7,15 @@ description: Put a service on the web, with certificates handled for you.
 
 A free domain needs no <Term tip="The system that points a domain name at a server's address. For your own domain, you add a record at your domain provider.">DNS</Term> setup, so it's the quickest way to get a service online.
 
+It's a <Term tip="A free service that answers any name ending in an IP address with that address.">nip.io</Term> name with your cluster's address in it, like `shop-web.203.0.113.7.nip.io`. Each cluster picks which address its free domains use, under **Free domains** on its **Settings** tab:
+
+- **Public IP:** the cluster's public address. Anyone on the internet can reach it, and it gets a Let's Encrypt certificate.
+- **Tailscale:** a server's [Tailscale](/docs/tailscale) address, like `shop-web.100.101.67.2.nip.io`. Only devices on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term> can reach it. Pyo Gateway answers there on ports 80 and 443 even while the cluster's [public traffic](/docs/clusters#public-traffic) is off.
+
+By default, a cluster uses **Public IP** when it takes public traffic and a server has its public address itself, on its network card or as its external IP, or a load balancer gives it one. A server behind <Term tip="A router or provider that shares one public address between machines. Connections from the internet only reach a machine when a port is forwarded to it.">NAT</Term>, like one at home or with some cloud providers, only knows its public address from the internet's side. Ports 80 and 443 may not reach it, so the cluster uses **Tailscale** and the setting says **Behind NAT**. Choose **Public IP** there if ports 80 and 443 are forwarded to the server.
+
+When you change it, the cluster's free domains move to the new address within seconds. A cluster without the chosen address has no free domain. Add your own domain instead.
+
 ## Custom domains
 
 Add your domain to a service, then point its DNS at your cluster. Pyo checks the DNS and tells you when the domain is active.
@@ -37,7 +46,7 @@ Services aren't limited to websites. A port can be:
 - **Port on every server:** a TCP or UDP port on each server in the cluster.
 - **Public IP:** a public TCP or UDP port, for a game server or a database you reach from outside.
 
-Only private ports are reachable while the cluster's [public traffic](/docs/clusters#public-traffic) is off.
+Only private ports are reachable while the cluster's [public traffic](/docs/clusters#public-traffic) is off. With free domains on [Tailscale](#free-domains), websites stay reachable from your tailnet too.
 
 ### Public TCP and UDP ports
 

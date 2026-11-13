@@ -7,13 +7,13 @@ Every web request to your sites, and every connection to a public TCP or UDP por
 
 ## How a request travels
 
-1. A visitor's request reaches a server in your cluster. Every server runs the gateway on ports 80 and 443, including GPU servers. Build-only servers don't. A cluster with [public traffic](/docs/clusters#public-traffic) turned off answers on none of them.
+1. A visitor's request reaches a server in your cluster. Every server runs the gateway on ports 80 and 443, including GPU servers. Build-only servers don't. A cluster with [public traffic](/docs/clusters#public-traffic) turned off answers on none of them. With [free domains](/docs/domains#free-domains) on Tailscale, each server also answers on its Tailscale address, whether public traffic is on or off.
 2. The gateway answers on HTTPS with the domain's own certificate. That's a Let's Encrypt certificate, a self-signed one for a private domain, or one you [uploaded](/docs/certificates). Plain HTTP redirects to HTTPS if the domain is set to redirect. Otherwise, plain HTTP gets an answer too.
 3. The gateway sends the request to the service, and the cluster picks a replica. It picks one on the same server, in the same region or anywhere, based on the cluster's [traffic routing](/docs/regions#how-traffic-is-routed).
 
 Deleting a service removes its routes and certificates. Every 10 minutes, Pyo also removes any routes left without a service.
 
-The gateway sees the visitor's real address when traffic arrives on one of the addresses the cluster lists for its servers. On the server Pyo runs on, this also works for its tailnet address. Traffic that reaches a server on any other address seems to come from the cluster's load balancer. Then the firewall, rate limits and analytics can't see the visitor. If Pyo sits behind a tunnel or a CDN that reaches it from a private or Tailscale address, the visitor's address comes from the `X-Forwarded-For` header. Pyo only trusts that header from these addresses: `127.0.0.1/32`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `::1/128` and `fc00::/7`.
+The gateway sees the visitor's real address when traffic arrives on one of the addresses the cluster lists for its servers. On the server Pyo runs on, this also works for its tailnet address, and so does every server's Tailscale address while free domains use it. Traffic that reaches a server on any other address seems to come from the cluster's load balancer. Then the firewall, rate limits and analytics can't see the visitor. If Pyo sits behind a tunnel or a CDN that reaches it from a private or Tailscale address, the visitor's address comes from the `X-Forwarded-For` header. Pyo only trusts that header from these addresses: `127.0.0.1/32`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `::1/128` and `fc00::/7`.
 
 ### PROXY protocol on websites
 

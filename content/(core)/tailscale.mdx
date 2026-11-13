@@ -24,6 +24,10 @@ A daily timer on the machine renews the certificate. It also hands connections t
 
 On Pyo's own machine, the tailnet name works too, and so does `http://localhost:8000`.
 
+## Websites on your tailnet
+
+A cluster's [free domains](/docs/domains#free-domains) can use its servers' Tailscale addresses, like `shop-web.100.101.67.2.nip.io`. Then your services' websites are reachable from your tailnet on ports 80 and 443, even while the cluster takes no [public traffic](/docs/clusters#public-traffic). A server behind NAT uses this by default.
+
 <Callout type="warn">
   HTTPS certificates are public. Your machine's and your tailnet's names show up in public <Term tip="Public logs of every certificate issued, so anyone can check which ones exist.">Certificate Transparency</Term> logs. Pyo stays reachable only from your tailnet. Still, to keep the names from giving much away, give your tailnet a random name with **Rename tailnet** under **DNS** in the admin console, and give the machine a generic name.
 </Callout>

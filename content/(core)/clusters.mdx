@@ -30,7 +30,7 @@ Open a cluster from **Clusters**. Its tabs are:
 | Workloads | Everything running, down to the server it's on |
 | Networking | HTTP routes and ports |
 | Storage | Volumes and storage classes |
-| Settings | Its details, public traffic, how traffic is routed, mTLS, its connection and removal |
+| Settings | Its details, public traffic, free domains, how traffic is routed, mTLS, its connection and removal |
 
 ## Public traffic
 
@@ -38,6 +38,8 @@ Open a cluster from **Clusters**. Its tabs are:
 
 - **On:** every server runs [Pyo Gateway](/docs/gateway) on ports 80 and 443 and your public TCP and UDP ports, except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Ports a service opens directly on the servers are open too. These are a **Port on every server**, or a [public port](/docs/domains#public-tcp-and-udp-ports) with the gateway turned off.
 - **Off:** nothing in the cluster is public. No server answers on the gateway's ports or on the ports services open directly. Services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until it's back on.
+
+With [free domains](/docs/domains#free-domains) on **Tailscale**, services' websites are reachable from your tailnet on ports 80 and 443, whether public traffic is on or off. Each server's Tailscale address answers, except on build-only servers. Nothing else opens. A service's [firewall](/docs/firewall) and [WAF](/docs/waf) apply there too, and they see each device's own tailnet address.
 
 Turning it back on opens the same ports again. A **Port on every server** keeps the number it had.
 
