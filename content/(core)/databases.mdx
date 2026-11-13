@@ -21,12 +21,14 @@ Open **Databases** in the sidebar, then **Postgres**, **MySQL** or **KV**. Choos
 - **Name** and **Cluster:** any of your connected clusters.
 - **Size**, per instance:
 
-  | Size | CPU | Memory | Storage |
-  | --- | --- | --- | --- |
-  | Small | 0.25 | 512 MiB | 5 GiB |
-  | Medium | 0.5 | 1 GiB | 10 GiB |
-  | Large | 1 | 2 GiB | 20 GiB |
-  | X-Large | 2 | 4 GiB | 50 GiB |
+  | Size | CPU | Memory | Set aside | Storage |
+  | --- | --- | --- | --- | --- |
+  | Small | 0.25 | 512 MiB | 128 MiB | 5 GiB |
+  | Medium | 0.5 | 1 GiB | 1 GiB | 10 GiB |
+  | Large | 1 | 2 GiB | 2 GiB | 20 GiB |
+  | X-Large | 2 | 4 GiB | 4 GiB | 50 GiB |
+
+  **Memory** is the most an instance can use. **Set aside** is what the server keeps free for it, so it fits where there's that much room. A small database at rest holds 60 to 100 MiB, so it sets aside 128 MiB and uses more as it needs, up to 512 MiB, while the server has it free. Custom sizes set aside all their memory.
 
   MySQL needs at least 1 GiB of memory, so it starts at **Medium**.
 

@@ -48,11 +48,36 @@ That also tells Railpack to serve the folder as a static site, whatever the fram
 
 Add build arguments in **Deploy new**, under **Advanced: Dockerfile, build context and arguments**, or later in the service's **Settings**, under **Deployment source**. They're used on the next deploy. To change the build command, add `RAILPACK_BUILD_CMD`, like `npm run build:prod`.
 
+## Static site generators
+
+Many generators' `start` script runs their development or preview server, like `eleventy --serve`, `astro dev`, `vite preview` or `hugo server`. That's a full Node.js process, often 100 MiB of memory or more, to serve files. When Pyo finds one, it runs your `build` script and serves the output with Caddy instead, in around 15 MiB:
+
+| Generator | Output folder |
+| --- | --- |
+| **Eleventy** | `_site`, or the `output` in your Eleventy config or `--output` in the build script |
+| **Astro**, with no server output or adapter | `dist`, or `outDir` in your Astro config |
+| **Hugo**, built through npm (like `hugo-bin`) | `public`, or `-d` in the build script |
+| **Vite** | `dist`, or `outDir` in your Vite config |
+
+Eleventy and Hugo are served this way with no `start` script too. The build log says which folder it serves, and the site gets the [automatic health check](#health-check).
+
+A generated site has a page for each path, so a path that matches nothing gets a `404` instead of the home page. A `Staticfile` of your own changes that.
+
+To run your `start` script instead, add the build argument:
+
+```bash
+RAILPACK_NO_SPA=1
+```
+
+Pyo also leaves it alone when you set `RAILPACK_SPA_OUTPUT_DIR`, `RAILPACK_START_CMD` or `RAILPACK_STATIC_FILE_ROOT`, or have a `Procfile` or a start command in `railpack.json`.
+
+Jekyll, and Hugo without a `package.json`, need a [Dockerfile](#your-own-dockerfile), since Railpack can't build them on its own.
+
 ## Routing in single page apps
 
 A single page app handles its own paths, like `/settings`, so every path that isn't a file should get `index.html`.
 
-- **A built frontend:** this is on by default.
+- **A built frontend:** this is on by default, except for a [static site generator](#static-site-generators)'s output that Pyo serves.
 - **Plain HTML:** turn it on with a `Staticfile` at the root:
 
 ```yaml

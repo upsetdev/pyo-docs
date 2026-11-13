@@ -23,6 +23,8 @@ description: Run Pyo on a laptop, VPS, dedicated server or homelab.
 
 A [build server](/docs/builders#where-a-builder-can-run) or more [servers](/docs/servers) in the cluster spread the load. On machines with less than 3.5 GiB, the installer tunes k3s for low memory. See [k3s](/docs/system-reference#k3s).
 
+On a 2 GB server, about 570 MiB is left for your services and databases: 512 MiB is set aside for k3s and the system, and Pyo's own parts, with k3s's DNS and metrics, ask for about 890 MiB. A small database takes 128 MiB of that, and a static site served by Caddy around 15 MiB. When a deploy doesn't fit, it fails with what it needs, what's free and the biggest requests on the server.
+
 On machines under 3.5 GB, observability starts off. You can [turn it on](/docs/observability#turning-it-on-or-off) when you have the memory to spare.
 
 Pyo sizes k3s and its own database by the machine's memory each time they start. After you give a machine more or less memory, restart it and they follow. See [Memory tiers](/docs/system-reference#memory-tiers).

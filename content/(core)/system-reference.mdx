@@ -198,16 +198,21 @@ To use another k3s version, install k3s yourself before installing Pyo. Pyo uses
 
 On a machine with less than 3.5 GiB of memory, the k3s that Pyo installs gets a soft memory limit, so it frees memory sooner instead of growing. The limit is 40% of the memory, and at least 768 MiB. With less than 2.75 GiB and no swap, Pyo also turns on compressed swap in memory (zram, `pyo-zram.service`), half the size of the memory, for k3s itself. Your services don't swap. Both are worked out again each time the machine starts, by `/usr/local/lib/pyo-memory.sh` (k3s runs it from `/etc/systemd/system/k3s.service.d/pyo-memory.conf`). Uninstalling Pyo with k3s removes them. From 3.5 GiB of memory, k3s gets neither.
 
+At any size, the same script sets aside memory for k3s and the system, so containers are only scheduled into what's left. It writes kubelet's `kube-reserved` and `system-reserved` to `/etc/rancher/k3s/config.yaml.d/50-pyo-memory.yaml` each time k3s starts. See [Memory tiers](#memory-tiers) for the amounts. Servers you [add](/docs/servers) keep all their memory for containers.
+
 ## Memory tiers
 
 Pyo reads the server's memory each time a part of it starts, so a server you resize gets the matching settings after a restart:
 
-| Memory | k3s | Pyo's database | Connections per process |
-| --- | --- | --- | --- |
-| Under 2.75 GiB | Soft memory limit and compressed swap | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
-| 2.75 to 3.5 GiB | Soft memory limit | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
-| 3.5 to 8 GiB | As it is | 32 MB of cache, 80 connections | 10 for `pyo`, 16 for `pyo-worker` |
-| 8 GiB or more | As it is | 64 MB of cache, 120 connections | 15 for `pyo`, 24 for `pyo-worker` |
+| Memory | k3s | Set aside for k3s and the system | Pyo's database | Connections per process |
+| --- | --- | --- | --- | --- |
+| Under 1.5 GiB | Soft memory limit and compressed swap | 256 MiB | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
+| 1.5 to 2.75 GiB | Soft memory limit and compressed swap | 512 MiB | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
+| 2.75 to 3.5 GiB | Soft memory limit | 512 MiB | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
+| 3.5 to 8 GiB | As it is | 768 MiB | 32 MB of cache, 80 connections | 10 for `pyo`, 16 for `pyo-worker` |
+| 8 GiB or more | As it is | 1 GiB | 64 MB of cache, 120 connections | 15 for `pyo`, 24 for `pyo-worker` |
+
+Pyo's own parts ask for about the memory they hold at rest, and may use more up to their limits. On a single server with databases set up, they and k3s's DNS and metrics ask for around 890 MiB.
 
 `PYO_DB_POOL` sets the connections per process instead. Keep two of each process within the database's connections, since an update runs the old and new ones side by side.
 
