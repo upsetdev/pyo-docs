@@ -41,7 +41,9 @@ On the service's **Deployments** tab, you can cancel a running deployment or ret
 
 ## Health checks
 
-A health check tells Pyo when a new version is ready. It can be an HTTP path, a TCP port or a command. Traffic only moves to the new version once the check passes.
+A health check tells Pyo when a new version is ready. It can be an HTTP path, a TCP port or a command. Traffic only moves to the new version once the check passes. With **None**, deploys don't wait for it to be ready.
+
+For a service from Git, Pyo picks the check until you change it. A [static site](/docs/deploy/static-sites#health-check) gets a check of `/`.
 
 ## A service's addresses
 

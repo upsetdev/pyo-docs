@@ -7,10 +7,13 @@ A static site is a folder of HTML, CSS, JavaScript and images. Pyo deploys it li
 
 ## Before you deploy
 
-Two settings in **Deploy new** make the site work the first time:
+Keep the default port, `8080`. Pyo sets `PORT` to the service's first port, and Railpack's Caddy listens on `PORT`.
 
-- **Port:** keep the default, `8080`. Pyo sets `PORT` to the service's first port, and Railpack's Caddy listens on `PORT`.
-- **Health check:** set the **Path** to `/health`. Railpack's Caddy answers it with `200`. The default path, `/healthz`, isn't a file in your site, so the check would fail and the new version would never take traffic.
+## Health check
+
+When the build finds a static site, Pyo checks that `/` answers before the new version takes traffic. A redirect counts too. The service's **Health check** shows **Automatic (static site)**.
+
+To use another check, change it on the service's **Resources** tab. Pyo then keeps yours. Choose **HTTP path** for another path, **TCP** to only wait for the port, or **None** to not wait at all.
 
 ## Plain HTML
 
@@ -91,7 +94,7 @@ server {
 }
 ```
 
-Set the health check **Path** to `/`. Pyo passes your build arguments to the Dockerfile as `ARG` values.
+Set the health check to **HTTP path** `/`, since Pyo only picks one for Railpack's static sites. Pyo passes your build arguments to the Dockerfile as `ARG` values.
 
 ## The Nginx template
 
