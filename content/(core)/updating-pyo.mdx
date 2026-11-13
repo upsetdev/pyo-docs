@@ -43,6 +43,7 @@ Pyo updates every cluster's agent for you. There's no button per cluster.
 
 - **An agent that doesn't come back:** if it isn't on the new version within 10 minutes, it's marked failed.
 - **An offline agent:** it's skipped, and catches up on the next update.
+- **New permissions for the agent:** an agent can't change its own permissions. When an update changes them, **Before you update** says so. After updating, run the connect command shown in each cluster's settings. Until then, the cluster shows **Update needed**.
 
 When some agents are behind, **Settings → Updates** shows **Some agents aren't on** the new version, with **Update now**. This updates only the agents. With automatic updates, it also happens in the maintenance window.
 
