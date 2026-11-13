@@ -24,15 +24,15 @@ To keep a service up through a server failure:
 
 | Part | Runs as | If its server fails |
 | --- | --- | --- |
-| Dashboard and API | 2 replicas, on different servers when there are two or more | Keep running on another server |
-| Background workers | 2 replicas | Keep running on another server |
+| Dashboard and API | 1 replica | Restarts on another server |
+| Background workers | 1 replica | Restarts on another server |
 | Agent | 1 replica on each cluster | Restarts on another server |
 | PostgreSQL | 1 replica, with a local volume | Down until that server returns |
 | ClickHouse | 1 replica, with a local volume | Observability pauses |
 | Image registry | 1 replica | No new images until it returns |
 | Backup store | 1 replica, with a local volume | Backups to it stop |
 
-Updates don't cause downtime, because replicas update one at a time. The limits above are about losing a whole server.
+Updates don't cause downtime, because a new replica is ready before the old one stops. The limits above are about losing a whole server.
 
 ## Make Pyo more resilient
 

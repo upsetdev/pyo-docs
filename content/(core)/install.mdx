@@ -7,11 +7,25 @@ description: Run Pyo on a laptop, VPS, dedicated server or homelab.
 ## Requirements
 
 - **System:** Linux on <Term tip="The 64-bit processor type of most servers and PCs, also called amd64.">x86-64</Term>, with root or `sudo` access.
-- **Resources:** at least 2 CPU cores, 4 GB of memory and 40 GB of disk. Add more for the services you run and the images you build.
+- **Resources:** at least 2 CPU cores, 2 GB of memory and 40 GB of disk. See [Memory](#memory) for how much to choose.
 - **Ports:** 8000 and 5005 free, plus 80, 443 and 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services.
 - **Remote access:** [Tailscale](/docs/tailscale) on the machine, with **MagicDNS** and **HTTPS Certificates** turned on in the Tailscale admin console, under **DNS**. Without it, Pyo works only at `http://localhost:8000`, on the machine itself.
 
 <Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificates need a machine that's reachable from the internet. On a private network, like most laptops, free domains get a <Term tip="A certificate Pyo makes itself. The connection is still encrypted, but browsers show a warning because no public authority vouches for it.">self-signed certificate</Term> instead.
+
+### Memory
+
+| Memory | Good for |
+| --- | --- |
+| 2 GB | The minimum. Enough to try Pyo or run a few small services. Builds are slower and there's little room for databases. |
+| 4 GB | Recommended for real use with databases. |
+| 8 GB or more | Many services, builds on the same server and several databases. |
+
+A [build server](/docs/builders#where-a-builder-can-run) or more [servers](/docs/servers) in the cluster spread the load. On machines with less than 3.5 GiB, the installer tunes k3s for low memory. See [k3s](/docs/system-reference#k3s).
+
+On machines under 3.5 GB, observability starts off. You can [turn it on](/docs/observability#turning-it-on-or-off) when you have the memory to spare.
+
+Pyo sizes k3s and its own database by the machine's memory each time they start. After you give a machine more or less memory, restart it and they follow. See [Memory tiers](/docs/system-reference#memory-tiers).
 
 ## Install
 

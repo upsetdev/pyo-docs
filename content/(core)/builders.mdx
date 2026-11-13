@@ -24,3 +24,5 @@ Choose **Remove builder** from its menu. A builder in a cluster takes its build 
 ## How it works
 
 A builder runs <Term tip="The build engine behind Docker. It turns your code or Dockerfile into an image.">BuildKit</Term> and connects out to Pyo with its own token. It picks up build jobs, streams the logs and hands back the finished image.
+
+BuildKit only runs while there are builds, so an idle builder uses almost no memory. A build starts it, and its log shows **Starting the builder…** for the few seconds that takes. After 10 minutes without builds, it stops again. The build cache stays on the server's disk, so the next build is as fast as before.

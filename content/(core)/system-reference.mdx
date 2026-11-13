@@ -45,7 +45,7 @@ Pyo sets these when it's installed, so you'll rarely need to touch them.
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `DATABASE_URL` | Required | The PostgreSQL database that holds Pyo's data. |
-| `DATABASE_POOL_MAX` | `10` | The most database connections each process opens. `pyo-worker` is installed with `15`. |
+| `PYO_DB_POOL` | By memory | The most database connections each process opens. By default it follows Pyo's database, which is sized by the server's memory. See [Memory tiers](#memory-tiers). |
 | `CLICKHOUSE_URL` | Not set | The ClickHouse server for [observability](/docs/observability). Without it, observability is off. |
 | `CLICKHOUSE_USER` | `default` | The ClickHouse user. |
 | `CLICKHOUSE_PASSWORD` | Empty | The ClickHouse password. |
@@ -159,8 +159,8 @@ sudo k3s kubectl -n pyo-system get pods
 | `pyo-backup-store` | S3-compatible storage on this cluster ([Garage](https://garagehq.deuxfleurs.fr), a single instance), the default destination for [backups](/docs/backups). Each team's key reaches only its own bucket. |
 | `registry` | Holds the images your builds produce. Only Pyo reaches it. |
 | `pyo-host` | Puts the dashboard on port 8000 and the registry on port 5005, on the machine itself and its Tailscale address. On the Tailscale address, the registry needs a login. |
-| `buildkitd` | Builds your images. |
-| `pyo-builder-*` | Any [build servers](/docs/builders) you've added. |
+| `buildkitd` | Builds Pyo's own images when Pyo is built from source. Stopped otherwise. Your images are built by builders. |
+| `pyo-builder-*` | Your [builders](/docs/builders). Their BuildKit runs only while there are builds. |
 
 Pyo also relies on these, outside that namespace:
 
@@ -195,6 +195,23 @@ On a machine without k3s, the installer installs the version that release of Pyo
 Servers you add to a cluster get the cluster's own k3s version, checked against that k3s release's published checksums. Tailscale, and the NVIDIA Container Toolkit for GPUs, come from their vendors' package repositories, whose signing keys are checked by fingerprint.
 
 To use another k3s version, install k3s yourself before installing Pyo. Pyo uses the k3s it finds and doesn't change its version, including when Pyo updates.
+
+On a machine with less than 3.5 GiB of memory, the k3s that Pyo installs gets a soft memory limit, so it frees memory sooner instead of growing. The limit is 40% of the memory, and at least 768 MiB. With less than 2.75 GiB and no swap, Pyo also turns on compressed swap in memory (zram, `pyo-zram.service`), half the size of the memory, for k3s itself. Your services don't swap. Both are worked out again each time the machine starts, by `/usr/local/lib/pyo-memory.sh` (k3s runs it from `/etc/systemd/system/k3s.service.d/pyo-memory.conf`). Uninstalling Pyo with k3s removes them. From 3.5 GiB of memory, k3s gets neither.
+
+## Memory tiers
+
+Pyo reads the server's memory each time a part of it starts, so a server you resize gets the matching settings after a restart:
+
+| Memory | k3s | Pyo's database | Connections per process |
+| --- | --- | --- | --- |
+| Under 2.75 GiB | Soft memory limit and compressed swap | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
+| 2.75 to 3.5 GiB | Soft memory limit | 16 MB of cache, 40 connections | 5 for `pyo`, 12 for `pyo-worker` |
+| 3.5 to 8 GiB | As it is | 32 MB of cache, 80 connections | 10 for `pyo`, 16 for `pyo-worker` |
+| 8 GiB or more | As it is | 64 MB of cache, 120 connections | 15 for `pyo`, 24 for `pyo-worker` |
+
+`PYO_DB_POOL` sets the connections per process instead. Keep two of each process within the database's connections, since an update runs the old and new ones side by side.
+
+[Observability](/docs/observability#turning-it-on-or-off) is a setting, not a tier: a new install under 3.5 GB starts with it off, and after that it changes only when an admin changes it.
 
 ## Agent policy
 
