@@ -18,10 +18,13 @@ branch = "main"
 dockerfile = "Dockerfile"
 context = "."
 
+[build.args]           # used on the next deploy
+RAILPACK_SPA_OUTPUT_DIR = "dist"
+
 [deploy]
 replicas = 2
 port = 8080            # the port it listens on for HTTP
-health = "/healthz"    # checked before traffic moves over
+health = "/healthz"    # checked before traffic moves over, or "tcp" or "none"
 auto_rollback = true
 
 [resources]
@@ -41,3 +44,5 @@ Unknown settings are rejected, so a typo fails instead of being ignored.
 ```bash
 pyo env set --secret STRIPE_KEY=sk_live_...
 ```
+
+Build arguments can end up in the image, so keep secrets out of `[build.args]` too.

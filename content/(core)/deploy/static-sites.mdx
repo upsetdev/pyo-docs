@@ -46,7 +46,7 @@ RAILPACK_SPA_OUTPUT_DIR=build
 
 That also tells Railpack to serve the folder as a static site, whatever the framework. Variables your build reads, like `VITE_API_URL`, go in build arguments too, since the build runs before the service starts.
 
-Add build arguments in **Deploy new**, under **Advanced: Dockerfile, build context and arguments**. To change the build command, add `RAILPACK_BUILD_CMD`, like `npm run build:prod`.
+Add build arguments in **Deploy new**, under **Advanced: Dockerfile, build context and arguments**, or later in the service's **Settings**, under **Deployment source**. They're used on the next deploy. To change the build command, add `RAILPACK_BUILD_CMD`, like `npm run build:prod`.
 
 ## Routing in single page apps
 
