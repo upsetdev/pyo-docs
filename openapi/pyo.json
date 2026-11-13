@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.2.1"
+    "version": "0.2.2"
   },
   "servers": [
     {
@@ -5488,6 +5488,9 @@
             "$ref": "#/components/schemas/SetClusterPublicTrafficOp"
           },
           {
+            "$ref": "#/components/schemas/SetClusterFreeDomainAddressOp"
+          },
+          {
             "$ref": "#/components/schemas/AddFirewallRuleOp"
           },
           {
@@ -5756,6 +5759,7 @@
             "saveTeamBackupSettings": "#/components/schemas/SaveTeamBackupSettingsOp",
             "scaleService": "#/components/schemas/ScaleServiceOp",
             "setAutoscale": "#/components/schemas/SetAutoscaleOp",
+            "setClusterFreeDomainAddress": "#/components/schemas/SetClusterFreeDomainAddressOp",
             "setClusterPublicTraffic": "#/components/schemas/SetClusterPublicTrafficOp",
             "setClusterWebProxyProtocol": "#/components/schemas/SetClusterWebProxyProtocolOp",
             "setDatabaseBackups": "#/components/schemas/SetDatabaseBackupsOp",
@@ -7855,6 +7859,46 @@
         "x-pyo-access": "deploy",
         "x-tags": [
           "Services"
+        ]
+      },
+      "SetClusterFreeDomainAddressOp": {
+        "type": "object",
+        "title": "Set cluster free domain address",
+        "description": "Where the cluster's free domains (`<name>.<ip>.nip.io`) point: \"public\" (its public IP, for everyone) or \"tailscale\" (its Tailscale IP, only from the tailnet). With \"tailscale\", services are reachable from your tailnet on ports 80 and 443 whether or not the cluster takes public traffic. Free domains on it move to the new address in place. By default it's public when the cluster takes public traffic and a server has its public IP itself (on a network card or as its ExternalIP) or a load balancer gives it one. Behind NAT, it's Tailscale.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "clusterId",
+          "address"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setClusterFreeDomainAddress"
+            ]
+          },
+          "clusterId": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "address": "example",
+          "clusterId": "cl_8kq2x7ad",
+          "op": "setClusterFreeDomainAddress"
+        },
+        "examples": [
+          {
+            "address": "example",
+            "clusterId": "cl_8kq2x7ad",
+            "op": "setClusterFreeDomainAddress"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
         ]
       },
       "SetClusterPublicTrafficOp": {
