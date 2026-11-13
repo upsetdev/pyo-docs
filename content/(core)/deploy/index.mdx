@@ -8,6 +8,7 @@ description: Deploy from Git, a container image or a template.
 Connect a repository and Pyo builds it on one of your builders.
 
 - **Zero config:** with no <Term tip="A file in your repository with the steps to build your code into a container image.">Dockerfile</Term> or Containerfile, Pyo detects your framework and builds it.
+- **Static sites:** plain HTML or a built frontend, like Vite or Astro. See [Static sites](/docs/deploy/static-sites).
 - **Dockerfile or Containerfile:** if you have one, Pyo uses it. If you have both, it uses the Dockerfile. You can set the Dockerfile path, the <Term tip="The folder whose files are sent to the build. Paths in your Dockerfile are read from there.">build context</Term> and <Term tip="Values passed in at build time, which your Dockerfile reads with ARG.">build arguments</Term>.
 
 ## Deploy on every push

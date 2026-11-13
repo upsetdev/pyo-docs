@@ -1,0 +1,105 @@
+---
+title: Static sites
+description: Deploy plain HTML or a built frontend from Git.
+---
+
+A static site is a folder of HTML, CSS, JavaScript and images. Pyo deploys it like any other service from Git. With no Dockerfile, Pyo builds it with [Railpack](https://railpack.com), which serves the files with [Caddy](https://caddyserver.com). The build log says **Static site** for plain files, or the framework's name for a built frontend.
+
+## Before you deploy
+
+Two settings in **Deploy new** make the site work the first time:
+
+- **Port:** keep the default, `8080`. Pyo sets `PORT` to the service's first port, and Railpack's Caddy listens on `PORT`.
+- **Health check:** set the **Path** to `/health`. Railpack's Caddy answers it with `200`. The default path, `/healthz`, isn't a file in your site, so the check would fail and the new version would never take traffic.
+
+## Plain HTML
+
+Push a repository with an `index.html` at its root, and that's it. Pyo serves the whole repository, except `.git` and `.env` files.
+
+To serve another folder, Railpack looks in this order:
+
+1. A `RAILPACK_STATIC_FILE_ROOT` build argument, like `site`.
+2. A file named `Staticfile` at the root, with `root: site`.
+3. A `public` folder.
+4. An `index.html` at the root.
+
+A request for `/about` finds `about`, `about.html` or `about/index.html`.
+
+## A built frontend
+
+Pyo runs your `build` script, then serves only its output. Railpack finds the output folder for:
+
+- **Vite**, including React, Vue and Svelte projects built with Vite
+- **Astro**, when it has no server output or adapter
+- **Next.js** with `output: 'export'`
+- **Create React App**
+- **Angular**
+
+It reads a custom `outDir` from your Vite or Astro config. For anything else, like SvelteKit with `adapter-static`, add a build argument with the output folder:
+
+```bash
+RAILPACK_SPA_OUTPUT_DIR=build
+```
+
+That also tells Railpack to serve the folder as a static site, whatever the framework. Variables your build reads, like `VITE_API_URL`, go in build arguments too, since the build runs before the service starts.
+
+Add build arguments in **Deploy new**, under **Advanced: Dockerfile, build context and arguments**. To change the build command, add `RAILPACK_BUILD_CMD`, like `npm run build:prod`.
+
+## Routing in single page apps
+
+A single page app handles its own paths, like `/settings`, so every path that isn't a file should get `index.html`.
+
+- **A built frontend:** this is on by default.
+- **Plain HTML:** turn it on with a `Staticfile` at the root:
+
+```yaml
+root: .
+index_fallback: true
+```
+
+Set `index_fallback: false` to turn it off for a built frontend. Without the fallback, a path that matches nothing gets a `404`, or your `404.html` for plain HTML sites.
+
+## A site in a subfolder
+
+If the site lives in a folder of a bigger repository, set the **Build context** to that folder, like `apps/web`. Pyo builds and serves it from there.
+
+## Your own Dockerfile
+
+If you add a Dockerfile, Pyo uses it instead of Railpack. This one builds a Vite site and serves it with nginx on port `8080`, with every unknown path going to `index.html`:
+
+```dockerfile title="Dockerfile"
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:1.27-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+```
+
+```nginx title="nginx.conf"
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+Set the health check **Path** to `/`. Pyo passes your build arguments to the Dockerfile as `ARG` values.
+
+## The Nginx template
+
+[Templates](/docs/templates) has **Nginx**. It serves nginx's welcome page on port `80`, and is a starting point for your own image: build one `FROM nginx` with your files in `/usr/share/nginx/html`, then deploy it from Git or a [container image](/docs/deploy#from-a-container-image).
+
+## Good to know
+
+- **Served from your servers:** the files come from your servers, not a global <Term tip="A content delivery network keeps copies of your files in many places around the world, so they load fast everywhere.">CDN</Term>. For visitors far from them, put a CDN like Cloudflare in front.
+- **Always on:** the site runs as a small service that's always on, with its own replicas and resources. See [Scaling](/docs/scaling).
+- **Everything else works the same:** [domains](/docs/domains) and HTTPS, the [firewall](/docs/firewall), the [WAF](/docs/waf) and [deploy on every push](/docs/deploy#deploy-on-every-push).
+- **Security headers:** for plain HTML sites, Railpack's Caddy adds a few headers, including a `Content-Security-Policy`. If it blocks something your site needs, use your own Dockerfile.
