@@ -60,7 +60,7 @@ The firewall doesn't cover **Port on every server** ports, or your servers' own 
 Pyo finds a visitor's country with an IP-location database (GeoLite2 Country) built into the gateway. The gateway doesn't download anything for it.
 
 <Callout type="warn">
-  While any service on a cluster has a country rule, the cluster's websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They don't use the `X-Forwarded-For` header. So behind a tunnel, or a CDN that reaches Pyo over a private link, every visitor looks like the tunnel. Use address rules there instead.
+  Websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They never use the `X-Forwarded-For` header, because a client could put any address there. So behind a tunnel or a CDN, every visitor looks like the tunnel or the CDN, and country rules see its location.
 </Callout>
 
 ## See what was turned away

@@ -13,7 +13,7 @@ Every web request to your sites, and every connection to a public TCP or UDP por
 
 Deleting a service removes its routes and certificates. Every 10 minutes, Pyo also removes any routes left without a service.
 
-The gateway sees the visitor's real address when traffic arrives on one of the addresses the cluster lists for its servers. On the server Pyo runs on, this also works for its tailnet address, and so does every server's Tailscale address while free domains use it. Traffic that reaches a server on any other address seems to come from the cluster's load balancer. Then the firewall, rate limits and analytics can't see the visitor. If Pyo sits behind a tunnel or a CDN that reaches it from a private or Tailscale address, the visitor's address comes from the `X-Forwarded-For` header. Pyo only trusts that header from these addresses: `127.0.0.1/32`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `::1/128` and `fc00::/7`.
+The gateway sees the visitor's real address when traffic arrives on one of the addresses the cluster lists for its servers. On the server Pyo runs on, this also works for its tailnet address, and so does every server's Tailscale address while free domains use it. Traffic that reaches a server on any other address seems to come from the cluster's load balancer. Then the firewall, rate limits and analytics can't see the visitor. The gateway never takes the visitor's address from the `X-Forwarded-For` header, because any client can write any address there. Behind a tunnel, a CDN or another proxy, every visitor seems to come from it. If it can send [PROXY protocol](#proxy-protocol-on-websites), turn that on.
 
 ### PROXY protocol on websites
 
@@ -110,7 +110,7 @@ The trade-off is small. Per server, the gateway uses about as much memory as Tra
 ## What stays the same
 
 - [Traffic routing](/docs/regions#how-traffic-is-routed): Local, Regional or Global.
-- The visitor's real address, even behind a CDN or another proxy.
+- The visitor's real address, also from a load balancer that sends PROXY protocol.
 - The [CDN certificate check](/docs/securing-pyo#require-the-cdns-certificate-with-mtls), turned on per cluster.
 - Redirecting HTTP to HTTPS, for domains set to redirect.
 - Let's Encrypt's checks, which reach your server through the gateway.

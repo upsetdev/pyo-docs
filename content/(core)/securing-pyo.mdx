@@ -92,6 +92,7 @@ Pyo warns you 30 days before the certificate expires. Replace it before then, be
 ### What changes behind a CDN
 
 - [Observability](/docs/observability) records the CDN's address instead of the visitor's, so visitor locations and IP-based counts won't be accurate. Use your CDN's own analytics for real visitor data.
+- The [firewall](/docs/firewall) and its rate limits see the CDN's addresses too. Pyo doesn't read `X-Forwarded-For`, so put rules for visitors in your CDN.
 - Services see the CDN as their client. To get the visitor's address, read the header your CDN sets, like `CF-Connecting-IP`. Only trust it once the firewall and mTLS are in place.
 - The CDN decrypts your traffic to do its job, so choose one you trust with it.
 
