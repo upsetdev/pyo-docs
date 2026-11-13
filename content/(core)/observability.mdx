@@ -29,6 +29,25 @@ pyo logs --follow
 
 See CPU and memory for each server and service, and for [Pyo Gateway](/docs/gateway), which handles all web traffic into each cluster. The gateway has no limit of its own, so its use is shown against the cluster's total capacity.
 
+## Turning it on or off
+
+Analytics, Logs, connections, firewall and WAF history and metrics over time all need Pyo's observability, which stores what each cluster's servers send. It's on unless a new install's server has less than 3.5 GB of memory. There it starts off to save memory.
+
+An admin turns it on or off under **Settings → Observability**, or with the CLI:
+
+```bash
+pyo observability off
+```
+
+While it's off:
+
+- Pyo stops collecting and frees the memory it used, about 150 MB on the server Pyo runs on and a little on each server.
+- Analytics, Logs and the charts over time say it's off.
+- What was stored is kept. Turn it back on to see it again, with a gap for the time it was off.
+- Everything else keeps working: your services' own logs, current CPU and memory, deploys, the firewall and the WAF.
+
+Pyo never turns it on or off by itself after the install. If the server's memory changes, **Settings → Observability** suggests turning it on or off.
+
 ## Terminal
 
 Open a <Term tip="A command line inside the running service, where you can type commands as you would on a server.">shell</Term> in any running service from the dashboard, or from your terminal:
