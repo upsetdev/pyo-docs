@@ -5,6 +5,8 @@ description: Move a Postgres or MySQL database from another provider into Pyo.
 
 Pyo can copy a Postgres or MySQL database from another provider into one of its own [databases](/docs/databases), straight from its connection URL or from a dump file. This page shows how to move a database and what to plan for.
 
+Moving from Coolify or Dokploy? [Importing from another platform](/docs/import-platforms) brings your services and their databases over together.
+
 ## Before you start
 
 - **The source must be reachable from your cluster.** The copy runs on your cluster, not in your browser. If the provider only accepts connections from listed addresses, allow the public addresses your servers connect out from, or use a dump file instead.

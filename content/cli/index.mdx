@@ -99,4 +99,12 @@ pyo backup now --db cache          # a KV database, or one added under Backups
 
 Backups go to the team's backup destination, set up under **Backups** on the dashboard. `--wait` follows the backup and prints its size and time.
 
+## Import from another platform
+
+```bash
+pyo import coolify --from https://coolify.example.com --source-token <token>
+```
+
+It shows what each project, service and database becomes, then asks before it imports. Use `dokploy` for Dokploy. See [Importing from another platform](/docs/import-platforms).
+
 See every command in the [command reference](/docs/cli/commands).
