@@ -56,6 +56,25 @@ Options:
   -V, --version        Print version
 ```
 
+## `pyo observability`
+
+Whether observability (analytics, request logs, usage history) is on for this Pyo, or turn it on or off. Turning it is for the installation's admin, with a full-access key
+
+```text
+Whether observability (analytics, request logs, usage history) is on for this Pyo, or turn it on or off. Turning it is for the installation's admin, with a full-access key
+
+Usage: pyo observability [OPTIONS] [STATE]
+
+Arguments:
+  [STATE]  [possible values: on, off]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
 ## `pyo link`
 
 Link this folder to a service (writes pyo.toml)
@@ -92,7 +111,7 @@ Options:
   -f, --file <FILE>        A Docker Compose file to import as a new project (a .env next to it is read too)
       --team <TEAM>        The team to import into (slug or id). Defaults to your first team
       --cluster <CLUSTER>  The cluster to run it on (name or id). Defaults to the team's default cluster
-  -y, --yes                Import without asking
+  -y, --yes                Don't ask: import the Compose file, or go ahead with a very large replica change from pyo.toml
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -681,6 +700,31 @@ Options:
   -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
   -h, --help               Print help
   -V, --version            Print version
+```
+
+## `pyo import`
+
+Bring services over from Coolify or Dokploy: see what they become, then import them. Owners and admins
+
+```text
+Bring services over from Coolify or Dokploy: see what they become, then import them. Owners and admins
+
+Usage: pyo import [OPTIONS] --from <FROM> --source-token <SOURCE_TOKEN> <PLATFORM>
+
+Arguments:
+  <PLATFORM>  The platform: coolify or dokploy [possible values: coolify, dokploy]
+
+Options:
+      --from <FROM>                  Its address, e.g. https://coolify.example.com
+      --url <URL>                    Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --source-token <SOURCE_TOKEN>  Its API token (Coolify's with read and read:sensitive). Used for this import only [env: PYO_IMPORT_TOKEN]
+      --token <TOKEN>                An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>                  The team to import into (slug or id). Defaults to your first team
+      --cluster <CLUSTER>            The cluster to run it on (name or id). Defaults to the team's default cluster
+      --deploy                       Deploy the services once they're made
+  -y, --yes                          Import without asking
+  -h, --help                         Print help
+  -V, --version                      Print version
 ```
 
 ## `pyo backup`

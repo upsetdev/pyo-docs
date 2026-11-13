@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "servers": [
     {
@@ -165,7 +165,7 @@
         },
         "responses": {
           "200": {
-            "description": "Done. Always `ok: true`, and some operations add more, such as a new API key or a join command.",
+            "description": "Done. Always `ok: true`, and some operations add more, such as a new API key or a join command. A `warning` comes with a change that went through but won't fully take effect yet, such as more replicas than the servers have room for.",
             "content": {
               "application/json": {
                 "schema": {
@@ -860,6 +860,49 @@
           },
           "503": {
             "description": "This installation doesn't store metrics.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/observability/settings": {
+      "get": {
+        "tags": [
+          "Observability"
+        ],
+        "summary": "Observability settings",
+        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory), and what it keeps of\nvisitors' IP addresses. `small`: the server Pyo runs on has under 3.5 GB\nof memory now. The installation's admin turns it on or off with\n`setObservability`.\n\nAPI key access: **read**.",
+        "operationId": "getObservabilitySettings",
+        "responses": {
+          "200": {
+            "description": "`enabled`, `ipMode` and `small`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2757,6 +2800,192 @@
         },
         "x-pyo-access": "read"
       }
+    },
+    "/platform-imports/preview": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Preview an import from another platform",
+        "description": "Reads a Coolify or Dokploy installation through its API, with a token\nyou give, and shows what importing would create: per project there, its\nservices (source, ports, domains, variable names, volumes), Compose\nstacks and databases, each with what doesn't carry over. Nothing is\ncreated and the token isn't kept. Things an earlier import made are\nmarked (`existingId`). Owners and admins.\n\nAPI key access: **full**.",
+        "operationId": "previewPlatformImport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The plan. Variables have no values.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPlan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address or token isn't usable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You aren't an owner or admin of the team, or the API key can't make changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many imports for now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The platform couldn't be reached or refused the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/platform-imports": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Import from another platform",
+        "description": "Reads the platform again (as `previewPlatformImport`) and creates the\npicked things (`items`, all by default): a project per project there,\nits services with their variables (secret ones sealed), domains (live\nafter the first deploy), ports and empty volumes, a project per Compose\nstack, and databases. A Postgres or MySQL database reachable from\noutside the platform is copied by a database import; others are made\nempty or left for you. Services aren't deployed unless `deploy`.\nRunning it again skips what an earlier import made. Owners and admins.\n\nAPI key access: **full**.",
+        "operationId": "startPlatformImport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "What became of each picked thing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportOutcome"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address, token or cluster isn't usable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You aren't an owner or admin of the team, or the API key can't make changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many imports for now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The platform couldn't be reached or refused the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
     }
   },
   "components": {
@@ -3053,6 +3282,51 @@
         "x-tags": [
           "Firewall"
         ]
+      },
+      "ApplyBody": {
+        "type": "object",
+        "required": [
+          "teamId",
+          "platform",
+          "url",
+          "token"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "url": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "description": "Read again for this request, never stored."
+          },
+          "clusterId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where the services and databases go. The team's default cluster when omitted."
+          },
+          "items": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The `key`s to import, from the preview. All of them when omitted."
+          },
+          "deploy": {
+            "type": "boolean",
+            "description": "Deploy each service once it's made. Off: they're saved, stopped, to deploy when you like."
+          }
+        }
       },
       "AttachVolumeOp": {
         "type": "object",
@@ -3844,6 +4118,10 @@
               "type": "object"
             },
             "description": "Databases to connect it to before its first deploy, as `connectDatabase` does: each `{\"id\": \"mdb_…\", \"env\": {\"WORDPRESS_DB_HOST\": \"MYSQL_HOST\", …}}` (`env` optional)."
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "Go ahead with a very large replica change: without it, one that goes to 20 or more replicas and to more than 10 times what the service had, or more than twice what its servers have room for, is refused with 409 and `needsConfirm: true`. Ask the user before sending it."
           }
         },
         "example": {
@@ -4379,6 +4657,10 @@
         "properties": {
           "error": {
             "type": "string"
+          },
+          "needsConfirm": {
+            "type": "boolean",
+            "description": "The change wasn't made: confirm it with the user, then send it again\nwith `confirm: true`."
           }
         }
       },
@@ -4528,6 +4810,317 @@
         "x-tags": [
           "Projects"
         ]
+      },
+      "ImportDatabase": {
+        "type": "object",
+        "description": "One of their databases.",
+        "required": [
+          "key",
+          "sourceName",
+          "name",
+          "engine",
+          "action",
+          "warnings"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "\"db:<id there>\"."
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name in Pyo."
+          },
+          "engine": {
+            "type": "string",
+            "description": "Its engine there: \"postgres\", \"mysql\", \"mariadb\", \"mongodb\", \"redis\", \"keydb\", \"dragonfly\", \"clickhouse\" or \"libsql\"."
+          },
+          "image": {
+            "type": "string",
+            "description": "Its image there."
+          },
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Pyo's engine for it: \"postgres\", \"mysql\" or \"valkey\" (KV). None when Pyo has none."
+          },
+          "action": {
+            "type": "string",
+            "description": "\"import\" (made and its data copied), \"create\" (made empty) or \"manual\" (left for you)."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "existingId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A database of the team's with its name already."
+          }
+        }
+      },
+      "ImportDomain": {
+        "type": "object",
+        "required": [
+          "hostname",
+          "portName"
+        ],
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "In a stack: the Compose service it's for."
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "portName": {
+            "type": "string",
+            "description": "The service's HTTP port it routes to."
+          }
+        }
+      },
+      "ImportOutcome": {
+        "type": "object",
+        "required": [
+          "ok",
+          "results"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportResult"
+            }
+          }
+        }
+      },
+      "ImportPlan": {
+        "type": "object",
+        "description": "What importing would create, project by project.",
+        "required": [
+          "platform",
+          "host",
+          "projects",
+          "warnings"
+        ],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "\"coolify\" or \"dokploy\"."
+          },
+          "host": {
+            "type": "string",
+            "description": "The platform's host, as given."
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportProject"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "About the whole import, e.g. a token that can't read variables' values."
+          }
+        }
+      },
+      "ImportProject": {
+        "type": "object",
+        "description": "A project there (in Coolify, one of its environments) and what's in it.",
+        "required": [
+          "key",
+          "name",
+          "services",
+          "stacks",
+          "databases"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Its id there."
+          },
+          "name": {
+            "type": "string",
+            "description": "The Pyo project's name."
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportService"
+            }
+          },
+          "stacks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportStack"
+            },
+            "description": "Compose stacks there: each becomes a project of its own, as Pyo's\nCompose import makes one."
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportDatabase"
+            },
+            "description": "Databases belong to the team in Pyo, not to a project."
+          },
+          "existingProjectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Pyo project an earlier import made for it."
+          }
+        }
+      },
+      "ImportResult": {
+        "type": "object",
+        "description": "What became of one picked thing.",
+        "required": [
+          "key",
+          "name",
+          "state"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "description": "\"created\", \"importing\" (a database whose data is being copied), \"exists\" (an earlier import made it), \"skipped\" (it can't be imported) or \"failed\"."
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Pyo service, project or database."
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ImportService": {
+        "type": "object",
+        "description": "One of their applications as a Pyo service.",
+        "required": [
+          "key",
+          "sourceName",
+          "service",
+          "domains",
+          "warnings",
+          "importable"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "What to pick it by: \"app:<id there>\"."
+          },
+          "sourceName": {
+            "type": "string",
+            "description": "Its name there."
+          },
+          "builder": {
+            "type": "string",
+            "description": "For a service built from Git: \"dockerfile\", or \"railpack\" (zero config)."
+          },
+          "service": {
+            "$ref": "#/components/schemas/PlanService",
+            "description": "The service: its source, ports, variables (no values in a preview), volumes and health check."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportDomain"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "importable": {
+            "type": "boolean",
+            "description": "False when it can't be imported (the warnings say why)."
+          },
+          "existingId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Pyo service an earlier import made from it."
+          }
+        }
+      },
+      "ImportStack": {
+        "type": "object",
+        "description": "A Compose stack there as a Pyo project.",
+        "required": [
+          "key",
+          "sourceName",
+          "plan",
+          "domains",
+          "warnings",
+          "importable"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "\"compose:<id there>\"."
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/ComposePlan"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportDomain"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "importable": {
+            "type": "boolean"
+          },
+          "existingProjectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       },
       "InviteMemberOp": {
         "type": "object",
@@ -4877,6 +5470,9 @@
             "$ref": "#/components/schemas/RevealBackupPasswordOp"
           },
           {
+            "$ref": "#/components/schemas/SetObservabilityOp"
+          },
+          {
             "$ref": "#/components/schemas/UploadCertificateOp"
           },
           {
@@ -5164,6 +5760,7 @@
             "setClusterWebProxyProtocol": "#/components/schemas/SetClusterWebProxyProtocolOp",
             "setDatabaseBackups": "#/components/schemas/SetDatabaseBackupsOp",
             "setDatabaseExtensions": "#/components/schemas/SetDatabaseExtensionsOp",
+            "setObservability": "#/components/schemas/SetObservabilityOp",
             "setProjectIsolation": "#/components/schemas/SetProjectIsolationOp",
             "setServerLocation": "#/components/schemas/SetServerLocationOp",
             "setServerMaintenance": "#/components/schemas/SetServerMaintenanceOp",
@@ -5460,6 +6057,13 @@
           }
         }
       },
+      "Platform": {
+        "type": "string",
+        "enum": [
+          "coolify",
+          "dokploy"
+        ]
+      },
       "Preview": {
         "type": "object",
         "description": "Whether a site can be shown in a frame.",
@@ -5481,53 +6085,27 @@
       },
       "PreviewBody": {
         "type": "object",
-        "description": "What to import: a file's text, or a file in one of the team's GitHub\nrepositories.",
         "required": [
-          "teamId"
+          "teamId",
+          "platform",
+          "url",
+          "token"
         ],
         "properties": {
           "teamId": {
+            "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform",
+            "description": "\"coolify\" or \"dokploy\"."
+          },
+          "url": {
             "type": "string",
-            "description": "The team it's for."
+            "description": "The platform's address, e.g. https://coolify.example.com."
           },
-          "file": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The Compose file's text, when it isn't read from a repository."
-          },
-          "env": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "A .env file's text, for `${VAR}`s and `env_file: .env`."
-          },
-          "repo": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/RepoInput",
-                "description": "Or: a repository the team's GitHub App installations can see."
-              }
-            ]
-          },
-          "clusterId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The cluster it goes to: public web ports get a free domain on it."
-          },
-          "name": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The project's name, when the file has none."
+          "token": {
+            "type": "string",
+            "description": "An API token of the platform's: Coolify's with read and read:sensitive, or a Dokploy API key. Used for this request only, never stored."
           }
         }
       },
@@ -6132,27 +6710,6 @@
         "x-tags": [
           "Domains"
         ]
-      },
-      "RepoInput": {
-        "type": "object",
-        "required": [
-          "fullName",
-          "branch",
-          "path"
-        ],
-        "properties": {
-          "fullName": {
-            "type": "string",
-            "description": "\"owner/repo\"."
-          },
-          "branch": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string",
-            "description": "The Compose file's path, e.g. \"compose.yml\" or \"deploy/compose.yml\"."
-          }
-        }
       },
       "ResendInviteOp": {
         "type": "object",
@@ -6974,6 +7531,10 @@
               "string",
               "null"
             ]
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "Go ahead with a very large replica change: without it, one that goes to 20 or more replicas and to more than 10 times what the service had, or more than twice what its servers have room for, is refused with 409 and `needsConfirm: true`. Ask the user before sending it."
           }
         },
         "example": {
@@ -7170,7 +7731,7 @@
       "ScaleServiceOp": {
         "type": "object",
         "title": "Scale service",
-        "description": "Change a service's number of replicas without a new deployment.\n\nAPI key access: **deploy**.",
+        "description": "Change a service's number of replicas without a new deployment: 1 or more, with no maximum. Replicas that don't fit on the servers wait until there's room, and the response's `warning` says so.\n\nAPI key access: **deploy**.",
         "required": [
           "op",
           "id",
@@ -7189,6 +7750,10 @@
           "replicas": {
             "type": "integer",
             "format": "int32"
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "Go ahead with a very large replica change: without it, one that goes to 20 or more replicas and to more than 10 times what the service had, or more than twice what its servers have room for, is refused with 409 and `needsConfirm: true`. Ask the user before sending it."
           }
         },
         "example": {
@@ -7257,6 +7822,10 @@
                 "$ref": "#/components/schemas/Autoscale"
               }
             ]
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "Go ahead with a very large replica change: without it, one that goes to 20 or more replicas and to more than 10 times what the service had, or more than twice what its servers have room for, is refused with 409 and `needsConfirm: true`. Ask the user before sending it."
           }
         },
         "example": {
@@ -7266,6 +7835,7 @@
             "targetCpu": 70,
             "targetMemory": 80
           },
+          "confirm": true,
           "id": "svc_8kq2x7ad",
           "op": "setAutoscale"
         },
@@ -7277,6 +7847,7 @@
               "targetCpu": 70,
               "targetMemory": 80
             },
+            "confirm": true,
             "id": "svc_8kq2x7ad",
             "op": "setAutoscale"
           }
@@ -7481,6 +8052,40 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Databases"
+        ]
+      },
+      "SetObservabilityOp": {
+        "type": "object",
+        "title": "Set observability",
+        "description": "Turn observability (analytics, request logs, firewall and WAF history, usage history) on or off for the whole installation. The installation's admin. Off stops storing and showing history and frees its memory; what was stored is kept for when it's back on. Live logs, current usage, deploys and the firewall keep working.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "enabled"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setObservability"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "enabled": true,
+          "op": "setObservability"
+        },
+        "examples": [
+          {
+            "enabled": true,
+            "op": "setObservability"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Observability"
         ]
       },
       "SetProjectIsolationOp": {
