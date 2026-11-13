@@ -7,12 +7,16 @@ description: Run more replicas, set resources and choose where services run.
 
 Set how many <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term> of a service run, from the dashboard or through [MCP](/docs/mcp). Scaling takes effect without a redeploy.
 
+There's no fixed maximum: run as many replicas as your servers have room for. If you ask for more than fits, Pyo still accepts it and tells you how much CPU and memory they need against what's free. The replicas that don't fit show as **Waiting for room** and start once there's space, for example after you add a server.
+
+A very large change asks you to confirm first: one to 20 or more replicas that's over 10 times what the service had, or over twice what your servers have room for.
+
 ## Autoscaling
 
 Pyo can choose the number of replicas for you, between a minimum and a maximum, based on CPU use and, optionally, memory use. Open a service, choose **Scale**, turn on **Autoscale** and set:
 
 - **Minimum:** the fewest replicas it runs, even when idle.
-- **Maximum:** the most it can run, up to 50.
+- **Maximum:** the most it can run. Pyo tells you if your servers don't have room for that many.
 - **CPU target:** the average use to aim for, as a percentage of each replica's <Term tip="The CPU Pyo reserves for each replica. You set it under Resources, below.">CPU request</Term>.
 - **Memory target:** optional. Turn on **Also scale on memory** to aim for a memory use too, as a percentage of each replica's memory request. When both are on, whichever needs more replicas wins.
 
