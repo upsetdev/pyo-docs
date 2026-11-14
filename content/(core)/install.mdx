@@ -8,8 +8,7 @@ description: Run Pyo on a laptop, VPS, dedicated server or homelab.
 
 - **System:** Linux on <Term tip="The 64-bit processor type of most servers and PCs, also called amd64.">x86-64</Term>, with root or `sudo` access.
 - **Resources:** at least 2 CPU cores, 2 GB of memory and 40 GB of disk. See [Memory](#memory) for how much to choose.
-- **Ports:** 8000 and 5005 free, plus 80, 443 and 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services.
-- **Remote access:** [Tailscale](/docs/tailscale) on the machine, with **MagicDNS** and **HTTPS Certificates** turned on in the Tailscale admin console, under **DNS**. Without it, Pyo works only at `http://localhost:8000`, on the machine itself.
+- **Ports:** 8000 and 5005 free, plus 80, 443 and 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services and Pyo's dashboard.
 
 <Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificates need a machine that's reachable from the internet. On a private network, like most laptops, free domains get a <Term tip="A certificate Pyo makes itself. The connection is still encrypted, but browsers show a warning because no public authority vouches for it.">self-signed certificate</Term> instead.
 
@@ -41,12 +40,7 @@ It asks for `sudo` if it needs root. It installs k3s if it isn't there yet, then
 
 It installs the k3s version this release of Pyo was tested with, and checks k3s's checksums before running anything. See [k3s](/docs/system-reference#k3s) for the version and how to use another.
 
-When it finishes, the installer prints where Pyo is:
-
-- `https://<machine>.<tailnet>.ts.net:8443`, from any device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>, with the registry on `<machine>.<tailnet>.ts.net:5443`. See [Reaching Pyo over HTTPS](/docs/tailscale#reaching-pyo-over-https).
-- `http://localhost:8000`, on the machine itself.
-
-Without Tailscale, it prints only the second address, and how to turn on remote access. To turn it on, set up Tailscale and run the install command again.
+When it finishes, the installer prints where Pyo is. See [Where Pyo is](#where-pyo-is).
 
 It also prints a one-time login: the email `admin@pyo.local` and a password. Open the dashboard, sign in, and choose your own email and password. The printed login stops working once you do.
 
@@ -57,6 +51,20 @@ If you lose the printed password before signing in, read it back on the server:
 ```bash
 sudo k3s kubectl -n pyo-system get secret pyo-admin -o jsonpath='{.data.password}' | base64 -d
 ```
+
+## Where Pyo is
+
+One server needs no Tailscale. Pyo is at:
+
+| Address | From |
+| --- | --- |
+| `https://pyo.<public-ip>.nip.io` | Anywhere, with a Let's Encrypt certificate. It takes a minute or two after the install. |
+| `http://<private-ip>:8000` | Your own network, like a home or office LAN. |
+| `http://localhost:8000` | The machine itself. |
+
+Pyo answers port 8000 only from the machine itself, private networks and your tailnet. Anything else is turned away, whatever it sends. Over plain HTTP, sign in with your password or a one-time code. [Passkeys](/docs/passkeys) need HTTPS.
+
+Once you add a second server or another cluster, set up [Tailscale](/docs/tailscale). Pyo is then also at `https://pyo.<tailnet>.ts.net`, and you can close the public dashboard.
 
 ## Install a particular release
 

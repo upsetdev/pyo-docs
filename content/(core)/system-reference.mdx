@@ -53,10 +53,8 @@ Pyo sets these when it's installed, so you'll rarely need to touch them.
 | `PYO_LOCAL_URL` | `http://127.0.0.1:8000` | How the install command for **This machine** reaches Pyo, and where it downloads its script. |
 | `PYO_SCRIPTS_URL` | Pyo's own address | Where the commands for connecting other servers download their scripts. When not set, they download from Pyo itself, at the address the command gives the server, like your tailnet or public URL. Without one, they use `https://pyo.dev`. **This machine** always downloads from Pyo on it. |
 | `PYO_AGENT_SELF_UPDATE` | `true` | Lets agents update their own limits when Pyo is updated, on clusters connected while it's on. Set `false` to update them yourself. The cluster's page then shows **Update needed** with the command to run on its server. See [Securing Pyo](/docs/securing-pyo#what-to-keep-in-mind). |
-| `PYO_REGISTRY_PUSH` | This machine's Tailscale address, port 5005 | Where servers and builders on other machines reach Pyo's registry, with a login. Not set without Tailscale. |
 | `PYO_REGISTRY_PULL` | `127.0.0.1:5005` | The registry address servers pull images from. |
 | `PYO_REGISTRY` | `pyo-registry.pyo-system.svc.cluster.local:5000` | The registry itself, which only Pyo reaches. |
-| `PYO_TAILNET_NAME` | Not set | This machine's tailnet name. With it, Pyo is at `https://<name>:8443`, its registry at `<name>:5443`, and sign-in cookies are HTTPS-only. Without it, Pyo is only at `http://localhost:8000`. |
 | `PYO_BACKUP_STORE_URL` | Not set | The backup store on this cluster. |
 | `PYO_BACKUP_STORE_ADMIN_URL` | Not set | The backup store's admin API, where Pyo sets it up and makes each team's bucket and key. |
 | `PYO_BACKUP_STORE_ADMIN_TOKEN` | Not set | The token for the backup store's admin API. |
@@ -171,7 +169,8 @@ Pyo also relies on these, outside that namespace:
 | k3s | The host | The Kubernetes distribution everything runs on. |
 | Gateway controller (Envoy Gateway) | `pyo-gateway` | Sets up the gateway's proxies, and keeps your sites' certificates. See [Pyo Gateway](/docs/gateway). |
 | Gateway proxy (Envoy) | `pyo-gateway` | One on each server, except build-only servers. Takes traffic on ports 80 and 443, and public TCP and UDP ports, and routes it to your services. Published on the servers only while the cluster [accepts public traffic](/docs/clusters#public-traffic). |
-| `pyo-tailnet` Service | `pyo-gateway` | On the machine Pyo runs on. Takes connections to its tailnet address on ports 8443 and 5443 straight to the gateway, so the gateway sees each device's tailnet address. Written by the machine's daily `pyo-tailnet-cert` timer. |
+| `pyo-tailnet` | `pyo-system` | One on each server that runs a gateway proxy, once [Tailscale](/docs/tailscale) is set up. Hosts Pyo's names on the tailnet and keeps their certificates. |
+| `pyo-forward` | `pyo-system` | On the machine Pyo runs on. Answers port 8000 from the machine itself, private networks and the tailnet, and the registry's port 5006 from the tailnet only. |
 | Gateway API | The cluster | The standard routing objects Pyo Gateway reads. k3s 1.37 and later include it. On older k3s, Pyo installs it, and k3s takes it over when you upgrade to 1.37. It stays if you remove Pyo. |
 | `pyo-waf` | `pyo-gateway` | The [web application firewall](/docs/waf), only while a service on the cluster has it on. |
 | cert-manager | `cert-manager` | Issues HTTPS certificates. A certificate's Secret is deleted with it. |

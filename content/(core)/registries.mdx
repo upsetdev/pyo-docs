@@ -15,7 +15,7 @@ If you remove a login, services with private images from that registry can't red
 
 ## Push your own images
 
-You can push images you build yourself to Pyo's registry, from a device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>. It's served over HTTPS at `<machine>.<tailnet>.ts.net:5443`, so there's no insecure-registry setting to change. This needs Pyo's machine on Tailscale with HTTPS. See [Reaching Pyo over HTTPS](/docs/tailscale#reaching-pyo-over-https).
+You can push images you build yourself to Pyo's registry, from a device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>. It's served over HTTPS at `registry.<tailnet>.ts.net`, so there's no insecure-registry setting to change. This needs [Tailscale](/docs/tailscale) set up in Pyo. The registry is never on a public address.
 
 Team owners and admins can set this up:
 
@@ -25,9 +25,9 @@ Team owners and admins can set this up:
 4. Log in, tag and push with the commands Pyo shows you:
 
 ```bash
-echo <token> | docker login <machine>.<tailnet>.ts.net:5443 -u <username> --password-stdin
-docker tag <image> <machine>.<tailnet>.ts.net:5443/<team>/<project>/<service>:<tag>
-docker push <machine>.<tailnet>.ts.net:5443/<team>/<project>/<service>:<tag>
+echo <token> | docker login registry.<tailnet>.ts.net -u <username> --password-stdin
+docker tag <image> registry.<tailnet>.ts.net/<team>/<project>/<service>:<tag>
+docker push registry.<tailnet>.ts.net/<team>/<project>/<service>:<tag>
 ```
 
 Then deploy the service with that image. A token only works for your own team's images, and only pushes to a project and service that exist.

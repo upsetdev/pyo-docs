@@ -112,7 +112,7 @@ curl -fsSL https://pyo.dev/install.sh | bash -s -- --uninstall
 
 It lists what it will remove, and asks you to type `yes`. It removes:
 
-- Pyo's timers and scripts: `pyo-connect`, `pyo-tailnet-cert`, `/usr/local/lib/pyo` and `/etc/pyo`.
+- Pyo's timers and scripts: `pyo-connect`, `pyo-tailnet`, `/usr/local/lib/pyo` and `/etc/pyo`.
 - k3s, with Pyo and all your services, volumes and databases in it, through k3s's own `k3s-uninstall.sh`. Before that, it moves the files of Pyo's own database and registry, your volumes and your databases to `/var/lib/pyo-kept/<time>/storage`.
 - Pyo's AppArmor profile, if it installed one, and the firewall rules it added (`Pyo ingress` and `k3s over Tailscale`).
 

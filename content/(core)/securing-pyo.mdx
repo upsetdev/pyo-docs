@@ -7,9 +7,9 @@ Pyo is safe to try on a private network as it is. If your server is on the inter
 
 ## 1. Take the dashboard off the public internet
 
-Pyo already does most of this for you. Its dashboard is at `https://<machine>.<tailnet>.ts.net:8443`, and only addresses on your [Tailscale](/docs/tailscale#reaching-pyo-over-https) network get in. Plain HTTP on port 8000 only listens on the machine itself and its Tailscale address, never its public one.
+A single server starts with its dashboard at `https://pyo.<public-ip>.nip.io`, so you can reach it without Tailscale. Plain HTTP on port 8000 only answers the machine itself, private networks and your tailnet, never a public address.
 
-Keep it that way, and don't put the dashboard on a public address.
+Once you set up [Tailscale](/docs/tailscale), Pyo is at `https://pyo.<tailnet>.ts.net` too. Then close the public dashboard on the **Tailscale** card under **Integrations**. See [Closing the public dashboard](/docs/tailscale#closing-the-public-dashboard).
 
 ## 2. Close the ports you don't need
 
@@ -17,10 +17,10 @@ Only ports 80 and 443 need to be open to the world, for your services.
 
 | Port | What it is | Who should reach it |
 | --- | --- | --- |
-| 80, 443 | Your services | Everyone |
-| 8000 | Pyo's dashboard and API, over plain HTTP. It only listens on the machine itself and its Tailscale address. | You and your agents, on your tailnet |
-| 5005 | Pyo's registry for your servers and builders, over plain HTTP. It only listens on the machine itself and its Tailscale address, and on the Tailscale address every request needs a login. | Your servers, on your tailnet |
-| 8443, 5443, 3443 | Pyo over HTTPS: the dashboard, the registry, and object storage. Pyo turns away anything but tailnet addresses and the cluster's own servers. | You, on your tailnet |
+| 80, 443 | Your services, and Pyo's dashboard at `pyo.<public-ip>.nip.io` until you close it | Everyone |
+| 8000 | Pyo's dashboard and API, over plain HTTP. It answers only the machine itself, private networks and your tailnet. | You and your agents |
+| 5005 | Pyo's registry for this machine, over plain HTTP. It only listens on the machine itself. | Nobody else |
+| 5006 | Pyo's registry for your other servers and builders. It answers only your tailnet, and every request needs a login. | Your servers, on your tailnet |
 | 6443 | The Kubernetes API | Only your servers |
 | 22 | SSH | Only you |
 
@@ -32,7 +32,7 @@ Then check from a different network. These should time out:
 
 ```bash
 curl -m 5 http://your-public-ip:8000
-curl -m 5 -k https://your-public-ip:8443
+curl -m 5 http://your-public-ip:5006
 ```
 
 The provider's firewall guards the server itself. To choose who can reach your services, by address, range or country, use Pyo's [firewall](/docs/firewall). To inspect website requests for attacks, add the [web application firewall](/docs/waf).
@@ -58,7 +58,7 @@ In your provider's firewall, block all inbound traffic to ports 80 and 443, then
 | Port | Allow from |
 | --- | --- |
 | 80, 443 | Your CDN's IP ranges only |
-| 8000, 5005, 8443, 5443, 3443 | Your tailnet only |
+| 8000, 5006 | Your tailnet only |
 | 6443 | Your servers only |
 | 22 | You only |
 
