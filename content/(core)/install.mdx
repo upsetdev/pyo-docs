@@ -58,7 +58,7 @@ One server needs no Tailscale. Pyo is at:
 
 | Address | From |
 | --- | --- |
-| `https://pyo.<public-ip>.nip.io` | Anywhere, with a Let's Encrypt certificate. It takes a minute or two after the install. |
+| `https://pyo.<public-ip>.nip.io` | Anywhere, with a Let's Encrypt certificate. It takes a minute or two after the install. Not behind NAT, where ports 80 and 443 can't reach the server. |
 | `http://<private-ip>:8000` | Your own network, like a home or office LAN. |
 | `http://localhost:8000` | The machine itself. |
 
