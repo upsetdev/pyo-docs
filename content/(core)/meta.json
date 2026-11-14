@@ -43,6 +43,7 @@
     "backups",
     "---Integrations---",
     "github",
+    "gitlab",
     "registries",
     "tailscale",
     "email",

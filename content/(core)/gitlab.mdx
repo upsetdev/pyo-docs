@@ -1,0 +1,50 @@
+---
+title: Connecting GitLab
+description: Deploy from gitlab.com or your own GitLab, with deploys on every push.
+---
+
+A team connects GitLab with an access token. It works with gitlab.com and with your own GitLab. A team can connect several, such as gitlab.com and its own GitLab.
+
+## Create a token
+
+A **group access token** is best. It belongs to the group, not to one person, so it keeps working when people leave.
+
+1. In GitLab, open the group, then **Settings → Access tokens**.
+2. Choose **Add new token** and give it a name, like `Pyo`.
+3. Set **Role** to **Maintainer**. Pyo needs it to add webhooks and to make deploy tokens for builds.
+4. Under **Scopes**, select **api**. Pyo needs nothing else.
+5. Set an expiry date, then choose **Create group access token** and copy it.
+
+A project access token works the same way for a single project. On gitlab.com, group and project access tokens need a paid plan. On the Free plan, use a <Term tip="A token that acts as one GitLab user.">personal access token</Term> with the **api** scope, ideally of a separate user that's a Maintainer of the projects.
+
+## Connect a team
+
+Open **Integrations** in the sidebar's **Team** section. Under **Git providers**, choose **Connect** next to **GitLab**. Enter the GitLab URL (`https://gitlab.com` or your own) and the token. Pyo checks the token before saving and seals it with the team's key. Team owners and admins can do this.
+
+Each connection has these buttons:
+
+- **Test** says what the token can do, and what's missing: the **api** scope, the Maintainer role, or an expiry date coming soon.
+- **Replace** saves a new token, for example before the old one expires.
+- **Remove** disconnects GitLab and removes the webhooks Pyo made. A connection can't be removed while a service deploys from it.
+
+## Deploy
+
+In **New deploy**, pick a project under **Your GitLab projects**, then a branch. Pyo lists the projects the token has the Maintainer role on.
+
+Builds never get the connection's token. When a builder starts a build, Pyo makes a GitLab <Term tip="A token that can only read one repository.">deploy token</Term> for that repository. It can only read the code, expires within the hour, and Pyo revokes it when the build ends. It's never written to the build's logs or image.
+
+Each deploy shows on its commit in GitLab as a **Pyo** status: pending, running, then passed, failed or canceled. The status links to the deployment.
+
+## Deploys on push
+
+Pyo adds a webhook to each project its services deploy from, for push events. The webhook sends a secret that Pyo checks, so nobody else can trigger deploys. Pyo removes the webhook when no service deploys from the project any more.
+
+Each push to a service's branch deploys it. You can turn that off per service under **Settings → Git**. A push doesn't deploy a service that's rolled back or pinned to a commit.
+
+GitLab has to reach Pyo for webhooks. When it can't, such as gitlab.com and a Pyo only on your tailnet, Pyo checks the branch every minute instead. **Test** says when a project has no webhook.
+
+## Your own GitLab
+
+Pyo calls your GitLab from its own server, and checks the address each time it connects. Pyo never calls its own server or its cluster's network. It calls addresses on a private network, like your LAN or [Tailscale](/docs/tailscale), unless the installation sets [`PYO_ALLOW_PRIVATE_NETWORKS`](/docs/system-reference#installation-settings) to `false`. Use `https://`. Plain `http://` only works on a private network. Pyo doesn't follow redirects, so enter GitLab's final address.
+
+If Pyo is on a private address, GitLab only sends it webhooks when an admin allows it: **Admin → Settings → Network → Outbound requests → Allow requests to the local network from webhooks and integrations**. Without it, Pyo checks branches every minute.
