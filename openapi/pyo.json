@@ -2748,7 +2748,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`repositories`: each with `connectionId`, `provider`, `host`, `fullName`, `name`, `namespace`, `private`, `defaultBranch`, `htmlUrl` and `pushedAt`. `errors`: connections that couldn't be listed, with `connectionId` and `message`.",
+            "description": "`repositories`: each with `connectionId`, `provider`, `host`, `fullName`, `name`, `group`, `private`, `defaultBranch`, `htmlUrl` and `pushedAt`. `errors`: connections that couldn't be listed, with `connectionId` and `message`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3460,72 +3460,6 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Firewall"
-        ]
-      },
-      "AddGitConnectionOp": {
-        "type": "object",
-        "title": "Add git connection",
-        "description": "Connect GitLab (gitlab.com or your own) with an access token.\nTeam owners and admins. Pyo checks the token first: it needs the\n`api` scope, and the Maintainer role on the projects to deploy. The\ntoken is sealed and never shown again. `warning` says what's missing,\nsuch as a token with no Maintainer role yet.\n\nAPI key access: **full**.",
-        "required": [
-          "op",
-          "id",
-          "teamId",
-          "provider",
-          "token"
-        ],
-        "properties": {
-          "op": {
-            "type": "string",
-            "enum": [
-              "addGitConnection"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "description": "A new id you choose: `gitc_` then 4 to 40 lowercase letters, digits, dashes or underscores."
-          },
-          "teamId": {
-            "type": "string"
-          },
-          "provider": {
-            "type": "string",
-            "description": "\"gitlab\"."
-          },
-          "url": {
-            "type": "string",
-            "description": "The GitLab address, like https://gitlab.example.com. https://gitlab.com when omitted."
-          },
-          "token": {
-            "type": "string",
-            "description": "A group, project or personal access token."
-          },
-          "publicUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Where GitLab sends webhooks and where commit statuses link: this Pyo's address. Pyo's own setting when omitted."
-          }
-        },
-        "example": {
-          "id": "gitc_8kq2x7ad",
-          "op": "addGitConnection",
-          "provider": "gitlab",
-          "teamId": "team_8kq2x7ad",
-          "token": "example"
-        },
-        "examples": [
-          {
-            "id": "gitc_8kq2x7ad",
-            "op": "addGitConnection",
-            "provider": "gitlab",
-            "teamId": "team_8kq2x7ad",
-            "token": "example"
-          }
-        ],
-        "x-pyo-access": "full",
-        "x-tags": [
-          "Git providers"
         ]
       },
       "AddVolumeOp": {
@@ -5904,12 +5838,6 @@
             "$ref": "#/components/schemas/RemoveGithubInstallationOp"
           },
           {
-            "$ref": "#/components/schemas/AddGitConnectionOp"
-          },
-          {
-            "$ref": "#/components/schemas/ReplaceGitConnectionTokenOp"
-          },
-          {
             "$ref": "#/components/schemas/TestGitConnectionOp"
           },
           {
@@ -6083,7 +6011,6 @@
           "propertyName": "op",
           "mapping": {
             "addFirewallRule": "#/components/schemas/AddFirewallRuleOp",
-            "addGitConnection": "#/components/schemas/AddGitConnectionOp",
             "addVolume": "#/components/schemas/AddVolumeOp",
             "addWafRule": "#/components/schemas/AddWafRuleOp",
             "attachVolume": "#/components/schemas/AttachVolumeOp",
@@ -6130,7 +6057,6 @@
             "reorderFirewallRules": "#/components/schemas/ReorderFirewallRulesOp",
             "reorderWafRules": "#/components/schemas/ReorderWafRulesOp",
             "replaceCertificate": "#/components/schemas/ReplaceCertificateOp",
-            "replaceGitConnectionToken": "#/components/schemas/ReplaceGitConnectionTokenOp",
             "resendInvite": "#/components/schemas/ResendInviteOp",
             "resizeVolume": "#/components/schemas/ResizeVolumeOp",
             "restartService": "#/components/schemas/RestartServiceOp",
@@ -7143,53 +7069,6 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Domains"
-        ]
-      },
-      "ReplaceGitConnectionTokenOp": {
-        "type": "object",
-        "title": "Replace git connection token",
-        "description": "Replace a Git connection's access token. Team owners and admins.\n\nAPI key access: **full**.",
-        "required": [
-          "op",
-          "id",
-          "token"
-        ],
-        "properties": {
-          "op": {
-            "type": "string",
-            "enum": [
-              "replaceGitConnectionToken"
-            ]
-          },
-          "id": {
-            "type": "string"
-          },
-          "token": {
-            "type": "string"
-          },
-          "publicUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "This Pyo's address, for webhooks and links. Pyo's own setting when omitted."
-          }
-        },
-        "example": {
-          "id": "gitc_8kq2x7ad",
-          "op": "replaceGitConnectionToken",
-          "token": "example"
-        },
-        "examples": [
-          {
-            "id": "gitc_8kq2x7ad",
-            "op": "replaceGitConnectionToken",
-            "token": "example"
-          }
-        ],
-        "x-pyo-access": "full",
-        "x-tags": [
-          "Git providers"
         ]
       },
       "ResendInviteOp": {
