@@ -1,0 +1,71 @@
+---
+title: Servers at Hetzner
+description: Let Pyo make servers in your Hetzner Cloud project and join them to a cluster.
+---
+
+Pyo can make servers for you in [Hetzner Cloud](https://www.hetzner.com/cloud). It creates the server, joins it to a cluster over your [tailnet](/docs/tailscale), and deletes it again when you remove it. You pay Hetzner for the servers as usual.
+
+## Before you start
+
+- [Tailscale](/docs/tailscale) is set up in Pyo. Servers at Hetzner join over your tailnet.
+- You're an owner or admin of the team. The Hetzner token belongs to the team, like its clusters, so servers it makes are billed to that team's Hetzner project.
+
+## Make a token
+
+1. Open the [Hetzner Console](https://console.hetzner.cloud) and pick the project Pyo should use. A project of its own keeps Pyo's servers apart from the rest.
+2. Open **Security › API tokens** and choose **Generate API token**.
+3. Name it `pyo` and choose **Read & Write**. Pyo can't make servers with a read-only token.
+4. Copy the token. Hetzner shows it once.
+
+## Connect it
+
+In Pyo, open **Integrations** and paste the token on the **Hetzner** card. Pyo checks it by listing Hetzner's locations before saving it. **Test** lists them again, **Replace** takes a new token and **Remove** forgets it.
+
+With the CLI, `pyo hetzner connect` reads the token from `PYO_HETZNER_TOKEN` or asks for it without showing it.
+
+## Add a server
+
+Open a cluster, choose **Add server**, then **Hetzner**:
+
+1. Name the server and pick its role: it **runs services**, or it **builds only**.
+2. Pick a location and a server type. Pyo reads the types, their specs and their monthly prices from Hetzner as you pick. Prices are before VAT and include the server's IPv4 address. Pyo's servers run x86-64, so Arm types can't be picked.
+3. Optionally paste your SSH public key, to sign in to the server over your tailnet.
+4. Choose **Create**. Pyo shows the monthly price and asks once more.
+
+The page then follows the server: **Creating**, **Booting**, **Joining**, **Ready**. If your tailnet has [Tailnet Lock](https://tailscale.com/kb/1226/tailnet-lock) on, Pyo shows the `tailscale lock sign` command to run on a signing device while the server joins. Pyo waits up to 15 minutes. If the server isn't ready by then, Pyo says why and offers to delete it.
+
+To make a new cluster on Hetzner, choose **Add cluster**, then **Hetzner**. Pyo makes its first server, named `<cluster>-1`, and runs the same setup there that **Add cluster**'s command runs.
+
+From the CLI:
+
+```bash
+pyo server types --location fsn1
+pyo server create --cluster prod --location fsn1 --type cx22
+pyo server create --new-cluster edge --location ash --type cpx21
+```
+
+## Remove a server
+
+Remove it from the server's page, from the **Hetzner** card, or with `pyo server delete <name>`. Pyo shows the monthly cost that stops and asks first. Then it:
+
+1. Moves the server's services to the other servers and takes it out of the cluster, like [removing any server](/docs/servers#maintenance).
+2. Takes it off your tailnet.
+3. Deletes it at Hetzner.
+
+A cluster's first server runs the cluster, so it can be deleted only after the cluster is removed. Removing the Hetzner token leaves the servers running at Hetzner.
+
+## What Pyo does with the token
+
+- The token is encrypted with the team's key in Pyo's database. Only Pyo uses it, and it never goes to a server.
+- Pyo calls only `https://api.hetzner.cloud`, to list locations, server types and prices, and to create and delete servers and a firewall.
+- Each server gets this cloud-init: it runs the same `curl … | bash` join command the dashboard shows, with a fresh Tailscale key that works once and expires in an hour. Pyo's Tailscale OAuth client is never in it. It turns off password sign-in over SSH, and it blocks the server's containers from Hetzner's metadata service, which serves the cloud-init again.
+- Each server carries the labels `pyo=<installation id>` and `pyo-cluster=<cluster id>`. Pyo deletes only servers with its own installation's label, so it never touches the rest of your project.
+- Pyo makes one firewall, `pyo-<installation id>`, and puts every server it makes behind it. It allows ports 80 and 443 from anywhere, and UDP 41641 for Tailscale's direct connections. Everything else is closed. Servers talk to each other over your tailnet.
+- Pyo doesn't add or remove servers on its own, and it doesn't resize them.
+
+## When it doesn't work
+
+- **Server limit.** New Hetzner accounts can make only a few servers. Ask Hetzner to raise it on the **Limits** page of the Console.
+- **Unavailable.** A server type can sell out in a location. Pick another type or location.
+- **The server doesn't join.** If it never shows up on your tailnet, its setup failed. Open the server's console at Hetzner and read `/var/log/pyo-join.log`. Then delete the server in Pyo and try again.
+- **Read-only token.** Make a new token with **Read & Write**.

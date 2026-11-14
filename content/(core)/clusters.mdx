@@ -19,6 +19,8 @@ curl -fsSL https://your-pyo/install/connect.sh | bash -s -- --api <pyo-address-f
 
 Copy the command from the dashboard, which fills in your Pyo's address and these values. The `--api` address is where the new machine reaches Pyo. It can differ from the address you use in your browser. It's Pyo's name on your tailnet, like `https://pyo.tail1234.ts.net`. Connecting a cluster needs [Tailscale](/docs/tailscale) set up in Pyo. The command carries a single-use key that joins the machine to your tailnet. A public address must use `https://`. Plain `http://` works only for a private network or tailnet address. The token is shown once. The script asks for `sudo` when it needs root. The agent connects out to Pyo, so you don't have to open anything on the machine.
 
+Pyo can also make the cluster's first server at [Hetzner](/docs/hetzner).
+
 ## Inside a cluster
 
 Open a cluster from **Clusters**. Its tabs are:
