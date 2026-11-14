@@ -174,7 +174,7 @@ Pyo also relies on these, outside that namespace:
 | `pyo-waf` | `pyo-gateway` | The [web application firewall](/docs/waf), only while a service on the cluster has it on. |
 | cert-manager | `cert-manager` | Issues HTTPS certificates. A certificate's Secret is deleted with it. |
 
-In `pyo-system`, [network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) turn away everything Pyo doesn't need: Pyo's database, ClickHouse, the registry and the backup store's admin API only answer Pyo itself. Your services reach Pyo's dashboard and API, and the backup store's S3 API with a key.
+In `pyo-system`, [network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) turn away everything Pyo doesn't need: Pyo's database, ClickHouse, the registry and the backup store's admin API only answer Pyo itself. Pyo's dashboard and API answer the gateway, Pyo's own parts and the servers, never your services' pods directly: they reach it through its public or tailnet address, like anyone else. Your services reach the backup store's S3 API with a key.
 
 If the gateway fails to install, the cluster's page says so. Its installer's log has the reason:
 
