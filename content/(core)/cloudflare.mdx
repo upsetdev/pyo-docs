@@ -66,6 +66,8 @@ Certificates renew through Cloudflare, so set these in Cloudflare under **SSL/TL
 - **Encryption mode:** Full (strict). Your cluster has a valid certificate.
 - **Always Use HTTPS:** off. Pyo already sends visitors from HTTP to HTTPS, and Let's Encrypt checks your domain over plain HTTP.
 
+To see your visitors' own addresses and let only Cloudflare reach the service, turn on [Behind Cloudflare](/docs/firewall#behind-cloudflare) on the service's **Firewall** tab.
+
 ## Wildcard certificates
 
 Pyo's certificates are for one hostname each. For `*.example.com`, upload [your own certificate](/docs/certificates).
