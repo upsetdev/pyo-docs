@@ -2622,7 +2622,7 @@
         "tags": [
           "GitHub"
         ],
-        "summary": "The file a Git build of a repository would use by default: its Dockerfile,\nelse its Containerfile, in the build context. None: the build is\nzero-config (Railpack).",
+        "summary": "The Dockerfile a Git build of a repository would use by default, in the\nbuild context. None: the build is zero-config (Railpack).",
         "description": "API key access: **read**.",
         "operationId": "getGithubBuildFile",
         "parameters": [
@@ -2665,7 +2665,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`file`: \"Dockerfile\" or \"Containerfile\" (a Dockerfile wins when there are both), or null when there's neither.",
+            "description": "`file`: the Dockerfile Pyo would use, or null when there's none.",
             "content": {
               "application/json": {
                 "schema": {
