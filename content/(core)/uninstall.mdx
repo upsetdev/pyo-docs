@@ -39,6 +39,14 @@ sudo ufw status numbered
 sudo ufw delete <number>
 ```
 
+To remove Pyo's [memory settings for k3s](/docs/system-reference#k3s):
+
+```bash
+sudo systemctl disable --now pyo-zram.service
+sudo rm -f /etc/systemd/system/pyo-zram.service /etc/systemd/system/k3s-agent.service.d/pyo-memory.conf /usr/local/lib/pyo-memory.sh
+sudo systemctl daemon-reload
+```
+
 If the first line of `/etc/apparmor.d/cri-containerd.apparmor.d` is `# Managed by Pyo`, it's Pyo's AppArmor profile, which k3s no longer needs:
 
 ```bash
@@ -55,8 +63,10 @@ This removes everything Pyo put into a cluster and leaves the cluster itself, wi
 3. On the cluster's first server, run:
 
    ```bash
-   curl -fsSL https://pyo.dev/connect.sh | sudo bash -s -- --uninstall
+   curl -fsSL https://your-pyo/install/connect.sh | sudo bash -s -- --uninstall
    ```
+
+   Put your Pyo's address in place of `https://your-pyo`, as in the cluster's commands in the dashboard.
 
 It lists what it will remove, and asks you to type `yes`. It stops the agent first, so nothing is put back, then removes:
 
