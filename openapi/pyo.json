@@ -2622,7 +2622,7 @@
         "tags": [
           "GitHub"
         ],
-        "summary": "The Dockerfile a Git build of a repository would use by default, in the\nbuild context. None: the build is zero-config (Railpack).",
+        "summary": "The file a Git build of a repository would use by default: its Dockerfile,\nelse its Containerfile, in the build context. None: the build is\nzero-config (Railpack).",
         "description": "API key access: **read**.",
         "operationId": "getGithubBuildFile",
         "parameters": [
@@ -2665,7 +2665,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`file`: the Dockerfile Pyo would use, or null when there's none.",
+            "description": "`file`: \"Dockerfile\" or \"Containerfile\" (a Dockerfile wins when there are both), or null when there's neither.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2807,7 +2807,7 @@
           "Projects"
         ],
         "summary": "Preview an import from another platform",
-        "description": "Reads a Coolify or Dokploy installation through its API, with a token\nyou give, and shows what importing would create: per project there, its\nservices (source, ports, domains, variable names, volumes), Compose\nstacks and databases, each with what doesn't carry over. Nothing is\ncreated and the token isn't kept. Things an earlier import made are\nmarked (`existingId`). Owners and admins.\n\nAPI key access: **full**.",
+        "description": "Reads a Coolify or Dokploy installation, or a Railway or Vercel\naccount, through its API with a token you give, and shows what importing would create: per project there, its\nservices (source, ports, domains, variable names, volumes), Compose\nstacks and databases, each with what doesn't carry over. Nothing is\ncreated and the token isn't kept. Things an earlier import made are\nmarked (`existingId`). Owners and admins.\n\nAPI key access: **full**.",
         "operationId": "previewPlatformImport",
         "requestBody": {
           "content": {
@@ -3288,7 +3288,6 @@
         "required": [
           "teamId",
           "platform",
-          "url",
           "token"
         ],
         "properties": {
@@ -3304,6 +3303,13 @@
           "token": {
             "type": "string",
             "description": "Read again for this request, never stored."
+          },
+          "team": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Vercel only: the team to read (its id or slug)."
           },
           "clusterId": {
             "type": [
@@ -4918,11 +4924,11 @@
         "properties": {
           "platform": {
             "type": "string",
-            "description": "\"coolify\" or \"dokploy\"."
+            "description": "\"coolify\", \"dokploy\", \"railway\" or \"vercel\"."
           },
           "host": {
             "type": "string",
-            "description": "The platform's host, as given."
+            "description": "The platform's host, as given (railway.com or vercel.com for those)."
           },
           "projects": {
             "type": "array",
@@ -6065,7 +6071,9 @@
         "type": "string",
         "enum": [
           "coolify",
-          "dokploy"
+          "dokploy",
+          "railway",
+          "vercel"
         ]
       },
       "Preview": {
@@ -6092,7 +6100,6 @@
         "required": [
           "teamId",
           "platform",
-          "url",
           "token"
         ],
         "properties": {
@@ -6101,15 +6108,22 @@
           },
           "platform": {
             "$ref": "#/components/schemas/Platform",
-            "description": "\"coolify\" or \"dokploy\"."
+            "description": "\"coolify\", \"dokploy\", \"railway\" or \"vercel\"."
           },
           "url": {
             "type": "string",
-            "description": "The platform's address, e.g. https://coolify.example.com."
+            "description": "The platform's address, e.g. https://coolify.example.com. Empty for Railway and Vercel: Pyo reads them only from their own API."
           },
           "token": {
             "type": "string",
-            "description": "An API token of the platform's: Coolify's with read and read:sensitive, or a Dokploy API key. Used for this request only, never stored."
+            "description": "An API token of the platform's: Coolify's with read and read:sensitive, a Dokploy API key, a Railway account, workspace or project token, or a Vercel token. Used for this request only, never stored."
+          },
+          "team": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Vercel only: the team to read (its id or slug). The token's own scope when omitted."
           }
         }
       },
