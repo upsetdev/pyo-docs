@@ -41,7 +41,7 @@ Pyo adds a webhook to each project its services deploy from, for push events. Th
 
 Each push to a service's branch deploys it. You can turn that off per service under **Settings → Git**. A push doesn't deploy a service that's rolled back or pinned to a commit.
 
-GitLab has to reach Pyo for webhooks. When it can't, such as gitlab.com and a Pyo only on your tailnet, Pyo checks the branch every minute instead. **Test** says when a project has no webhook.
+GitLab has to reach Pyo for webhooks. gitlab.com, or any GitLab on the internet, gets Pyo's public address. A GitLab on a private network or your tailnet gets Pyo's tailnet address first. When Pyo has no address GitLab can reach, such as gitlab.com and a Pyo only on your tailnet, Pyo checks the branch every minute instead. **Test** says when there's no webhook.
 
 ## Your own GitLab
 
