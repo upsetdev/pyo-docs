@@ -1,6 +1,6 @@
 ---
 title: Firewall
-description: Choose who can reach a service, by address, range or country.
+description: Choose who can reach a service, by address, range, country or CDN.
 ---
 
 Pyo's firewall decides who can reach a service over public traffic, and how often. You set it per service on the service's **Firewall** tab, under **Access**. With no rules, everyone gets in. Developers can change the rules. The [web application firewall](/docs/waf) has its own section on the same tab.
@@ -12,9 +12,10 @@ Choose **Add rule**, then say which clients the rule matches:
 - **IP address**, like `203.0.113.7`
 - **IP range**, IPv4 or IPv6, like `198.51.100.0/24`
 - **Country**
+- **Network**, a [preset](#presets) like **Cloudflare** or **Tailnet**
 - **Any client**
 
-For the first three, pick **is in** or **is not in**, and list up to 50 values. Then pick the action:
+For the first four, pick **is in** or **is not in**, and list up to 50 values. Then pick the action:
 
 - **Block** turns the client away. Websites answer with a plain "access denied" page, status `403`.
 - **Allow** lets the client in.
@@ -34,6 +35,40 @@ To let in only some clients, allow them, then block everyone else:
 Or in one rule: **Block** if client IP is not in `203.0.113.0/24`.
 
 A TCP port's own **IP filter** is checked before the service's rules. It can only narrow them.
+
+## Presets
+
+A preset is a named list of address ranges that Pyo keeps up to date. Use it in a rule like any address or range.
+
+| Preset | What it holds |
+| --- | --- |
+| **Cloudflare** | Cloudflare's edge, from [cloudflare.com/ips](https://www.cloudflare.com/ips/) |
+| **Fastly** | Fastly's edge, from its [public IP list](https://api.fastly.com/public-ip-list) |
+| **bunny.net** | bunny.net's edge servers, from its [edge server list](https://api.bunny.net/system/edgeserverlist) for IPv4 and IPv6 |
+| **Amazon CloudFront** | The addresses CloudFront reaches your servers from (`CLOUDFRONT_ORIGIN_FACING` in [AWS's IP ranges](https://ip-ranges.amazonaws.com/ip-ranges.json)) |
+| **Tailnet** | Tailscale's addresses, `100.64.0.0/10` and `fd7a:115c:a1e0::/48` |
+| **Private networks** | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` and `fc00::/7` |
+
+Pyo fetches the CDN lists from each provider once a day. If a fetch fails, it keeps the last list it got. Pyo also ships with a copy of each list, so presets work on a server without internet access. Rules keep the preset's name, so they always use the current list.
+
+To let only a CDN reach a service: **Block** if client IP is not in **Cloudflare**. To see who the visitors are behind it, turn on [Behind Cloudflare](#behind-cloudflare) instead.
+
+A CDN's list can hold hundreds of ranges, so rate limits can't use one. **Tailnet** and **Private networks** work in rate limits, and count as 2 and 4 of the 16 values. A service's rules can list up to 8,192 ranges in all, with presets counted by their ranges.
+
+## Behind Cloudflare
+
+Turn on **Behind Cloudflare** on the service's **Firewall** tab when your service's domains are proxied by Cloudflare (the orange cloud). Then:
+
+- Only Cloudflare can reach the service's websites. The rule list shows this first, as **Added by Behind Cloudflare**.
+- The firewall, rate limits and analytics see the real visitor, the address Cloudflare sends in `CF-Connecting-IP`. Country rules use the visitor's country.
+
+Pyo Gateway only reads the visitor's address from a connection that comes from Cloudflare's current ranges. It takes the address Cloudflare adds to `X-Forwarded-For`, which is the same one it sends in `CF-Connecting-IP`. A client that connects directly is turned away, whatever headers it sends.
+
+Set Cloudflare's SSL/TLS mode to **Full (strict)**. Over plain HTTP, Pyo Gateway only checks that the request came from Cloudflare. Your other rules and rate limits apply over HTTPS. Behind Cloudflare applies to websites. It doesn't change TCP and UDP ports.
+
+<Callout type="info">
+  Let's Encrypt can always reach `/.well-known/acme-challenge/`, whatever the firewall says, so certificates keep renewing. This holds for every service, behind Cloudflare or not.
+</Callout>
 
 ## Rate limits
 
@@ -60,7 +95,7 @@ The firewall doesn't cover **Port on every server** ports, or your servers' own 
 Pyo finds a visitor's country with an IP-location database (GeoLite2 Country) built into the gateway. The gateway doesn't download anything for it.
 
 <Callout type="warn">
-  Websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They never use the `X-Forwarded-For` header, because a client could put any address there. So behind a tunnel or a CDN, every visitor looks like the tunnel or the CDN, and country rules see its location.
+  Websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They don't trust the `X-Forwarded-For` header, because a client could put any address there. So behind a tunnel or a CDN, every visitor looks like the tunnel or the CDN, and country rules see its location. Behind Cloudflare, turn on [Behind Cloudflare](#behind-cloudflare) to see the visitor.
 </Callout>
 
 ## See what was turned away
@@ -68,6 +103,7 @@ Pyo finds a visitor's country with an IP-location database (GeoLite2 Country) bu
 Under **Analytics**, the service's **Firewall** tab shows the requests and TCP connections that were turned away. You see them over time, with the top rules, countries, addresses and paths. The latest ones show the rule that matched:
 
 - the rule's name
+- **Behind Cloudflare**, if the request didn't come from Cloudflare
 - **A removed rule**, if the rule has since been deleted
 - **A firewall rule** or **Over a rate limit**, if no rule matches the client now
 
@@ -79,7 +115,7 @@ If the dashboard runs on the service's cluster and the change would block your o
 
 ## From the API and MCP
 
-Change the firewall with the [addFirewallRule](/docs/api/reference/firewall/add-firewall-rule), [updateFirewallRule](/docs/api/reference/firewall/update-firewall-rule), [reorderFirewallRules](/docs/api/reference/firewall/reorder-firewall-rules) and [removeFirewallRule](/docs/api/reference/firewall/remove-firewall-rule) operations. A rule's `action` is `allow`, `block` or `rateLimit`. Its `operator` is `in` or `notIn`. Its `sources` are the addresses, ranges or country codes. Leave `sources` empty to match any client. A rate limit adds `requests` and `per` (`second` or `minute`). AI assistants use the `add_firewall_rule`, `update_firewall_rule`, `reorder_firewall_rules`, `remove_firewall_rule` and `get_firewall_blocked` [tools](/docs/mcp/tools#firewall).
+Change the firewall with the [addFirewallRule](/docs/api/reference/firewall/add-firewall-rule), [updateFirewallRule](/docs/api/reference/firewall/update-firewall-rule), [reorderFirewallRules](/docs/api/reference/firewall/reorder-firewall-rules) and [removeFirewallRule](/docs/api/reference/firewall/remove-firewall-rule) operations. A rule's `action` is `allow`, `block` or `rateLimit`. Its `operator` is `in` or `notIn`. Its `sources` are the addresses, ranges or country codes, or presets: `cloudflare`, `fastly`, `bunny`, `cloudfront`, `tailnet` and `private`. Leave `sources` empty to match any client. A rate limit adds `requests` and `per` (`second` or `minute`). Turn Behind Cloudflare on or off with [setServiceBehindCdn](/docs/api/reference/firewall/set-service-behind-cdn) and `cdn` set to `cloudflare` or `null`. Services show it as `behindCdn`. AI assistants use the `add_firewall_rule`, `update_firewall_rule`, `reorder_firewall_rules`, `remove_firewall_rule`, `set_service_behind_cdn` and `get_firewall_blocked` [tools](/docs/mcp/tools#firewall). From the CLI, use [`pyo firewall`](/docs/cli/commands#pyo-firewall).
 
 ## Web application firewall
 

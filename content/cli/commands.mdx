@@ -702,6 +702,157 @@ Options:
   -V, --version            Print version
 ```
 
+## `pyo firewall`
+
+Who may reach the service: its firewall rules, and a CDN in front
+
+```text
+Who may reach the service: its firewall rules, and a CDN in front
+
+Usage: pyo firewall [OPTIONS] <COMMAND>
+
+Commands:
+  list    The rules, in the order they're checked
+  add     Add a rule at the end
+  remove  Remove a rule, by its number in the list or its id
+  behind  Put the service's websites behind a CDN, or "off"
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+### `pyo firewall list`
+
+The rules, in the order they're checked
+
+```text
+The rules, in the order they're checked
+
+Usage: pyo firewall list [OPTIONS]
+
+Options:
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+### `pyo firewall add`
+
+Add a rule at the end.
+
+```text
+Add a rule at the end.
+
+Values: IP addresses and ranges, two-letter country codes, or presets: cloudflare, fastly, bunny, cloudfront (a CDN's current ranges), tailnet, private. None: any client.
+
+Usage: pyo firewall add [OPTIONS] <ACTION> [VALUES]...
+
+Arguments:
+  <ACTION>
+          allow, block or rate-limit
+
+  [VALUES]...
+          The values to match
+
+Options:
+      --not
+          Match clients not in the values instead
+
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --requests <REQUESTS>
+          A rate limit's requests from each client address
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_TOKEN]
+
+      --per <PER>
+          A rate limit's window: second or minute
+          
+          [possible values: second, minute]
+
+      --name <NAME>
+          A name for it
+
+  -s, --service <SERVICE>
+          The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+```
+
+### `pyo firewall remove`
+
+Remove a rule, by its number in the list or its id
+
+```text
+Remove a rule, by its number in the list or its id
+
+Usage: pyo firewall remove [OPTIONS] <RULE>
+
+Arguments:
+  <RULE>  
+
+Options:
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+  -y, --yes                Don't ask to confirm
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+### `pyo firewall behind`
+
+Put the service's websites behind a CDN, or "off".
+
+```text
+Put the service's websites behind a CDN, or "off".
+
+Behind Cloudflare, only Cloudflare reaches them, and rules, rate limits and analytics see the visitor it forwards.
+
+Usage: pyo firewall behind [OPTIONS] <CDN>
+
+Arguments:
+  <CDN>
+          [possible values: cloudflare, off]
+
+Options:
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_TOKEN]
+
+  -s, --service <SERVICE>
+          The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+```
+
 ## `pyo import`
 
 Bring services over from Coolify or Dokploy: see what they become, then import them. Owners and admins

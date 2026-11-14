@@ -3213,7 +3213,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Up to 50 IP addresses and ranges (\"198.51.100.0/24\", \"2001:db8::/32\") or two-letter country codes (\"DE\"), but not both. None (with \"in\") matches any client. Countries apply to websites only, since TCP and UDP ports never see a client's country. Rate limits take no countries, and only one value with \"notIn\"."
+            "description": "Up to 50 IP addresses and ranges (\"198.51.100.0/24\", \"2001:db8::/32\") or two-letter country codes (\"DE\"), but not both. Presets go with addresses: a CDN's current ranges (\"cloudflare\", \"fastly\", \"bunny\", \"cloudfront\") or your networks (\"tailnet\" for Tailscale's addresses, \"private\" for private networks). None (with \"in\") matches any client. Countries apply to websites only, since TCP and UDP ports never see a client's country. Rate limits take no countries and no CDN, and only one range with \"notIn\"."
           },
           "requests": {
             "type": [
@@ -5747,6 +5747,9 @@
             "$ref": "#/components/schemas/SetServiceWafOp"
           },
           {
+            "$ref": "#/components/schemas/SetServiceBehindCdnOp"
+          },
+          {
             "$ref": "#/components/schemas/AddWafRuleOp"
           },
           {
@@ -6021,6 +6024,7 @@
             "setServerRegularServices": "#/components/schemas/SetServerRegularServicesOp",
             "setServerSchedulable": "#/components/schemas/SetServerSchedulableOp",
             "setServerTags": "#/components/schemas/SetServerTagsOp",
+            "setServiceBehindCdn": "#/components/schemas/SetServiceBehindCdnOp",
             "setServiceWaf": "#/components/schemas/SetServiceWafOp",
             "setTeamBackupSelection": "#/components/schemas/SetTeamBackupSelectionOp",
             "stopService": "#/components/schemas/StopServiceOp",
@@ -8635,6 +8639,47 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Servers"
+        ]
+      },
+      "SetServiceBehindCdnOp": {
+        "type": "object",
+        "title": "Set service behind cdn",
+        "description": "Put a service's websites behind a CDN, or take them out of it. Behind Cloudflare, only Cloudflare's address ranges reach its websites, and the visitor is the address Cloudflare forwards (taken only from connections that come from those ranges): firewall rules, rate limits and analytics see that visitor. Over plain HTTP only Cloudflare's connections are checked, so set Cloudflare's SSL mode to Full (strict). Let's Encrypt's challenges always get through.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "serviceId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setServiceBehindCdn"
+            ]
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "cdn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"cloudflare\", or null for none."
+          }
+        },
+        "example": {
+          "op": "setServiceBehindCdn",
+          "serviceId": "svc_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "op": "setServiceBehindCdn",
+            "serviceId": "svc_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Firewall"
         ]
       },
       "SetServiceWafOp": {
