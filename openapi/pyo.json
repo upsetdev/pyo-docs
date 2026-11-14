@@ -2622,7 +2622,7 @@
         "tags": [
           "GitHub"
         ],
-        "summary": "The file a Git build of a repository would use by default: its Dockerfile,\nelse its Containerfile, in the build context. None: the build is\nzero-config (Railpack).",
+        "summary": "The Dockerfile a Git build of a repository would use by default, in the\nbuild context. None: the build is zero-config (Railpack).",
         "description": "API key access: **read**.",
         "operationId": "getGithubBuildFile",
         "parameters": [
@@ -2665,7 +2665,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`file`: \"Dockerfile\" or \"Containerfile\" (a Dockerfile wins when there are both), or null when there's neither.",
+            "description": "`file`: the Dockerfile Pyo would use, or null when there's none.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2706,6 +2706,320 @@
           },
           "500": {
             "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/git/repos": {
+      "get": {
+        "tags": [
+          "Git providers"
+        ],
+        "summary": "Git repositories",
+        "description": "The repositories the team's Git connections (GitLab) can deploy: those\ntheir token has the Maintainer role on, latest activity first.\n\nAPI key access: **read**.",
+        "operationId": "listGitRepos",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Only repositories whose path contains this.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`repositories`: each with `connectionId`, `provider`, `host`, `fullName`, `name`, `namespace`, `private`, `defaultBranch`, `htmlUrl` and `pushedAt`. `errors`: connections that couldn't be listed, with `connectionId` and `message`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No `team`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/git/branches": {
+      "get": {
+        "tags": [
+          "Git providers"
+        ],
+        "summary": "Git branches",
+        "description": "A repository's branches, through one of the team's Git connections.\n\nAPI key access: **read**.",
+        "operationId": "listGitBranches",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connection",
+            "in": "query",
+            "description": "The Git connection's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "query",
+            "description": "The repository: its path (\"group/project\") or URL.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Only branches whose name contains this.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`branches`: each with `name`, `commit`, `default` and `protected`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A missing or invalid field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team or connection, or you aren't in the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached or refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/git/build-file": {
+      "get": {
+        "tags": [
+          "Git providers"
+        ],
+        "summary": "Git build file",
+        "description": "The Dockerfile a build of a repository of the team's Git connections\nwould use by default, in the build context. Null: the build is\nzero-config (Railpack).\n\nAPI key access: **read**.",
+        "operationId": "getGitBuildFile",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connection",
+            "in": "query",
+            "description": "The Git connection's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "query",
+            "description": "The repository: its path (\"group/project\") or URL.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branch",
+            "in": "query",
+            "description": "The branch to look at.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "The build context, a folder of the repository (\".\" for its root).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`file`: the Dockerfile Pyo would use, or null when there's none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A missing or invalid field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team or connection, or you aren't in the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached or refused.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2807,7 +3121,7 @@
           "Projects"
         ],
         "summary": "Preview an import from another platform",
-        "description": "Reads a Coolify or Dokploy installation, or a Railway or Vercel\naccount, through its API with a token you give, and shows what importing would create: per project there, its\nservices (source, ports, domains, variable names, volumes), Compose\nstacks and databases, each with what doesn't carry over. Nothing is\ncreated and the token isn't kept. Things an earlier import made are\nmarked (`existingId`). Owners and admins.\n\nAPI key access: **full**.",
+        "description": "Reads a Coolify or Dokploy installation through its API, with a token\nyou give, and shows what importing would create: per project there, its\nservices (source, ports, domains, variable names, volumes), Compose\nstacks and databases, each with what doesn't carry over. Nothing is\ncreated and the token isn't kept. Things an earlier import made are\nmarked (`existingId`). Owners and admins.\n\nAPI key access: **full**.",
         "operationId": "previewPlatformImport",
         "requestBody": {
           "content": {
@@ -2895,74 +3209,12 @@
       }
     },
     "/platform-imports": {
-      "get": {
-        "tags": [
-          "Projects"
-        ],
-        "summary": "List imports from other platforms",
-        "description": "A team's imports of the last 30 days, newest first (at most 20). Owners\nand admins.\n\nAPI key access: **read**.",
-        "operationId": "listPlatformImports",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "query",
-            "description": "The team whose imports to list.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "`imports`: each one as `getPlatformImport` gives it.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "You aren't an owner or admin of the team.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something went wrong on Pyo's side. It's logged.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        },
-        "x-pyo-access": "read"
-      },
       "post": {
         "tags": [
           "Projects"
         ],
         "summary": "Import from another platform",
-        "description": "Starts an import and answers at once with it (`getPlatformImport` follows\nit). On the server, whatever happens to this request, Pyo reads the\nplatform again (as `previewPlatformImport`) and creates the picked\nthings (`items`, all by default): a project per project there, its\nservices with their variables (secret ones sealed), domains (live after\nthe first deploy), ports and empty volumes, a project per Compose stack,\nand databases. A Postgres or MySQL database reachable from outside the\nplatform is copied by a database import. Others are made empty or left\nfor you. Services aren't deployed unless `deploy`. Running it again\nskips what an earlier import made. The token is kept in memory for the\nimport only, never stored. Owners and admins.\n\nAPI key access: **full**.",
+        "description": "Reads the platform again (as `previewPlatformImport`) and creates the\npicked things (`items`, all by default): a project per project there,\nits services with their variables (secret ones sealed), domains (live\nafter the first deploy), ports and empty volumes, a project per Compose\nstack, and databases. A Postgres or MySQL database reachable from\noutside the platform is copied by a database import; others are made\nempty or left for you. Services aren't deployed unless `deploy`.\nRunning it again skips what an earlier import made. Owners and admins.\n\nAPI key access: **full**.",
         "operationId": "startPlatformImport",
         "requestBody": {
           "content": {
@@ -2975,12 +3227,22 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "description": "Started: the import, `reading` at first.",
+          "200": {
+            "description": "What became of each picked thing.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportRun"
+                  "$ref": "#/components/schemas/ImportOutcome"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address, token or cluster isn't usable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -3024,73 +3286,19 @@
                 }
               }
             }
+          },
+          "502": {
+            "description": "The platform couldn't be reached or refused the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         },
         "x-pyo-access": "full"
-      }
-    },
-    "/platform-imports/{id}": {
-      "get": {
-        "tags": [
-          "Projects"
-        ],
-        "summary": "Get an import from another platform",
-        "description": "How an import started with `startPlatformImport` is doing: its status,\nwhat it makes and what became of each item so far. Owners and admins.\n\nAPI key access: **read**.",
-        "operationId": "getPlatformImport",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "The import's id.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The import.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImportRun"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such import.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something went wrong on Pyo's side. It's logged.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        },
-        "x-pyo-access": "read"
       }
     }
   },
@@ -3254,6 +3462,72 @@
           "Firewall"
         ]
       },
+      "AddGitConnectionOp": {
+        "type": "object",
+        "title": "Add git connection",
+        "description": "Connect GitLab (gitlab.com or your own) with an access token.\nTeam owners and admins. Pyo checks the token first: it needs the\n`api` scope, and the Maintainer role on the projects to deploy. The\ntoken is sealed and never shown again. `warning` says what's missing,\nsuch as a token with no Maintainer role yet.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id",
+          "teamId",
+          "provider",
+          "token"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "addGitConnection"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "A new id you choose: `gitc_` then 4 to 40 lowercase letters, digits, dashes or underscores."
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "description": "\"gitlab\"."
+          },
+          "url": {
+            "type": "string",
+            "description": "The GitLab address, like https://gitlab.example.com. https://gitlab.com when omitted."
+          },
+          "token": {
+            "type": "string",
+            "description": "A group, project or personal access token."
+          },
+          "publicUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where GitLab sends webhooks and where commit statuses link: this Pyo's address. Pyo's own setting when omitted."
+          }
+        },
+        "example": {
+          "id": "gitc_8kq2x7ad",
+          "op": "addGitConnection",
+          "provider": "gitlab",
+          "teamId": "team_8kq2x7ad",
+          "token": "example"
+        },
+        "examples": [
+          {
+            "id": "gitc_8kq2x7ad",
+            "op": "addGitConnection",
+            "provider": "gitlab",
+            "teamId": "team_8kq2x7ad",
+            "token": "example"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Git providers"
+        ]
+      },
       "AddVolumeOp": {
         "type": "object",
         "title": "Add volume",
@@ -3394,6 +3668,7 @@
         "required": [
           "teamId",
           "platform",
+          "url",
           "token"
         ],
         "properties": {
@@ -3409,13 +3684,6 @@
           "token": {
             "type": "string",
             "description": "Read again for this request, never stored."
-          },
-          "team": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Vercel only: the team to read (its id or slug)."
           },
           "clusterId": {
             "type": [
@@ -4923,55 +5191,6 @@
           "Projects"
         ]
       },
-      "ImportConnect": {
-        "type": "object",
-        "description": "A database of the import a service gets connected to.",
-        "required": [
-          "database",
-          "env"
-        ],
-        "properties": {
-          "database": {
-            "type": "string",
-            "description": "The database's `key` in this plan."
-          },
-          "env": {
-            "type": "object",
-            "description": "The service's variables that point at it, each with the database's\nvariable it becomes, as `connectDatabase` maps them:\n`{\"DATABASE_URL\": \"DATABASE_URL\", \"PGHOST\": \"POSTGRES_HOST\"}`.",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "propertyNames": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "ImportConnected": {
-        "type": "object",
-        "description": "A database Pyo connected a service to, in place of the variables that\npointed at the old one.",
-        "required": [
-          "database",
-          "databaseId",
-          "variables"
-        ],
-        "properties": {
-          "database": {
-            "type": "string",
-            "description": "The database's name in Pyo."
-          },
-          "databaseId": {
-            "type": "string"
-          },
-          "variables": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "The service's variables it set."
-          }
-        }
-      },
       "ImportDatabase": {
         "type": "object",
         "description": "One of their databases.",
@@ -5049,24 +5268,21 @@
           }
         }
       },
-      "ImportItem": {
+      "ImportOutcome": {
         "type": "object",
-        "description": "One thing an import makes, listed once the platform is read.",
         "required": [
-          "key",
-          "name",
-          "kind"
+          "ok",
+          "results"
         ],
         "properties": {
-          "key": {
-            "type": "string"
+          "ok": {
+            "type": "boolean"
           },
-          "name": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "description": "\"service\", \"stack\" or \"database\"."
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportResult"
+            }
           }
         }
       },
@@ -5082,11 +5298,11 @@
         "properties": {
           "platform": {
             "type": "string",
-            "description": "\"coolify\", \"dokploy\", \"railway\" or \"vercel\"."
+            "description": "\"coolify\" or \"dokploy\"."
           },
           "host": {
             "type": "string",
-            "description": "The platform's host, as given (railway.com or vercel.com for those)."
+            "description": "The platform's host, as given."
           },
           "projects": {
             "type": "array",
@@ -5168,7 +5384,7 @@
           },
           "state": {
             "type": "string",
-            "description": "\"created\", \"importing\" (a database whose data is being copied), \"exists\" (an earlier import made it), \"held\" (a service made but not deployed: `message` says why), \"skipped\" (it can't be imported) or \"failed\"."
+            "description": "\"created\", \"importing\" (a database whose data is being copied), \"exists\" (an earlier import made it), \"skipped\" (it can't be imported) or \"failed\"."
           },
           "message": {
             "type": "string"
@@ -5185,78 +5401,6 @@
               "string",
               "null"
             ]
-          },
-          "connected": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ImportConnected"
-            },
-            "description": "A service: the databases of the import Pyo connected it to."
-          }
-        }
-      },
-      "ImportRun": {
-        "type": "object",
-        "description": "An import, as it runs on the server and once it's done.",
-        "required": [
-          "id",
-          "teamId",
-          "platform",
-          "status",
-          "deploy",
-          "items",
-          "results",
-          "createdBy",
-          "createdAt"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "teamId": {
-            "type": "string"
-          },
-          "platform": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "description": "\"reading\" (the platform), \"importing\", \"done\", \"failed\" (`error` says why) or \"interrupted\" (Pyo restarted during it: import again, what's there is skipped)."
-          },
-          "deploy": {
-            "type": "boolean"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ImportItem"
-            },
-            "description": "What it makes, once the platform is read."
-          },
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ImportResult"
-            },
-            "description": "What became of each item, as each one finishes."
-          },
-          "error": {
-            "type": "string"
-          },
-          "createdBy": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Unix milliseconds."
-          },
-          "finishedAt": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64"
           }
         }
       },
@@ -5310,20 +5454,6 @@
               "null"
             ],
             "description": "The Pyo service an earlier import made from it."
-          },
-          "connects": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ImportConnect"
-            },
-            "description": "Databases of this import its variables point at: Pyo connects each\none to it before its first deploy, in place of those variables. One\nthat isn't picked holds its deploy."
-          },
-          "holds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Why Pyo won't deploy it: a variable points at a database Pyo can't\nmatch, or one it doesn't import."
           }
         }
       },
@@ -5774,6 +5904,18 @@
             "$ref": "#/components/schemas/RemoveGithubInstallationOp"
           },
           {
+            "$ref": "#/components/schemas/AddGitConnectionOp"
+          },
+          {
+            "$ref": "#/components/schemas/ReplaceGitConnectionTokenOp"
+          },
+          {
+            "$ref": "#/components/schemas/TestGitConnectionOp"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveGitConnectionOp"
+          },
+          {
             "$ref": "#/components/schemas/CreateDeployHookOp"
           },
           {
@@ -5941,6 +6083,7 @@
           "propertyName": "op",
           "mapping": {
             "addFirewallRule": "#/components/schemas/AddFirewallRuleOp",
+            "addGitConnection": "#/components/schemas/AddGitConnectionOp",
             "addVolume": "#/components/schemas/AddVolumeOp",
             "addWafRule": "#/components/schemas/AddWafRuleOp",
             "attachVolume": "#/components/schemas/AttachVolumeOp",
@@ -5976,6 +6119,7 @@
             "removeCronJob": "#/components/schemas/RemoveCronJobOp",
             "removeDeployHook": "#/components/schemas/RemoveDeployHookOp",
             "removeFirewallRule": "#/components/schemas/RemoveFirewallRuleOp",
+            "removeGitConnection": "#/components/schemas/RemoveGitConnectionOp",
             "removeGithubInstallation": "#/components/schemas/RemoveGithubInstallationOp",
             "removeIntegration": "#/components/schemas/RemoveIntegrationOp",
             "removeMember": "#/components/schemas/RemoveMemberOp",
@@ -5986,6 +6130,7 @@
             "reorderFirewallRules": "#/components/schemas/ReorderFirewallRulesOp",
             "reorderWafRules": "#/components/schemas/ReorderWafRulesOp",
             "replaceCertificate": "#/components/schemas/ReplaceCertificateOp",
+            "replaceGitConnectionToken": "#/components/schemas/ReplaceGitConnectionTokenOp",
             "resendInvite": "#/components/schemas/ResendInviteOp",
             "resizeVolume": "#/components/schemas/ResizeVolumeOp",
             "restartService": "#/components/schemas/RestartServiceOp",
@@ -6024,6 +6169,7 @@
             "setServiceWaf": "#/components/schemas/SetServiceWafOp",
             "setTeamBackupSelection": "#/components/schemas/SetTeamBackupSelectionOp",
             "stopService": "#/components/schemas/StopServiceOp",
+            "testGitConnection": "#/components/schemas/TestGitConnectionOp",
             "updateCluster": "#/components/schemas/UpdateClusterOp",
             "updateDatabase": "#/components/schemas/UpdateDatabaseOp",
             "updateDatabaseBackup": "#/components/schemas/UpdateDatabaseBackupOp",
@@ -6315,9 +6461,7 @@
         "type": "string",
         "enum": [
           "coolify",
-          "dokploy",
-          "railway",
-          "vercel"
+          "dokploy"
         ]
       },
       "Preview": {
@@ -6344,6 +6488,7 @@
         "required": [
           "teamId",
           "platform",
+          "url",
           "token"
         ],
         "properties": {
@@ -6352,22 +6497,15 @@
           },
           "platform": {
             "$ref": "#/components/schemas/Platform",
-            "description": "\"coolify\", \"dokploy\", \"railway\" or \"vercel\"."
+            "description": "\"coolify\" or \"dokploy\"."
           },
           "url": {
             "type": "string",
-            "description": "The platform's address, e.g. https://coolify.example.com. Empty for Railway and Vercel: Pyo reads them only from their own API."
+            "description": "The platform's address, e.g. https://coolify.example.com."
           },
           "token": {
             "type": "string",
-            "description": "An API token of the platform's: Coolify's with read and read:sensitive, a Dokploy API key, a Railway account, workspace or project token, or a Vercel token. Used for this request only, never stored."
-          },
-          "team": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Vercel only: the team to read (its id or slug). The token's own scope when omitted."
+            "description": "An API token of the platform's: Coolify's with read and read:sensitive, or a Dokploy API key. Used for this request only, never stored."
           }
         }
       },
@@ -6585,6 +6723,40 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Firewall"
+        ]
+      },
+      "RemoveGitConnectionOp": {
+        "type": "object",
+        "title": "Remove git connection",
+        "description": "Disconnect a Git connection, and remove the webhooks Pyo made. Not\nwhile a service deploys from it. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "removeGitConnection"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "gitc_8kq2x7ad",
+          "op": "removeGitConnection"
+        },
+        "examples": [
+          {
+            "id": "gitc_8kq2x7ad",
+            "op": "removeGitConnection"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Git providers"
         ]
       },
       "RemoveGithubInstallationOp": {
@@ -6971,6 +7143,53 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Domains"
+        ]
+      },
+      "ReplaceGitConnectionTokenOp": {
+        "type": "object",
+        "title": "Replace git connection token",
+        "description": "Replace a Git connection's access token. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id",
+          "token"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "replaceGitConnectionToken"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "publicUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "This Pyo's address, for webhooks and links. Pyo's own setting when omitted."
+          }
+        },
+        "example": {
+          "id": "gitc_8kq2x7ad",
+          "op": "replaceGitConnectionToken",
+          "token": "example"
+        },
+        "examples": [
+          {
+            "id": "gitc_8kq2x7ad",
+            "op": "replaceGitConnectionToken",
+            "token": "example"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Git providers"
         ]
       },
       "ResendInviteOp": {
@@ -8840,6 +9059,40 @@
           "Services"
         ]
       },
+      "TestGitConnectionOp": {
+        "type": "object",
+        "title": "Test git connection",
+        "description": "Check what a Git connection's token can do now. `problems` says what's\nmissing, and `working` whether it works at all. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "testGitConnection"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "gitc_8kq2x7ad",
+          "op": "testGitConnection"
+        },
+        "examples": [
+          {
+            "id": "gitc_8kq2x7ad",
+            "op": "testGitConnection"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Git providers"
+        ]
+      },
       "UpdateClusterOp": {
         "type": "object",
         "title": "Update cluster",
@@ -9708,6 +9961,10 @@
     {
       "name": "GitHub",
       "description": "Repositories to deploy from."
+    },
+    {
+      "name": "Git providers",
+      "description": "GitLab connections and their repositories to deploy from."
     },
     {
       "name": "Integrations",
