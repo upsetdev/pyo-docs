@@ -46,6 +46,7 @@
     "gitlab",
     "registries",
     "tailscale",
+    "cloudflare",
     "email",
     "external-secrets",
     "---Settings---",

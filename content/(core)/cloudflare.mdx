@@ -1,0 +1,71 @@
+---
+title: Connecting Cloudflare
+description: Let Pyo create the DNS records of your domains.
+---
+
+When your domain's DNS is on [Cloudflare](https://www.cloudflare.com), Pyo can create the record for each domain you add to a service. There's nothing to copy and paste.
+
+## Create the token
+
+In the Cloudflare dashboard, open **My Profile → API Tokens** and choose **Create Token**. Start from **Create Custom Token** and give it these permissions:
+
+| Type | Resource | Permission |
+| --- | --- | --- |
+| Zone | Zone | Read |
+| Zone | DNS | Edit |
+
+Under **Zone Resources**, include only the zones Pyo may use, like `example.com`. Leave the rest as it is, then create the token and copy it. Cloudflare shows it once.
+
+## Connect it
+
+Team owners and admins save the token on the **Cloudflare** card under **Integrations**, in the sidebar's **Team** section. Pyo checks it first:
+
+- It lists the zones the token can read.
+- In each zone, it makes and deletes a TXT record named `_pyo-check`, to check it can edit DNS there.
+
+The card shows the zones Pyo can use, and the permission it lacks in the others. Choose **Test** to check again after you change the token in Cloudflare. **Replace** saves a new token, and **Remove** forgets it. Records Pyo made stay in Cloudflare when you remove it.
+
+The token is stored encrypted, like your other keys, and never shown again. Members without the owner or admin role can't see or change it. Pyo only sends it to `https://api.cloudflare.com`.
+
+From the CLI:
+
+```bash
+pyo cloudflare connect --token-file cloudflare-token.txt
+pyo cloudflare test
+pyo cloudflare zones
+pyo cloudflare remove
+```
+
+`connect` also reads the token from `CLOUDFLARE_API_TOKEN`, or from stdin with `--token-file -`.
+
+## Adding a domain
+
+When a connected zone covers a domain you add, **Create the DNS record in Cloudflare** is on in the dialog. It's in the new service wizard too. Pyo picks the longest matching zone, so `shop.eu.example.com` goes to `eu.example.com` when you connected both.
+
+Pyo creates an A record that points to the cluster's public IP address, the same record it would ask you to create yourself. A cluster without a public IP address gets no record, and Pyo says so.
+
+Each record Pyo makes has the comment `Made by Pyo (<installation id>)`. The domain's row on the service's **Domains** tab shows how its record stands:
+
+- **Record created:** Pyo made it.
+- **Record already there:** the name already pointed to the cluster. Pyo leaves that record alone.
+- **Cloudflare already has a record for it:** another A, AAAA or CNAME record has the name. Pyo never overwrites a record. It shows you what's there, and a team owner or admin can choose to replace it.
+- An error, with Cloudflare's reason and **Try again**.
+
+When you remove the domain, Pyo offers to delete its record too. It only deletes a record it made, and only while that record still has its comment.
+
+With the CLI, `pyo domain add` creates the record when a connected zone covers the hostname. Add `--no-cloudflare` to skip it, or `--proxied` to proxy it. `pyo domain dns <hostname>` tries again, with `--replace` to replace what's in the way. `pyo domain remove` deletes the record Pyo made, unless you add `--keep-dns-record`.
+
+## Proxied by Cloudflare
+
+**Proxied by Cloudflare** is off by default. Turn it on to send visitors through Cloudflare's network.
+
+Pyo first creates the record without the proxy, so Let's Encrypt reaches your cluster directly to issue the certificate. Once the certificate is issued, Pyo turns the proxy on.
+
+Certificates renew through Cloudflare, so set these in Cloudflare under **SSL/TLS**:
+
+- **Encryption mode:** Full (strict). Your cluster has a valid certificate.
+- **Always Use HTTPS:** off. Pyo already sends visitors from HTTP to HTTPS, and Let's Encrypt checks your domain over plain HTTP.
+
+## Wildcard certificates
+
+Pyo's certificates are for one hostname each. For `*.example.com`, upload [your own certificate](/docs/certificates).
