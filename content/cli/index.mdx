@@ -7,25 +7,25 @@ The CLI is separate from Pyo itself. Pyo runs on your server, and the CLI runs o
 
 ## Install
 
-Your Pyo serves the CLI, pointed at itself:
-
 ```bash
-curl -fsSL https://your-pyo/install/cli.sh | sh
+curl -fsSL https://pyo.dev/cli.sh | sh
 ```
 
-It installs to `/usr/local/bin` when that's writable, and `~/.local/bin` otherwise. Set `PYO_INSTALL_DIR` to choose another folder.
+It downloads the CLI from Pyo's latest release on GitHub and checks it against the release's checksum. It installs to `/usr/local/bin` when you can write there, and `~/.local/bin` otherwise. Set `PYO_INSTALL_DIR` to choose another folder, or `PYO_VERSION` for a release other than the latest.
 
 <Callout type="warn">
-  For now, the installer only supports Linux on x86-64. On other systems, build it from source with `cargo build --release -p pyo-cli`.
+  For now, the CLI is built for Linux on x86-64 only. On other systems, build it from source with `cargo build --release -p pyo-cli`.
 </Callout>
 
 ## Sign in
 
 ```bash
-pyo login
+pyo login --url https://your-pyo
 ```
 
-It asks for your Pyo's URL the first time, then opens your browser to approve the sign-in. This makes an API key for this computer that lasts a year. Run `pyo login` again for a new one. Use `--expires` to choose 30d, 90d, 1y or never.
+This opens your browser to approve the sign-in, and makes an API key for this computer that lasts a year. Run `pyo login` again for a new one. It remembers your Pyo, so `--url` is only needed the first time. Without it, it asks for the address. Use `--expires` to choose 30d, 90d, 1y or never.
+
+Your Pyo shows these commands with its own address under **API keys**.
 
 ## Link a folder
 
@@ -106,5 +106,23 @@ pyo import coolify --from https://coolify.example.com --source-token <token>
 ```
 
 It shows what each project, service and database becomes, then asks before it imports. Use `dokploy` for Dokploy. See [Importing from another platform](/docs/import-platforms).
+
+## Upgrade
+
+```bash
+pyo upgrade
+```
+
+This replaces `pyo` with the latest release, after checking its checksum. It says when you already have the latest. Add `--version 0.3.0` for a particular release. If you can't write to the folder `pyo` is in, run it as a user who can, or install it again into a folder of yours.
+
+Once a day, the CLI looks for a new release. When there is one, it says so after a command:
+
+```text
+Pyo CLI 0.3.0 is out (you have 0.2.5). Run pyo upgrade.
+```
+
+It looks in the background, so commands never wait for it, and it stays quiet when you're offline. It doesn't look in CI, when its output isn't a terminal, or when `PYO_NO_UPDATE_CHECK=1` is set.
+
+The CLI can be newer than your Pyo. When it is a minor version or more ahead, `pyo login` and `pyo link` say so, since newer commands may not work until you update Pyo under **Settings › Updates**.
 
 See every command in the [command reference](/docs/cli/commands).

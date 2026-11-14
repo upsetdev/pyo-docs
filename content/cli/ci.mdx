@@ -6,6 +6,8 @@ description: Use the CLI in a pipeline with an API key.
 In <Term tip="Continuous integration: a service like GitHub Actions that runs your tests and deploys on each push.">CI</Term> there's no browser to sign in with, so use an API key. Create one with deploy access and an expiry you'll remember to renew. Then give the CLI your Pyo's URL and the key:
 
 ```bash
+curl -fsSL https://pyo.dev/cli.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 export PYO_URL=https://your-pyo
 export PYO_TOKEN=<api-key>
 pyo deploy
