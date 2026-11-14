@@ -58,7 +58,9 @@ A cluster's first server runs the cluster, so it can be deleted only after the c
 
 - The token is encrypted with the team's key in Pyo's database. Only Pyo uses it, and it never goes to a server.
 - Pyo calls only `https://api.hetzner.cloud`, to list locations, server types and prices, and to create and delete servers and a firewall.
-- Each server gets this cloud-init: it runs the same `curl … | bash` join command the dashboard shows, with a fresh Tailscale key that works once and expires in an hour. Pyo's Tailscale OAuth client is never in it. It turns off password sign-in over SSH, and it blocks the server's containers from Hetzner's metadata service, which serves the cloud-init again.
+- Each server's startup script (its cloud-init) holds only one-time keys: a Tailscale key that works once and expires in an hour, and a code that works once and expires in 15 minutes. Join tokens and Pyo's Tailscale OAuth client are never in it.
+- On its first boot the server joins your tailnet with the key. Then it trades the code for its join details at Pyo over the tailnet and runs the same setup the dashboard's join command runs. Pyo answers only servers on your tailnet. If the code expires first, the server doesn't join and Pyo offers to delete it.
+- The startup script turns off password sign-in over SSH, and it blocks the server's containers from Hetzner's metadata service, which serves the script again.
 - Each server carries the labels `pyo=<installation id>` and `pyo-cluster=<cluster id>`. Pyo deletes only servers with its own installation's label, so it never touches the rest of your project.
 - Pyo makes one firewall, `pyo-<installation id>`, and puts every server it makes behind it. It allows ports 80 and 443 from anywhere, and UDP 41641 for Tailscale's direct connections. Everything else is closed. Servers talk to each other over your tailnet.
 - Pyo doesn't add or remove servers on its own, and it doesn't resize them.
@@ -67,5 +69,5 @@ A cluster's first server runs the cluster, so it can be deleted only after the c
 
 - **Server limit.** New Hetzner accounts can make only a few servers. Ask Hetzner to raise it on the **Limits** page of the Console.
 - **Unavailable.** A server type can sell out in a location. Pick another type or location.
-- **The server doesn't join.** If it never shows up on your tailnet, its setup failed. Open the server's console at Hetzner and read `/var/log/pyo-join.log`. Then delete the server in Pyo and try again.
+- **The server doesn't join.** If it never shows up on your tailnet, its setup failed. Open the server's console at Hetzner and read `/var/log/pyo-join.log`. A slow boot can outlast its 15-minute code. Then delete the server in Pyo and try again.
 - **Read-only token.** Make a new token with **Read & Write**.
