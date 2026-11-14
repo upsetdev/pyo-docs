@@ -4923,6 +4923,55 @@
           "Projects"
         ]
       },
+      "ImportConnect": {
+        "type": "object",
+        "description": "A database of the import a service gets connected to.",
+        "required": [
+          "database",
+          "env"
+        ],
+        "properties": {
+          "database": {
+            "type": "string",
+            "description": "The database's `key` in this plan."
+          },
+          "env": {
+            "type": "object",
+            "description": "The service's variables that point at it, each with the database's\nvariable it becomes, as `connectDatabase` maps them:\n`{\"DATABASE_URL\": \"DATABASE_URL\", \"PGHOST\": \"POSTGRES_HOST\"}`.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ImportConnected": {
+        "type": "object",
+        "description": "A database Pyo connected a service to, in place of the variables that\npointed at the old one.",
+        "required": [
+          "database",
+          "databaseId",
+          "variables"
+        ],
+        "properties": {
+          "database": {
+            "type": "string",
+            "description": "The database's name in Pyo."
+          },
+          "databaseId": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The service's variables it set."
+          }
+        }
+      },
       "ImportDatabase": {
         "type": "object",
         "description": "One of their databases.",
@@ -5119,7 +5168,7 @@
           },
           "state": {
             "type": "string",
-            "description": "\"created\", \"importing\" (a database whose data is being copied), \"exists\" (an earlier import made it), \"skipped\" (it can't be imported) or \"failed\"."
+            "description": "\"created\", \"importing\" (a database whose data is being copied), \"exists\" (an earlier import made it), \"held\" (a service made but not deployed: `message` says why), \"skipped\" (it can't be imported) or \"failed\"."
           },
           "message": {
             "type": "string"
@@ -5136,6 +5185,13 @@
               "string",
               "null"
             ]
+          },
+          "connected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportConnected"
+            },
+            "description": "A service: the databases of the import Pyo connected it to."
           }
         }
       },
@@ -5254,6 +5310,20 @@
               "null"
             ],
             "description": "The Pyo service an earlier import made from it."
+          },
+          "connects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportConnect"
+            },
+            "description": "Databases of this import its variables point at: Pyo connects each\none to it before its first deploy, in place of those variables. One\nthat isn't picked holds its deploy."
+          },
+          "holds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Why Pyo won't deploy it: a variable points at a database Pyo can't\nmatch, or one it doesn't import."
           }
         }
       },

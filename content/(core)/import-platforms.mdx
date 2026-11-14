@@ -22,7 +22,7 @@ Pyo uses the token only while it reads, and never stores it.
 2. Pick the **Platform**, enter its **Address** and **API token**, and pick the **Cluster** to run on. Then choose **Preview**.
 3. Check what each project, service and database becomes. Notes say what doesn't carry over.
 4. Pick what to bring. Turn on **Deploy services once imported** to deploy them now. Otherwise they're saved stopped, ready to deploy.
-5. Choose **Import**. Each item shows **Created**, **Copying data**, **Imported before**, **Not imported** or **Failed**. One failure doesn't stop the others.
+5. Choose **Import**. Each item shows **Created**, **Copying data**, **Imported before**, **Held**, **Not imported** or **Failed**. One failure doesn't stop the others.
 
 ### From the CLI
 
@@ -46,6 +46,14 @@ Send the platform's address and token to [Preview an import from another platfor
 - **Volumes:** they start empty. Copy their data yourself.
 - **Compose stacks:** each becomes a project of its own, as with a [Docker Compose import](/docs/deploy/compose). A Compose file from a repository isn't imported: use the Compose import from the repository.
 - **Databases:** Postgres and MySQL databases the platform makes reachable from outside are copied into new Pyo [databases](/docs/databases), as in [Migrating a database](/docs/migrating). Others are made empty, with how to move their data. Redis, KeyDB and Dragonfly become empty KV databases. MariaDB, MongoDB, ClickHouse and libSQL aren't imported.
+
+## Databases your services use
+
+When a service's variable points at a database you import, like a `DATABASE_URL` with that database's host, Pyo [connects](/docs/databases) the new database to the service in place of that variable. The preview says so for each one. With **Deploy services once imported**, the first deploy waits until the database is ready and its data is copied, so the service starts on the new database.
+
+The service gets the database's own variables. A `DATABASE_URL` stays `DATABASE_URL` and a Postgres service also gets `DATABASE_URL_DIRECT`. Variables with other names keep their names with the new values. For example `DATABASE_PUBLIC_URL` gets the new URL, and `PGHOST`, `PGUSER` and the others get its host, user and so on.
+
+Pyo doesn't deploy a service when it can't tell which database a variable points at, or when that database isn't part of the import. The service is created and shows **Held** with the reason, for example "DATABASE_URL points at a database Pyo couldn't match." Connect a database to it, then deploy it. Other services still deploy. A variable that points at a database outside the platform, like a hosted Postgres, is left as it is.
 
 Start, build and install commands, build secrets, file mounts, deploy keys, preview environments, labels and custom Docker options don't carry over. Each one is a note on its item.
 
