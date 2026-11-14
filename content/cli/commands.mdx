@@ -788,3 +788,32 @@ Options:
   -V, --version
           Print version
 ```
+
+## `pyo upgrade`
+
+Update the CLI to the latest release.
+
+```text
+Update the CLI to the latest release.
+
+Once a day, the CLI looks for a new release and says when one is out. PYO_NO_UPDATE_CHECK=1 turns that off.
+
+Usage: pyo upgrade [OPTIONS]
+
+Options:
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --version <VERSION>
+          A release instead of the latest, e.g. 0.3.0
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_TOKEN]
+
+  -h, --help
+          Print help (see a summary with '-h')
+```
