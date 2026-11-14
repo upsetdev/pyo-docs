@@ -14,10 +14,10 @@ On a fresh install, the server Pyo runs on is connected for you as your first cl
 Choose **Add cluster** to get a command that sets up k3s and the Pyo agent on a new machine:
 
 ```bash
-curl -fsSL https://your-pyo/install/connect.sh | sudo bash -s -- --api <pyo-address-for-servers> --token <token>
+curl -fsSL https://your-pyo/install/connect.sh | bash -s -- --api <pyo-address-for-servers> --token <token>
 ```
 
-Copy the command from the dashboard, which fills in your Pyo's address and these values. The `--api` address is where the new machine reaches Pyo. It can differ from the address you use in your browser. On a tailnet, it's Pyo's tailnet name on port 8000, like `http://pyo.tail1234.ts.net:8000`. If the tailnet has no MagicDNS, use Pyo's tailnet IP instead. A public address must use `https://`. Plain `http://` works only for a private network or tailnet address. The token is shown once. The agent connects out to Pyo, so you don't have to open anything on the machine.
+Copy the command from the dashboard, which fills in your Pyo's address and these values. The `--api` address is where the new machine reaches Pyo. It can differ from the address you use in your browser. On a tailnet, it's Pyo's tailnet name on port 8000, like `http://pyo.tail1234.ts.net:8000`. If the tailnet has no MagicDNS, use Pyo's tailnet IP instead. A public address must use `https://`. Plain `http://` works only for a private network or tailnet address. The token is shown once. The script asks for `sudo` when it needs root. The agent connects out to Pyo, so you don't have to open anything on the machine.
 
 ## Inside a cluster
 
@@ -52,7 +52,7 @@ Team owners and admins can change it, and each change is recorded in **Activity*
 A cluster's **Settings** tab shows the command under **Refresh this cluster**. Run it on the cluster's first server to apply Pyo's latest host settings, like the [memory reserve for k3s](/docs/system-reference#k3s):
 
 ```bash
-curl -fsSL https://your-pyo/install/connect.sh | sudo bash
+curl -fsSL https://your-pyo/install/connect.sh | bash
 ```
 
 The dashboard fills in your Pyo's address. It reads the agent's token from the agent already there. On the server Pyo runs on, the address is `http://127.0.0.1:8000`.

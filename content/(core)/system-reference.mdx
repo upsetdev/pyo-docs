@@ -203,7 +203,7 @@ At any size, the same script sets aside memory for k3s and the system, so contai
 On a server that already runs k3s, running the connect command again on the cluster's first server, or `install.sh` on the machine Pyo runs on, sets all this up. A cluster's **Settings** tab shows the command under [Refresh this cluster](/docs/clusters#refresh-a-cluster):
 
 ```bash
-curl -fsSL http://127.0.0.1:8000/install/connect.sh | sudo bash
+curl -fsSL http://127.0.0.1:8000/install/connect.sh | bash
 ```
 
 That's on the machine Pyo runs on. On another cluster's first server, the dashboard puts Pyo's address for servers in place of `http://127.0.0.1:8000`. It reads the agent's token from the agent already there. When the memory reserve or limit changes, k3s restarts briefly to use it. Your services keep running while it does.
