@@ -2895,12 +2895,74 @@
       }
     },
     "/platform-imports": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "List imports from other platforms",
+        "description": "A team's imports of the last 30 days, newest first (at most 20). Owners\nand admins.\n\nAPI key access: **read**.",
+        "operationId": "listPlatformImports",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "query",
+            "description": "The team whose imports to list.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`imports`: each one as `getPlatformImport` gives it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You aren't an owner or admin of the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      },
       "post": {
         "tags": [
           "Projects"
         ],
         "summary": "Import from another platform",
-        "description": "Reads the platform again (as `previewPlatformImport`) and creates the\npicked things (`items`, all by default): a project per project there,\nits services with their variables (secret ones sealed), domains (live\nafter the first deploy), ports and empty volumes, a project per Compose\nstack, and databases. A Postgres or MySQL database reachable from\noutside the platform is copied by a database import; others are made\nempty or left for you. Services aren't deployed unless `deploy`.\nRunning it again skips what an earlier import made. Owners and admins.\n\nAPI key access: **full**.",
+        "description": "Starts an import and answers at once with it (`getPlatformImport` follows\nit). On the server, whatever happens to this request, Pyo reads the\nplatform again (as `previewPlatformImport`) and creates the picked\nthings (`items`, all by default): a project per project there, its\nservices with their variables (secret ones sealed), domains (live after\nthe first deploy), ports and empty volumes, a project per Compose stack,\nand databases. A Postgres or MySQL database reachable from outside the\nplatform is copied by a database import. Others are made empty or left\nfor you. Services aren't deployed unless `deploy`. Running it again\nskips what an earlier import made. The token is kept in memory for the\nimport only, never stored. Owners and admins.\n\nAPI key access: **full**.",
         "operationId": "startPlatformImport",
         "requestBody": {
           "content": {
@@ -2913,22 +2975,12 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "What became of each picked thing.",
+          "202": {
+            "description": "Started: the import, `reading` at first.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportOutcome"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The address, token or cluster isn't usable.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
+                  "$ref": "#/components/schemas/ImportRun"
                 }
               }
             }
@@ -2972,9 +3024,63 @@
                 }
               }
             }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/platform-imports/{id}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get an import from another platform",
+        "description": "How an import started with `startPlatformImport` is doing: its status,\nwhat it makes and what became of each item so far. Owners and admins.\n\nAPI key access: **read**.",
+        "operationId": "getPlatformImport",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The import's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The import.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportRun"
+                }
+              }
+            }
           },
-          "502": {
-            "description": "The platform couldn't be reached or refused the token.",
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2984,7 +3090,7 @@
             }
           }
         },
-        "x-pyo-access": "full"
+        "x-pyo-access": "read"
       }
     }
   },
@@ -4894,21 +5000,24 @@
           }
         }
       },
-      "ImportOutcome": {
+      "ImportItem": {
         "type": "object",
+        "description": "One thing an import makes, listed once the platform is read.",
         "required": [
-          "ok",
-          "results"
+          "key",
+          "name",
+          "kind"
         ],
         "properties": {
-          "ok": {
-            "type": "boolean"
+          "key": {
+            "type": "string"
           },
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ImportResult"
-            }
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "\"service\", \"stack\" or \"database\"."
           }
         }
       },
@@ -5027,6 +5136,71 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "ImportRun": {
+        "type": "object",
+        "description": "An import, as it runs on the server and once it's done.",
+        "required": [
+          "id",
+          "teamId",
+          "platform",
+          "status",
+          "deploy",
+          "items",
+          "results",
+          "createdBy",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "\"reading\" (the platform), \"importing\", \"done\", \"failed\" (`error` says why) or \"interrupted\" (Pyo restarted during it: import again, what's there is skipped)."
+          },
+          "deploy": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportItem"
+            },
+            "description": "What it makes, once the platform is read."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportResult"
+            },
+            "description": "What became of each item, as each one finishes."
+          },
+          "error": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix milliseconds."
+          },
+          "finishedAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           }
         }
       },
