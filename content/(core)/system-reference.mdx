@@ -200,6 +200,14 @@ On a machine with less than 3.5 GiB of memory, the k3s that Pyo installs gets a 
 
 At any size, the same script sets aside memory for k3s and the system, so containers are only scheduled into what's left. It writes kubelet's `kube-reserved` and `system-reserved` to `/etc/rancher/k3s/config.yaml.d/50-pyo-memory.yaml` each time k3s starts. See [Memory tiers](#memory-tiers) for the amounts. Servers you [add](/docs/servers) keep all their memory for containers.
 
+On a server that already runs k3s, running the connect command again on the cluster's first server, or `install.sh` on the machine Pyo runs on, sets all this up:
+
+```bash
+curl -fsSL http://127.0.0.1:8000/install/connect.sh | sudo bash
+```
+
+That's on the machine Pyo runs on. On another cluster's first server, put Pyo's address for servers in place of `http://127.0.0.1:8000`. It reads the agent's token from the agent already there. When the memory reserve or limit changes, k3s restarts briefly to use it. Your services keep running while it does.
+
 ## Memory tiers
 
 Pyo reads the server's memory each time a part of it starts, so a server you resize gets the matching settings after a restart:
