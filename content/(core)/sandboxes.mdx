@@ -1,0 +1,104 @@
+---
+title: Sandboxes
+description: Isolated machines on demand, for AI agents, code interpreters, previews and CI. Coming in v0.4.0.
+---
+
+<Callout type="info">
+  Sandboxes are coming in Pyo v0.4.0. They aren't in a release yet, so this page describes what's planned. Names and code may change before the release.
+</Callout>
+
+A sandbox is an isolated machine you create through an API. Create one, run commands, read and write files, open a port as a URL, then throw it away. Use them for:
+
+- AI agents that write and run code.
+- Code interpreters.
+- Previews of a branch or a change.
+- CI jobs and other code you don't trust.
+
+Sandboxes run on your own infrastructure, so your code and data never leave it. They show in the same dashboard as your services and databases.
+
+## How sandboxes run
+
+Sandboxes run on their own **sandbox servers**, outside your clusters and build servers. A sandbox server runs no k3s or Docker, just a small Pyo daemon, so a busy sandbox can't slow down your services.
+
+Each sandbox is its own <Term tip="A very small virtual machine that boots in milliseconds, with its own kernel.">microVM</Term> on [Firecracker](https://firecracker-microvm.github.io), with its own kernel. Servers without KVM, like most cloud VPSs, use [gVisor](https://gvisor.dev) instead. Pyo checks each server when it joins and picks the runtime for you. A server's page shows which one it uses. Sandboxes never run as plain containers.
+
+Inside a sandbox, Docker works on Firecracker servers. On gVisor servers it doesn't fully work.
+
+### Add a sandbox server
+
+Open **Sandboxes** in the dashboard and choose **Add a sandbox server**. Pyo gives you a command to run on the new machine, with a one-time join code. It looks like this:
+
+```bash
+curl -fsSL https://pyo.dev/sandbox.sh | bash
+```
+
+The server joins over [Tailscale](/docs/tailscale), so adding one needs Tailscale set up in Pyo. Only ports 80 and 443 are public on a sandbox server. Its daemon answers only on your tailnet.
+
+A sandbox server needs Linux with kernel 5.10 or newer and cgroup v2.
+
+## Use sandboxes
+
+Your code talks to Pyo to create a sandbox, then talks to the sandbox server directly to run commands and move files. Sandboxes keep working while Pyo itself restarts.
+
+### TypeScript SDK
+
+Install `@pyo/sandbox` and create a sandbox from a template:
+
+```ts
+import { Sandbox } from "@pyo/sandbox";
+
+const sbx = await Sandbox.create({ template: "node-22", ttl: "1h" });
+const out = await sbx.exec("node -v");
+await sbx.files.write("/app/index.js", "console.log('hi')");
+const url = await sbx.ports.open(3000);
+```
+
+`ttl` sets how long the sandbox lives. `ports.open` returns a URL with HTTPS that reaches that port inside the sandbox.
+
+The SDK signs in with an [API key](/docs/api) that has the **Sandboxes** scope.
+
+### MCP
+
+Once a sandbox server joins, [MCP](/docs/mcp) gets sandbox tools, so an assistant can run code for you in a sandbox:
+
+- `create_sandbox`
+- `run_code`
+- `exec`
+- `read_file` and `write_file`
+- `open_port`
+- `delete`
+
+### CLI
+
+The [`pyo` CLI](/docs/cli) gets a `pyo sandbox` command to create sandboxes, run commands in them and delete them.
+
+### Dashboard
+
+The **Sandboxes** page lists your sandboxes. A sandbox's page has a terminal, its files, the commands it ran and its CPU and memory. When you create one, the dashboard also shows the same choices as SDK code, ready to copy.
+
+## Templates
+
+A sandbox starts from a template. Pyo builds templates from a container image, a Git repository or a Dockerfile, with the same builder as your services. Find them under **Sandbox templates**.
+
+## Limits
+
+Each team has limits on running sandboxes, CPU, memory, disk and how long a sandbox can live.
+
+## What's in v0.4.0
+
+- The **Sandboxes** dashboard, with sandbox templates.
+- Sandbox servers, with Firecracker or gVisor picked automatically.
+- Create sandboxes, run commands, read and write files, open ports as URLs, and set how long they live.
+- The TypeScript SDK, MCP tools and the `pyo sandbox` CLI command.
+- A **Sandboxes** scope for API keys, and limits per team.
+
+## Planned after v0.4.0
+
+These aren't in v0.4.0:
+
+- Starts in under 50 ms from a snapshot of the template.
+- Pause and resume, so a sandbox can be a lasting workspace.
+- Allow and deny lists for a sandbox's outgoing traffic.
+- A Python SDK.
+- Promote a sandbox to a service, with a domain, HTTPS and autoscaling.
+- Read-only access to one of the team's databases, off by default.
