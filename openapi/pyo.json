@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.3.2"
+    "version": "0.4.0"
   },
   "servers": [
     {
@@ -1851,7 +1851,7 @@
           "Databases"
         ],
         "summary": "Database extensions",
-        "description": "The extensions Pyo's databases offer: Postgres extensions and KV\nmodules. Each one's `name`, `engine` (\"postgres\" or \"valkey\"), `section`\n(\"managed\" ones are turned on with `setDatabaseExtensions`, and the\ndatabase's owner adds \"additional\" ones with CREATE EXTENSION), a\none-line `description`, its `docs`, its `edition` when it's a limited build,\n`hidden` when it's obsolete (shown only while a database has it on), and\nwhether turning it on or off `restart`s the database (every KV module\ndoes).\n\nAPI key access: **read**.",
+        "description": "The extensions Pyo's databases offer: Postgres extensions and KV\nmodules. Each one's `name`, `engine` (\"postgres\" or \"valkey\"), `section`\n(\"pyo\" ones are turned on with `setDatabaseExtensions`, and the\ndatabase's owner adds \"additional\" ones with CREATE EXTENSION), a\none-line `description`, its `docs`, its `edition` when it's a limited build,\n`hidden` when it's obsolete (shown only while a database has it on), and\nwhether turning it on or off `restart`s the database (every KV module\ndoes).\n\nAPI key access: **read**.",
         "operationId": "listDatabaseExtensions",
         "responses": {
           "200": {
@@ -6085,7 +6085,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Postgres extensions or KV modules to turn on with it, from `listDatabaseExtensions` with `section` \"managed\" for its engine. For example [\"vector\", \"pg_cron\"] or [\"valkey-json\"]."
+            "description": "Postgres extensions or KV modules to turn on with it, from `listDatabaseExtensions` with `section` \"pyo\" for its engine. For example [\"vector\", \"pg_cron\"] or [\"valkey-json\"]."
           }
         },
         "example": {
@@ -10859,7 +10859,7 @@
       "SetDatabaseExtensionsOp": {
         "type": "object",
         "title": "Set database extensions",
-        "description": "Turn a Postgres database's extensions or a KV database's modules on and off. `extensions` is the full list to have on, from `listDatabaseExtensions` with `section` \"managed\" for its engine. The database's owner adds Postgres's \"additional\" ones with CREATE EXTENSION. Some load a library, which restarts the database (`restart`). With high availability, it restarts one instance at a time and the primary hands over last. Every KV module restarts the database and needs KV 8.1. Turning a Postgres extension off drops it (DROP EXTENSION, without CASCADE). Postgres refuses while other objects depend on it, and the database's `extensions` shows this. Developers and up.\n\nAPI key access: **full**.",
+        "description": "Turn a Postgres database's extensions or a KV database's modules on and off. `extensions` is the full list to have on, from `listDatabaseExtensions` with `section` \"pyo\" for its engine. The database's owner adds Postgres's \"additional\" ones with CREATE EXTENSION. Some load a library, which restarts the database (`restart`). With high availability, it restarts one instance at a time and the primary hands over last. Every KV module restarts the database and needs KV 8.1. Turning a Postgres extension off drops it (DROP EXTENSION, without CASCADE). Postgres refuses while other objects depend on it, and the database's `extensions` shows this. Developers and up.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "id",
