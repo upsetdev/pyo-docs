@@ -15,11 +15,11 @@ A service with public TCP or UDP ports has a **Connections** card on its **Overv
 
 A TCP connection is counted when it closes. A UDP exchange is counted once it's been quiet for a minute, and its duration includes that minute. Ports that skip the gateway aren't counted.
 
-## Logs
+## Request logs
 
-**Logs**, in the sidebar's **Observability** menu, shows the web server's log of every request your sites served: the time, method, URL, status, response time and size, with the visitor's browser and country. Search and filter them to find a request. Sensitive values in query strings are hidden. Logs are kept for 180 days.
+**Request logs**, in the sidebar's **Observability** menu, shows the web server's log of every request your sites served: the time, method, URL, status, response time and size, with the visitor's browser and country. Search and filter them to find a request. Sensitive values in query strings are hidden. Logs are kept for 180 days.
 
-These are request logs, not your service's own output. For that, open its logs in the dashboard or use the CLI:
+These are request logs, not your service's own output. Service logs are on each service. Open them from the service, or use the CLI:
 
 ```bash
 pyo logs --follow
@@ -31,7 +31,7 @@ See CPU and memory for each server and service, and for [Pyo Gateway](/docs/gate
 
 ## Turning it on or off
 
-Analytics, Logs, connections, firewall and WAF history and metrics over time all need Pyo's observability, which stores what each cluster's servers send. It's on unless a new install's server has less than 3.5 GB of memory. There it starts off to save memory.
+Analytics, Request logs, connections, firewall and WAF history and metrics over time all need Pyo's observability, which stores what each cluster's servers send. It's on unless a new install's server has less than 3.5 GB of memory. There it starts off to save memory.
 
 An admin turns it on or off under **Settings → Observability**, or with the CLI:
 
@@ -42,7 +42,7 @@ pyo observability off
 While it's off:
 
 - Pyo stops collecting and frees the memory it used, about 150 MB on the server Pyo runs on and a little on each server.
-- Analytics, Logs and the charts over time say it's off.
+- Analytics, Request logs and the charts over time say it's off.
 - What was stored is kept. Turn it back on to see it again, with a gap for the time it was off.
 - Everything else keeps working: your services' own logs, current CPU and memory, deploys, the firewall and the WAF.
 
