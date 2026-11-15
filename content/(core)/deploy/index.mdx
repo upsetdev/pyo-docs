@@ -7,6 +7,8 @@ description: Deploy from Git, a container image or a template.
 
 Connect a repository and Pyo builds it on one of your builders.
 
+Paste the repository's URL as you have it. `github.com/acme/web`, `https://gitlab.com/acme/web.git` and SSH forms like `git@github.com:acme/web.git` all work. A GitLab URL with `/-/tree/<branch>` picks that branch too. Leave the branch empty to build the repository's default branch, like `main`, `master` or `trunk`.
+
 - **Zero config:** with no <Term tip="A file in your repository with the steps to build your code into a container image.">Dockerfile</Term>, Pyo detects your framework and builds it.
 - **Static sites:** plain HTML or a built frontend, like Vite or Astro. See [Static sites](/docs/deploy/static-sites).
 - **Dockerfile:** if you have one, Pyo uses it. You can set the Dockerfile path, the <Term tip="The folder whose files are sent to the build. Paths in your Dockerfile are read from there.">build context</Term> and <Term tip="Values passed in at build time, which your Dockerfile reads with ARG.">build arguments</Term>.
