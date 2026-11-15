@@ -123,7 +123,7 @@ Set these on the machine where you run `pyo`, like in [CI](/docs/cli/ci).
 | `PYO_NO_UPDATE_CHECK` | Set to `1` to stop the daily look for a new CLI. |
 | `NO_COLOR` | Turns off colored output. |
 
-`pyo login` saves your sign-in to `~/.config/pyo/config.toml`. The daily look for a new CLI keeps what it found in `~/.cache/pyo/update-check.json`.
+`pyo login` saves your sign-in to `~/.config/pyo/config.toml`. The daily look for a new CLI keeps what it found in `~/.cache/pyo/update-check.json`. On Windows, they're `%APPDATA%\pyo\config.toml` and `%LOCALAPPDATA%\pyo\update-check.json`, in your user profile.
 
 ## Inside your services
 

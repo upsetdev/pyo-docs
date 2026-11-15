@@ -7,15 +7,53 @@ The CLI is separate from Pyo itself. Pyo runs on your server, and the CLI runs o
 
 ## Install
 
+On Linux and macOS:
+
 ```bash
 curl -fsSL https://pyo.dev/cli.sh | sh
 ```
 
-It downloads the CLI from Pyo's latest release on GitHub and checks it against the release's checksum. It installs to `/usr/local/bin` when you can write there, and `~/.local/bin` otherwise. Set `PYO_INSTALL_DIR` to choose another folder, or `PYO_VERSION` for a release other than the latest.
+It downloads the CLI for your system from Pyo's latest release on GitHub and checks it against the release's checksum. It works on Linux and macOS, on both x86-64 and Arm. It installs to `/usr/local/bin` when you can write there, and `~/.local/bin` otherwise. Set `PYO_INSTALL_DIR` to choose another folder, or `PYO_VERSION` for a release other than the latest.
+
+### Windows
+
+In PowerShell:
+
+```powershell
+$dir = "$env:LOCALAPPDATA\Programs\pyo"
+$url = "https://github.com/upsetdev/pyo/releases/latest/download/pyo-windows-x86_64.exe"
+New-Item -ItemType Directory -Force $dir | Out-Null
+$ProgressPreference = "SilentlyContinue"
+Invoke-WebRequest $url -OutFile "$dir\pyo.exe"
+Invoke-WebRequest "$url.sha256" -OutFile "$dir\pyo.exe.sha256"
+$want = (Get-Content "$dir\pyo.exe.sha256").Split(" ")[0]
+Remove-Item "$dir\pyo.exe.sha256"
+if ((Get-FileHash "$dir\pyo.exe").Hash -ne $want) { Remove-Item "$dir\pyo.exe"; throw "The download doesn't match its checksum. Try again." }
+$path = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($path -notlike "*$dir*") { [Environment]::SetEnvironmentVariable("Path", "$path;$dir", "User") }
+```
+
+This installs `pyo.exe` in your user folder and adds it to your `Path`. Open a new terminal to use it. The CLI runs on Windows on x86-64.
+
+### Download it yourself
+
+Each [release on GitHub](https://github.com/upsetdev/pyo/releases) has the CLI for every system, each with a `.sha256` checksum:
+
+| System | File |
+| --- | --- |
+| Linux, x86-64 | `pyo-linux-x86_64` |
+| Linux, Arm | `pyo-linux-aarch64` |
+| macOS, Apple silicon | `pyo-macos-aarch64` |
+| macOS, Intel | `pyo-macos-x86_64` |
+| Windows, x86-64 | `pyo-windows-x86_64.exe` |
+
+Rename it to `pyo` (or `pyo.exe` on Windows) and put it in a folder on your `PATH`. On Linux and macOS, make it runnable with `chmod +x pyo`.
 
 <Callout type="warn">
-  For now, the CLI is built for Linux on x86-64 only. On other systems, build it from source with `cargo build --release -p pyo-cli`.
+  macOS blocks a CLI you download in a browser from opening. Clear the block with `xattr -d com.apple.quarantine pyo`. The `curl` install above doesn't need this.
 </Callout>
+
+On other systems, build the CLI from source with `cargo build --release -p pyo-cli`.
 
 ## Sign in
 
@@ -113,7 +151,7 @@ It shows what each project, service and database becomes, then asks before it im
 pyo upgrade
 ```
 
-This replaces `pyo` with the latest release, after checking its checksum. It says when you already have the latest. Add `--version 0.3.0` for a particular release. If you can't write to the folder `pyo` is in, run it as a user who can, or install it again into a folder of yours.
+This replaces `pyo` with the latest release for your system, after checking its checksum. It says when you already have the latest. Add `--version 0.3.0` for a particular release. If you can't write to the folder `pyo` is in, run it as a user who can, or install it again into a folder of yours.
 
 Once a day, the CLI looks for a new release. When there is one, it says so after a command:
 
