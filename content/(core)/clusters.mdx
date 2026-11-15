@@ -29,10 +29,24 @@ Open a cluster from **Clusters**. Its tabs are:
 | --- | --- |
 | Overview | Its state at a glance |
 | Servers | The machines in it |
-| Workloads | Everything running, down to the server it's on |
+| Workloads | Everything running, down to the server it's on. See [Workloads](#workloads) |
 | Networking | HTTP routes and ports |
 | Storage | Volumes and storage classes |
 | Settings | Its details, public traffic, free domains, how traffic is routed, mTLS, its connection and removal |
+
+### Workloads
+
+The **Workloads** tab opens on your team's **Services**, with their project, kind, status, CPU and memory. Switch to **System** to see what Pyo and the cluster run themselves. Each part is one row, with its replicas, CPU and memory added up and the worst status among them:
+
+| Part | What it is |
+| --- | --- |
+| Agent | The Pyo agent that runs the cluster for Pyo |
+| Builds | Builders and Pyo's registry |
+| Databases | What runs your databases |
+| Gateway | [Pyo Gateway](/docs/gateway), certificates, the WAF and static sites |
+| Logs | What collects request logs, analytics and metrics |
+| Pyo | Pyo itself, on the server it runs on |
+| Cluster | Everything else the cluster runs, like k3s's DNS |
 
 ## Public traffic
 
