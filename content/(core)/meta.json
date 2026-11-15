@@ -23,7 +23,7 @@
     "gateway",
     "volumes",
     "gpus",
-    "sandboxes",
+    "sandbox",
     "observability",
     "activity",
     "---Infrastructure---",
