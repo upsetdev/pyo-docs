@@ -21,6 +21,8 @@ Paste the repository's URL as you have it. `github.com/acme/web`, `https://gitla
 
 Run any image by name, such as `ghcr.io/acme/api:1.2`. For private images, save a [registry login](/docs/registries) first.
 
+Pyo picks the port from the image's `EXPOSE` when it would otherwise have to guess, and sets the health check to match. It reads public images only. For a private image, or a registry that's slow to answer, check the port before you deploy.
+
 ## From Docker Compose
 
 Import a Compose file as a project, with a service for each Compose service. See [Importing Docker Compose](/docs/deploy/compose).
