@@ -26,6 +26,7 @@ replicas = 2
 port = 8080            # the port it listens on for HTTP
 health = "/healthz"    # checked before traffic moves over, or "tcp" or "none"
 auto_rollback = true
+serve = "static"       # a static site's build served as files, or "service"
 
 [resources]
 cpu = "500m"           # limit: "500m" or "1" (cores)
