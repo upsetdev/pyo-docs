@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Pyo API",
-    "description": "Everything the dashboard does, for scripts. Read with GET, and change things with one operation per POST to `/ops`.\n\nAuthenticate with an API key from the dashboard's API keys page: `Authorization: Bearer pyo_…`. A key acts as you, with your role in each team, and is limited further by its access: **read** (look, never change), **deploy** (also deploy, roll back, restart, stop and scale services) or **full** (everything you can do in its teams). Each endpoint and operation says the access it needs in `x-pyo-access`.\n\nErrors come back as `{\"error\": \"…\"}` with a status code. Times are milliseconds since 1970 unless they say otherwise.",
+    "description": "Everything the dashboard does, for scripts. Read with GET, and change things with one operation per POST to `/ops`.\n\nAuthenticate with an API key from the dashboard's API keys page: `Authorization: Bearer pyo_…`. A key acts as you, with your role in each team, and is limited further by its access: **read** (look, never change), **deploy** (also deploy, roll back, restart, stop and scale services), **sandboxes** (also create and use sandboxes) or **full** (everything you can do in its teams). Each endpoint and operation says the access it needs in `x-pyo-access`.\n\nErrors come back as `{\"error\": \"…\"}` with a status code. Times are milliseconds since 1970 unless they say otherwise.",
     "license": {
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
@@ -3563,6 +3563,1357 @@
         },
         "x-pyo-access": "read"
       }
+    },
+    "/sandboxes": {
+      "get": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Sandboxes",
+        "description": "A team's sandboxes: their template, size, state, server and lifetime.\nEnv values are never shown, only their names.\n\nAPI key access: **read**.",
+        "operationId": "listSandboxes",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "description": "\"live\" (the default: not stopped or failed) or \"all\" (the latest 500).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`sandboxes`, newest first, each with `id`, `teamId`, `projectId`, `serverId`, `server`, `template`, `templateId`, `state` (\"creating\", \"running\", \"pausing\", \"paused\", \"resuming\", \"stopping\", \"stopped\" or \"failed\"), `runtime` (\"firecracker\" or \"gvisor\"), `cpus`, `memoryMib`, `diskMib`, `network`, `isolation`, `labels`, `env` (names only), `url` (its server's daemon), `edgeUrl` (its server's edge proxy, or null), `ports` (each `port`, `public` and `url`), `error`, `createdBy`, `createdAt`, `startedAt`, `expiresAt`, `pausedAt` and `endedAt`. Also `limits` (the team's) and `inUse` (what its sandboxes take now).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      },
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Create a sandbox",
+        "description": "Makes an isolated machine from a sandbox template on one of the team's\nsandbox servers (or the installation's), within the team's limits. It\nruns until its lifetime ends or it's deleted. The answer has the\n`connection`: the server's address and a token, valid an hour, for exec,\nterminals, files and ports there. Ask for a new token with\n`createSandboxToken`. `teamId` may be left out when the API key (or\nyou) can use only one team.\n\nAPI key access: **sandboxes**.",
+        "operationId": "createSandbox",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSandbox"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "`sandbox` (as in `listSandboxes`) and `connection`: `url`, `sandboxId`, `token` and `expiresAt`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A size, lifetime or other value Pyo can't accept, or no `teamId` when you can use more than one team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Your role, the API key's access or the team's sandbox limits don't allow it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, template or project.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No sandbox server can run it: none yet, none with the template, or none with KVM for `isolation: vm`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Every sandbox server is full or down. Try again soon.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}": {
+      "get": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "A sandbox",
+        "description": "One sandbox, as `listSandboxes` lists them, with a fresh `connection`\nfor its server when you may use it.\n\nAPI key access: **read**.",
+        "operationId": "getSandbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id, `sbx_…`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sandbox, with `connection` (as in `createSandbox`) when you may use sandboxes and it lives. Otherwise `connection` is null and `connectionNote` says why: a read-only key, a viewer, or a sandbox that has ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox, or you can't see it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      },
+      "delete": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Delete a sandbox",
+        "description": "Ends the sandbox and throws away its files. When its server can't be\nreached right now, it shows as stopping and Pyo tries again.\n\nAPI key access: **sandboxes**.",
+        "operationId": "deleteSandbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sandbox, now stopped or stopping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}/pause": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Pause a sandbox",
+        "description": "Stops its machine and keeps its memory and files on the server, so it\nresumes where it was. Connections to it drop.\n\nAPI key access: **sandboxes**.",
+        "operationId": "pauseSandbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sandbox, paused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has ended, or isn't running.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}/resume": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Resume a sandbox",
+        "description": "Starts a paused sandbox again where it was.\n\nAPI key access: **sandboxes**.",
+        "operationId": "resumeSandbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sandbox, running.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has ended, or isn't paused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}/extend": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Extend a sandbox",
+        "description": "Sets when the sandbox ends: `ttl` from now.\n\nAPI key access: **sandboxes**.",
+        "operationId": "extendSandbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Extend"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The sandbox, with its new `expiresAt`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Longer than the team's sandboxes may live.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}/token": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "New sandbox token",
+        "description": "A new token for the sandbox's server, valid an hour. Ask before the\nlast one runs out.\n\nAPI key access: **sandboxes**.",
+        "operationId": "createSandboxToken",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The connection: `url`, `sandboxId`, `token` and `expiresAt`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}/ports": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Open a sandbox port",
+        "description": "Serves a port the sandbox listens on at its own URL. A public port\nanswers anyone. A private one needs a sandbox token, in\n`Authorization: Bearer` or once as `?pyo_token=` in a browser.\n\nAPI key access: **sandboxes**.",
+        "operationId": "openSandboxPort",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenPort"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "`url`, `port` and `public`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has ended, or its server has no edge proxy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandboxes/{id}/ports/{port}": {
+      "delete": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Close a sandbox port",
+        "description": "Stops serving the port at its URL. Closing a port that isn't open is\nfine.\n\nAPI key access: **sandboxes**.",
+        "operationId": "closeSandboxPort",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "port",
+            "in": "path",
+            "description": "The port, like 3000.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`port` and `closed`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandbox-servers": {
+      "get": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Sandbox servers",
+        "description": "The servers a team's sandboxes run on: its own and the installation's.\n\nAPI key access: **read**.",
+        "operationId": "listSandboxServers",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`servers`, each with `id`, `teamId` (null for the installation's), `name`, `address`, `state` (\"joining\", \"ready\", \"unreachable\" or \"refused\"), `enabled`, `capability` (`runtime`, `kvm`, `bootMs`, `arch`, `cpus`, `memory`, `disk` and the checks), `summary` (one line about it), `capacity`, `templates`, `daemonVersion`, `lastReportAt`, `error`, `sandboxes` (how many run there), `createdAt`, `edgeDomain` and, with an edge domain, `edge`: its `domain`, `https` (whether it serves HTTPS), `cert` (`state`: \"none\", \"issuing\", \"ready\" or \"failed\", `notAfter`, `issuedAt`, `error`, `served`), `cloudflare` (the connected zone that covers it: `teamId`, `zone`, `canEdit`, or null) and `dns` (`name`, the `records` to point it at the server, and what Pyo `made`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      },
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Add a sandbox server",
+        "description": "Makes a server's one-time join code and the command to run on it. The\ncode works once, for 15 minutes. The command joins your tailnet, installs\nPyo's sandbox daemon, checks what the server can run (Firecracker where it\nhas KVM, gVisor elsewhere) and joins. Adding a server that hasn't joined\nyet again makes a new code. Team owners and admins. Needs Tailscale.\n\nAPI key access: **full**.",
+        "operationId": "addSandboxServer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddServer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "`server`, `command` (run it on the server as root) and `expiresAt` (when the code runs out).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A bad name, or Tailscale isn't set up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A server with that name has joined already, or Pyo isn't on the tailnet yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/sandbox-servers/{id}": {
+      "delete": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Remove a sandbox server",
+        "description": "Deletes its sandboxes where it still answers, and forgets it. To take the\ndaemon off the server, run `sandbox.sh --uninstall` there.\n\nAPI key access: **full**.",
+        "operationId": "removeSandboxServer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox server's id, `sbs_…`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`ok`, and `stopped`: how many sandboxes ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/sandbox-servers/{id}/certificate": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Get a sandbox server's certificate",
+        "description": "Gets a Let's Encrypt certificate for `*.<edge domain>` with a DNS-01\nchallenge in the team's Cloudflare connection, and puts it on the\nserver, whose edge serves it at once. It runs in the background: the\nserver's `edge.cert.state` says how it goes. Pyo renews it 30 days\nbefore it runs out. Also renews it now. The zone must be connected and\neditable. Team owners and admins, or the installation's admin for its\nown servers.\n\nAPI key access: **full**.",
+        "operationId": "issueSandboxServerCertificate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox server's id, `sbs_…`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "`state`: \"issuing\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server has no edge domain, or no connected Cloudflare zone covers it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Pyo is getting it already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/sandbox-servers/{id}/dns-record": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Create a sandbox server's DNS record",
+        "description": "Creates the wildcard record `*.<edge domain>` in the team's Cloudflare\nconnection: A (and AAAA) to the public addresses the server reports,\nnot proxied. Records already on the name are never changed: another one\nthere is a conflict. Team owners and admins, or the installation's\nadmin for its own servers.\n\nAPI key access: **full**.",
+        "operationId": "createSandboxServerDnsRecord",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox server's id, `sbs_…`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "`ok`, `status` (\"created\", \"exists\" or \"conflict\") and `existing` (the records in the way).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server has no edge domain, or no connected Cloudflare zone covers it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The server reports no public address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/sandbox-templates": {
+      "get": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Sandbox templates",
+        "description": "What a team's sandboxes can start from: its own templates and the\ninstallation's.\n\nAPI key access: **read**.",
+        "operationId": "listSandboxTemplates",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`templates`, each with `id`, `teamId` (null for the installation's), `name`, `source` (`kind` and `image`), `state` (\"pending\", \"building\", \"ready\" or \"failed\", from its servers), `servers`, `error` and `createdAt`. Each of `servers` is a sandbox server that may use it, with `id`, `name`, `state` (\"pending\", \"building\", \"ready\" or \"failed\"), `phase` while building (\"queued\", \"pulling\", \"unpacking\" or \"snapshotting\"), `pulled` and `imageBytes`, `pullMs`, `unpackMs` and `snapshotMs`, `bytes` (disk it takes there), `snapshots` and `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      },
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Create a sandbox template",
+        "description": "A template made from an OCI image, like \"node:22\", or an image in Pyo's\nregistry. Every sandbox server that may use it pulls the image, makes a\nroot disk from it, boots it once and snapshots it. The template is\nready once one server has it.\n\nAPI key access: **sandboxes**.",
+        "operationId": "createSandboxTemplate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The template, as in `listSandboxTemplates`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A bad name or image.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The team has a template with that name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
+    },
+    "/sandbox-templates/{id}": {
+      "delete": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Delete a sandbox template",
+        "description": "Deletes it here and on the sandbox servers. Refused while sandboxes run\nfrom it.\n\nAPI key access: **sandboxes**.",
+        "operationId": "deleteSandboxTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The template's id, `stp_…`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`ok`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such template.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sandboxes still run from it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      }
     }
   },
   "components": {
@@ -3724,6 +5075,33 @@
         "x-tags": [
           "Firewall"
         ]
+      },
+      "AddServer": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "teamId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The team whose server it is. Left out: the installation's, which\nevery team may use (the installation's admin, in the dashboard)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name in Pyo and on your tailnet: lowercase letters, digits and\ndashes."
+          },
+          "edgeDomain": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A domain whose wildcard points at the server, like sbx.example.com.\nSandbox ports are then served at `<port>-<sandbox>.<domain>` on\nports 80 and 443. Pyo gets the certificate for `*.<domain>` when the\nteam's Cloudflare connection covers the domain\n(`issueSandboxServerCertificate`). Otherwise it goes in\n/etc/pyo-sandbox/edge on the server."
+          }
+        },
+        "additionalProperties": false
       },
       "AddVolumeOp": {
         "type": "object",
@@ -4253,6 +5631,35 @@
         "x-tags": [
           "Databases"
         ]
+      },
+      "Connection": {
+        "type": "object",
+        "description": "Where a client reaches its sandbox, and with what.",
+        "required": [
+          "url",
+          "sandboxId",
+          "token",
+          "expiresAt"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The sandbox server's daemon, on your tailnet."
+          },
+          "sandboxId": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "description": "`Authorization: Bearer <token>` for exec, terminals, files and ports."
+          },
+          "expiresAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the token runs out (epoch milliseconds). Ask for a new one with\n`createSandboxToken` before.",
+            "minimum": 0
+          }
+        }
       },
       "CreateBuilderOp": {
         "type": "object",
@@ -4930,6 +6337,110 @@
           "Images"
         ]
       },
+      "CreateSandbox": {
+        "type": "object",
+        "description": "What a client asks for. Everything but the team and template has a\ndefault.",
+        "required": [
+          "template"
+        ],
+        "properties": {
+          "teamId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The team the sandbox belongs to. May be left out when the API key\n(or user) has exactly one team."
+          },
+          "template": {
+            "type": "string",
+            "description": "A sandbox template's name (or id): the team's own, else the\ninstallation's."
+          },
+          "cpus": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "1 when omitted.",
+            "minimum": 0
+          },
+          "memoryMib": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "512 when omitted.",
+            "minimum": 0
+          },
+          "diskMib": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The writable disk, sparse. 2048 when omitted.",
+            "minimum": 0
+          },
+          "ttl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "How long it lives, like \"30m\" or \"1h\", or seconds. 5 minutes when\nomitted."
+          },
+          "pauseWhenIdleSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Pause after this many seconds without use. Kept for now, acted on in\na later release.",
+            "minimum": 0
+          },
+          "env": {
+            "type": "object",
+            "description": "Environment variables. Pyo passes them on and keeps only the names.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"internet\" (the default) or \"none\"."
+          },
+          "isolation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"auto\" (the default: Firecracker where the server has KVM, gVisor\nelsewhere) or \"vm\" (Firecracker only)."
+          },
+          "labels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A project of the team, as a label."
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateServiceOp": {
         "type": "object",
         "title": "Create service",
@@ -5101,6 +6612,31 @@
         "x-tags": [
           "Teams"
         ]
+      },
+      "CreateTemplate": {
+        "type": "object",
+        "required": [
+          "name",
+          "image"
+        ],
+        "properties": {
+          "teamId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The team whose template it is. Left out: the installation's (its\nadmin, in the dashboard)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Lowercase letters, digits, dashes, dots and underscores, like\n\"node-22\"."
+          },
+          "image": {
+            "type": "string",
+            "description": "The OCI image it's made from, like \"node:22\", or an image in Pyo's\nregistry, like \"registry.<tailnet>.ts.net/acme/app/api:1\"."
+          }
+        },
+        "additionalProperties": false
       },
       "DeleteCloudServerOp": {
         "type": "object",
@@ -5577,6 +7113,19 @@
           "Databases"
         ]
       },
+      "EdgeRequest": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The team whose Cloudflare connection to use, for one of the\ninstallation's servers. A team's own server always uses its team's."
+          }
+        },
+        "additionalProperties": false
+      },
       "ErrorBody": {
         "type": "object",
         "description": "What every error response carries: one sentence to show.",
@@ -5592,6 +7141,19 @@
             "description": "The change wasn't made: confirm it with the user, then send it again\nwith `confirm: true`."
           }
         }
+      },
+      "Extend": {
+        "type": "object",
+        "required": [
+          "ttl"
+        ],
+        "properties": {
+          "ttl": {
+            "type": "string",
+            "description": "The sandbox now ends this long from now, like \"30m\" or \"1h\", or\nseconds. Within the team's longest lifetime."
+          }
+        },
+        "additionalProperties": false
       },
       "GithubInstallUrlOp": {
         "type": "object",
@@ -6615,6 +8177,9 @@
             "$ref": "#/components/schemas/RemoveMemberOp"
           },
           {
+            "$ref": "#/components/schemas/ResetMemberSignInOp"
+          },
+          {
             "$ref": "#/components/schemas/CreateProjectOp"
           },
           {
@@ -6848,6 +8413,7 @@
             "reorderWafRules": "#/components/schemas/ReorderWafRulesOp",
             "replaceCertificate": "#/components/schemas/ReplaceCertificateOp",
             "resendInvite": "#/components/schemas/ResendInviteOp",
+            "resetMemberSignIn": "#/components/schemas/ResetMemberSignInOp",
             "resizeVolume": "#/components/schemas/ResizeVolumeOp",
             "restartService": "#/components/schemas/RestartServiceOp",
             "restoreDatabase": "#/components/schemas/RestoreDatabaseOp",
@@ -6901,6 +8467,28 @@
             "verifyDomain": "#/components/schemas/VerifyDomainOp"
           }
         }
+      },
+      "OpenPort": {
+        "type": "object",
+        "required": [
+          "port"
+        ],
+        "properties": {
+          "port": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The port the sandbox listens on, like 3000.",
+            "minimum": 0
+          },
+          "public": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether anyone can open the URL. A private port needs a sandbox\ntoken. True when left out."
+          }
+        },
+        "additionalProperties": false
       },
       "PlanEnv": {
         "type": "object",
@@ -7936,6 +9524,40 @@
             "id": "mem_8kq2x7ad",
             "op": "resendInvite",
             "send": true
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Teams"
+        ]
+      },
+      "ResetMemberSignInOp": {
+        "type": "object",
+        "title": "Reset member sign in",
+        "description": "Owners only: a one-time link for a member who lost their password, to choose a new one. It's emailed to them. Without email set up, it's returned to pass on, for an account in this team alone.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "resetMemberSignIn"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "mem_8kq2x7ad",
+          "op": "resetMemberSignIn"
+        },
+        "examples": [
+          {
+            "id": "mem_8kq2x7ad",
+            "op": "resetMemberSignIn"
           }
         ],
         "x-pyo-access": "full",
@@ -10784,6 +12406,10 @@
     {
       "name": "Observability",
       "description": "Usage of servers and services, website traffic and request logs."
+    },
+    {
+      "name": "Sandboxes",
+      "description": "Isolated machines made on demand on your sandbox servers, for agents, code and previews."
     }
   ]
 }

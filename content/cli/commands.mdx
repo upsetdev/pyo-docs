@@ -423,6 +423,345 @@ Options:
   -V, --version        Print version
 ```
 
+## `pyo sandbox`
+
+Sandboxes: isolated machines on your sandbox servers. exec, shell and cp reach the sandbox's server directly, over your tailnet for now
+
+```text
+Sandboxes: isolated machines on your sandbox servers. exec, shell and cp reach the sandbox's server directly, over your tailnet for now
+
+Usage: pyo sandbox [OPTIONS] <COMMAND>
+
+Commands:
+  create     Make a sandbox from a sandbox template and print its id
+  ls         The team's sandboxes
+  get        One sandbox
+  rm         Delete a sandbox and its files
+  pause      Pause a sandbox. It resumes where it was
+  resume     Resume a paused sandbox
+  extend     Make a sandbox end this long from now
+  token      A new token for the sandbox's server, valid an hour
+  exec       Run a command in a sandbox and print its output. Exits with its code
+  shell      A terminal in a sandbox
+  cp         Copy a file into or out of a sandbox: <ID>:<PATH> on one side. Up to 64 MB
+  ports      Serve a sandbox's ports at their own URLs
+  servers    The servers sandboxes run on
+  templates  What sandboxes start from
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox create`
+
+Make a sandbox from a sandbox template and print its id
+
+```text
+Make a sandbox from a sandbox template and print its id
+
+Usage: pyo sandbox create [OPTIONS] <TEMPLATE>
+
+Arguments:
+  <TEMPLATE>  The sandbox template, like node-22 (see pyo sandbox templates ls)
+
+Options:
+      --cpus <CPUS>             CPUs. Default 1
+      --url <URL>               Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --memory <MEMORY>         Memory in MiB. Default 512
+      --token <TOKEN>           An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --disk <DISK>             Writable disk in MiB. Default 2048
+      --ttl <TTL>               How long it lives, like 30m or 1h. Default 5m
+      --pause-when-idle <SECS>  Pause after this many seconds without use
+  -e, --env <KEY=VALUE>         An environment variable, KEY=VALUE. Repeat for more
+      --label <KEY=VALUE>       A label, key=value. Repeat for more
+      --network <NETWORK>       internet or none [possible values: internet, none]
+      --isolation <ISOLATION>   auto (Firecracker where the server has KVM, gVisor elsewhere) or vm (Firecracker only) [possible values: auto, vm]
+      --project <PROJECT>       A project of the team (id), as a label
+      --json                    Print the sandbox and its connection as JSON
+      --team <TEAM>             The team (slug or id). Defaults to your first team
+  -h, --help                    Print help
+  -V, --version                 Print version
+```
+
+### `pyo sandbox ls`
+
+The team's sandboxes
+
+```text
+The team's sandboxes
+
+Usage: pyo sandbox ls [OPTIONS]
+
+Options:
+  -a, --all            Ended ones too (the latest 500)
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --json           Print it as JSON
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox get`
+
+One sandbox
+
+```text
+One sandbox
+
+Usage: pyo sandbox get [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The sandbox's id, sbx_…
+
+Options:
+      --json           Print it as JSON
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox rm`
+
+Delete a sandbox and its files
+
+```text
+Delete a sandbox and its files
+
+Usage: pyo sandbox rm [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The sandbox's id, sbx_…
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox pause`
+
+Pause a sandbox. It resumes where it was
+
+```text
+Pause a sandbox. It resumes where it was
+
+Usage: pyo sandbox pause [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The sandbox's id, sbx_…
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox resume`
+
+Resume a paused sandbox
+
+```text
+Resume a paused sandbox
+
+Usage: pyo sandbox resume [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The sandbox's id, sbx_…
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox extend`
+
+Make a sandbox end this long from now
+
+```text
+Make a sandbox end this long from now
+
+Usage: pyo sandbox extend [OPTIONS] <ID> <TTL>
+
+Arguments:
+  <ID>   The sandbox's id, sbx_…
+  <TTL>  Like 30m or 1h
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox token`
+
+A new token for the sandbox's server, valid an hour
+
+```text
+A new token for the sandbox's server, valid an hour
+
+Usage: pyo sandbox token [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The sandbox's id, sbx_…
+
+Options:
+      --json           Print it as JSON
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox exec`
+
+Run a command in a sandbox and print its output. Exits with its code
+
+```text
+Run a command in a sandbox and print its output. Exits with its code
+
+Usage: pyo sandbox exec [OPTIONS] <ID> <COMMAND>...
+
+Arguments:
+  <ID>          The sandbox's id, sbx_…
+  <COMMAND>...  One argument runs with /bin/sh -c, more run as they are
+
+Options:
+      --cwd <CWD>       The working directory
+      --url <URL>       Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --timeout <SECS>  Kill the command after this many seconds. Default 60
+      --token <TOKEN>   An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>     The team (slug or id). Defaults to your first team
+  -h, --help            Print help
+  -V, --version         Print version
+```
+
+### `pyo sandbox shell`
+
+A terminal in a sandbox
+
+```text
+A terminal in a sandbox
+
+Usage: pyo sandbox shell [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The sandbox's id, sbx_…
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox cp`
+
+Copy a file into or out of a sandbox: `<ID>`:`<PATH>` on one side. Up to 64 MB
+
+```text
+Copy a file into or out of a sandbox: <ID>:<PATH> on one side. Up to 64 MB
+
+Usage: pyo sandbox cp [OPTIONS] <FROM> <TO>
+
+Arguments:
+  <FROM>  A local file, - for stdin, or <ID>:<PATH>
+  <TO>    A local file or folder, - for stdout, or <ID>:<PATH>
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox ports`
+
+Serve a sandbox's ports at their own URLs
+
+```text
+Serve a sandbox's ports at their own URLs
+
+Usage: pyo sandbox ports [OPTIONS] <COMMAND>
+
+Commands:
+  open   Serve a port the sandbox listens on and print its URL
+  close  Stop serving a port
+  ls     The sandbox's open ports
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox servers`
+
+The servers sandboxes run on
+
+```text
+The servers sandboxes run on
+
+Usage: pyo sandbox servers [OPTIONS] <COMMAND>
+
+Commands:
+  add   Add a sandbox server: prints the command to run on it. Owners and admins
+  ls    The sandbox servers the team can use
+  rm    Remove a sandbox server (name or id). Its sandboxes end
+  help  Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox templates`
+
+What sandboxes start from
+
+```text
+What sandboxes start from
+
+Usage: pyo sandbox templates [OPTIONS] <COMMAND>
+
+Commands:
+  ls      The sandbox templates the team can use
+  create  Make a sandbox template from an image
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
 ## `pyo db`
 
 Built-in databases
