@@ -1,9 +1,9 @@
 ---
 title: Importing from another platform
-description: Move your services, Compose stacks and databases from Coolify or Dokploy into Pyo.
+description: Move your services, Compose stacks and databases from Coolify, Dokploy, Railway or Vercel into Pyo.
 ---
 
-Pyo can bring your services over from Coolify or Dokploy. It reads them through the platform's API, shows you what each one becomes, and imports the ones you pick. Owners and admins can import.
+Pyo can bring your services over from Coolify, Dokploy, Railway or Vercel. It reads them through the platform's API, shows you what each one becomes, and imports the ones you pick. Owners and admins can import.
 
 ## Before you start
 
@@ -11,6 +11,8 @@ Make a token on the platform:
 
 - **Coolify:** in **Keys & Tokens**, make an API token with `read` and `read:sensitive`. Without `read:sensitive`, Coolify doesn't share variable values. If the API is off, turn it on in **Settings**.
 - **Dokploy:** in your profile's **API/CLI** section, generate an API key.
+- **Railway:** in **Account Settings**, then **Tokens**, make a token. A workspace or project token works too. A project token reads one environment of one project.
+- **Vercel:** in **Account Settings**, then **Tokens**, make a token.
 
 Pyo uses the token only while it reads, and never stores it.
 
@@ -19,7 +21,7 @@ Pyo uses the token only while it reads, and never stores it.
 ### From the dashboard
 
 1. Choose **New → Import from a platform**.
-2. Pick the **Platform**, enter its **Address** and **API token**, and pick the **Cluster** to run on. Then choose **Preview**.
+2. Pick the **Platform** and enter its **API token**. Coolify and Dokploy also need their **Address**. For Vercel, enter a **Team** (its slug or id) to read that team instead of the token's own scope. Pick the **Cluster** to run on, then choose **Preview**.
 3. Check what each project, service and database becomes. Notes say what doesn't carry over.
 4. Pick what to bring. Turn on **Deploy services once imported** to deploy them now. Otherwise they're saved stopped, ready to deploy.
 5. Choose **Import**. Each item shows **Created**, **Copying data**, **Imported before**, **Held**, **Not imported** or **Failed**. One failure doesn't stop the others.
@@ -30,11 +32,16 @@ Pyo uses the token only while it reads, and never stores it.
 pyo import coolify --from https://coolify.example.com --source-token <token>
 ```
 
-The CLI shows what it will create and asks before it imports. Use `dokploy` for Dokploy. Add `--team` or `--cluster` to choose where it goes, `--deploy` to deploy the services, and `--yes` to skip the question.
+```bash
+pyo import railway --source-token <token>
+pyo import vercel --source-token <token> --source-team <team>
+```
+
+The CLI shows what it will create and asks before it imports. Use `dokploy` for Dokploy. Railway and Vercel need no `--from`, and `--source-team` is optional. Add `--team` or `--cluster` to choose where it goes, `--deploy` to deploy the services, and `--yes` to skip the question.
 
 ### From the API
 
-Send the platform's address and token to [Preview an import from another platform](/docs/api/reference/projects/preview-platform-import) to see the plan. Then import the items you pick with [Import from another platform](/docs/api/reference/projects/start-platform-import).
+Send the platform's token, and its address for Coolify or Dokploy, to [Preview an import from another platform](/docs/api/reference/projects/preview-platform-import) to see the plan. Then import the items you pick with [Import from another platform](/docs/api/reference/projects/start-platform-import).
 
 ## What comes over
 
@@ -46,6 +53,22 @@ Send the platform's address and token to [Preview an import from another platfor
 - **Volumes:** they start empty. Copy their data yourself.
 - **Compose stacks:** each becomes a project of its own, as with a [Docker Compose import](/docs/deploy/compose). A Compose file from a repository isn't imported: use the Compose import from the repository.
 - **Databases:** Postgres and MySQL databases the platform makes reachable from outside are copied into new Pyo [databases](/docs/databases), as in [Migrating a database](/docs/migrating). Others are made empty, with how to move their data. Redis, KeyDB and Dragonfly become empty KV databases. MariaDB, MongoDB, ClickHouse and libSQL aren't imported.
+
+### From Railway
+
+- **Projects:** each environment other than production becomes a project of its own, as above. Pull request environments are left out.
+- **Services:** each is built from its repository or run from its image. One Railway built with buildpacks is built with zero config.
+- **Variables:** references like `${{shared.KEY}}` are filled in. `RAILWAY_PRIVATE_DOMAIN` becomes the service's name in Pyo and `RAILWAY_PUBLIC_DOMAIN` its first custom domain. Sealed variables come over secret and empty, so set them in Pyo.
+- **Databases:** Postgres and MySQL with public access turned on are copied. Redis becomes an empty KV database. MongoDB isn't imported.
+- A service Railway ran on a schedule, or put to sleep when idle, keeps running in Pyo. Make a cron job for a scheduled one.
+
+### From Vercel
+
+- **Projects:** each becomes a service built with zero config from its Git repository, on port 3000. Its build and install commands and Node.js version come with it. A project deployed with Vercel's CLI, with no repository, needs one.
+- **Variables:** production ones come over. Sensitive variables come over by name, secret and empty, so set them in Pyo. Vercel's own variables like `VERCEL_URL` aren't set. The build gets only public variables like `NEXT_PUBLIC_` ones. Add others as build arguments if the build needs them.
+- **Databases:** a Postgres store is copied when Vercel shares its URL. Otherwise it's made empty. A Redis store becomes an empty KV database. Blob stores aren't carried over.
+- **Runs as a server:** Next.js runs as one server with `next start`, middleware and image optimization included. Vercel Functions and Edge Functions don't run in Pyo. Pyo serves what the build makes.
+- Cron jobs, password protection and preview deployments aren't carried over. Each one is a note on its item.
 
 ## Databases your services use
 
