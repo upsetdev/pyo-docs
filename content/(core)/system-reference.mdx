@@ -22,7 +22,7 @@ sudo k3s kubectl -n pyo-system set env deployment/pyo --list
 Pyo has two deployments, and some settings belong on both. `pyo` serves the dashboard and API, and `pyo-worker` runs deploys, backups and other background work.
 
 <Callout type="warn">
-  Updating Pyo puts back the values it sets in its own <Term tip="The file that describes how Pyo itself is set up on the cluster.">manifest</Term>, like `PYO_REGISTRY_PUSH`. Variables you've added, like `PYO_ALLOW_SIGNUP` and `PYO_COOKIE_SECURE`, are kept.
+  Updating Pyo puts back the values it sets in its own <Term tip="The file that describes how Pyo itself is set up on the cluster.">manifest</Term>, like `PYO_REGISTRY_PULL`. Variables you've added, like `PYO_ALLOW_SIGNUP` and `PYO_COOKIE_SECURE`, are kept.
 </Callout>
 
 ## Installation settings
@@ -138,7 +138,6 @@ Pyo sets these itself, so leave them as they are.
 | `PYO_AGENT_TOKEN` | How an agent signs in to Pyo. |
 | `PYO_BUILDER_TOKEN` | How a builder signs in to Pyo. |
 | `PYO_GEOIP_DB` | Where the visitor location data is kept. |
-| `PYO_TAILNET_API_URL` | Pyo's address on your Tailscale network. |
 
 ## What runs on your server
 
@@ -158,7 +157,7 @@ sudo k3s kubectl -n pyo-system get pods
 | `pyo-vector` | Collects request logs on each server and passes them to Pyo. |
 | `pyo-backup-store` | S3-compatible storage on this cluster ([Garage](https://garagehq.deuxfleurs.fr), a single instance), the default destination for [backups](/docs/backups). Each team's key reaches only its own bucket. |
 | `registry` | Holds the images your builds produce. Only Pyo reaches it. |
-| `pyo-host` | Puts the dashboard on port 8000 and the registry on port 5005, on the machine itself and its Tailscale address. On the Tailscale address, the registry needs a login. |
+| `pyo-host` | Puts the registry on port 5005 of the machine itself, for its k3s and BuildKit. |
 | `buildkitd` | Builds Pyo's own images when Pyo is built from source. Stopped otherwise. Your images are built by builders. |
 | `pyo-builder-*` | Your [builders](/docs/builders). Their BuildKit runs only while there are builds. |
 
