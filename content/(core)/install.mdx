@@ -80,11 +80,13 @@ To update later, run the install command again. See [Updating Pyo](/docs/updatin
 
 When a fresh install is ready, the installer tells `api.pyo.dev` once, so we know how many people get Pyo running. It sends Pyo's version, the OS and the arch. It never sends the server's name, domains, addresses or who you are, and the source IP isn't stored. Running the command again to update sends nothing. The installer says when it counts.
 
-To skip it, set `PYO_TELEMETRY=off`:
+To skip it, set `PYO_TELEMETRY=off`. This also starts Pyo with [usage counts](/docs/updating-pyo#usage-counts) off:
 
 ```bash
 curl -fsSL https://pyo.dev/install.sh | PYO_TELEMETRY=off bash
 ```
+
+You can turn usage counts on later under **Settings → Updates**.
 
 ## Securing Pyo
 
