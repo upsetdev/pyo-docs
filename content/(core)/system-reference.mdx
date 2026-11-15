@@ -172,6 +172,7 @@ Pyo also relies on these, outside that namespace:
 | `pyo-forward` | `pyo-system` | On the machine Pyo runs on. Answers port 8000 from the machine itself, private networks and the tailnet, and the registry's port 5006 from the tailnet only. |
 | Gateway API | The cluster | The standard routing objects Pyo Gateway reads. k3s 1.37 and later include it. On older k3s, Pyo installs it, and k3s takes it over when you upgrade to 1.37. It stays if you remove Pyo. |
 | `pyo-waf` | `pyo-gateway` | The [web application firewall](/docs/waf), only while a service on the cluster has it on. |
+| `pyo-static` | `pyo-static` | Serves the cluster's [static sites](/docs/deploy/static-sites#served-as-static-files) as files, only while it has one. Reads their files from Pyo with a token that reaches only that cluster's sites, and keeps a copy on its server's disk. |
 | cert-manager | `cert-manager` | Issues HTTPS certificates. A certificate's Secret is deleted with it. |
 
 In `pyo-system`, [network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) turn away everything Pyo doesn't need: Pyo's database, ClickHouse, the registry and the backup store's admin API only answer Pyo itself. Pyo's dashboard and API answer the gateway, Pyo's own parts and the servers, never your services' pods directly: they reach it through its public or tailnet address, like anyone else. Your services reach the backup store's S3 API with a key.

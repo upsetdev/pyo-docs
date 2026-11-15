@@ -3,15 +3,81 @@ title: Static sites
 description: Deploy plain HTML or a built frontend from Git.
 ---
 
-A static site is a folder of HTML, CSS, JavaScript and images. Pyo deploys it like any other service from Git. With no Dockerfile, Pyo builds it with [Railpack](https://railpack.com), which serves the files with [Caddy](https://caddyserver.com). The build log says **Static site** for plain files, or the framework's name for a built frontend.
+A static site is a folder of HTML, CSS, JavaScript and images. Pyo deploys it like any other service from Git. With no Dockerfile, Pyo builds it with [Railpack](https://railpack.com). The build log says **Static site** for plain files, or the framework's name for a built frontend.
+
+## Served as static files
+
+When the build is a static site, Pyo serves its files from Pyo Static, a small file server it runs on the cluster, instead of a service of its own:
+
+- **Instant deploys and rollbacks:** each deploy is its own folder of files. A deploy or a rollback only moves the site's domains to another folder, so nothing restarts.
+- **No replicas to run:** one server, `pyo-static`, serves every static site of the cluster. It runs only while the cluster has one.
+- **Up when storage isn't:** the files are kept in your team's storage on the server Pyo runs on, and `pyo-static` keeps a copy on its own server's disk. A site keeps answering while that storage can't be reached.
+- **Everything else works the same:** [domains](/docs/domains) and HTTPS, free domains, the [firewall](/docs/firewall), the [WAF](/docs/waf), [analytics](/docs/observability) and [deploy on every push](/docs/deploy#deploy-on-every-push).
+
+The build log says **Uploading the site** with its files and size, and the service shows **Static files** instead of its replicas. Its **Logs** show each request, with its path, status and time.
+
+Only Railpack's static builds are served this way. A Dockerfile build always runs as a service, and so does a build that isn't a static site.
+
+### Run it as a service instead
+
+To serve the site with its own Caddy service, as Pyo did before, turn off **Serve as static files** in the service's **Settings**, under **Static files**, then redeploy. Turn it on again the same way. The switch works both ways without downtime: the domains move to the new version only once it's ready.
+
+With the CLI, set `serve = "service"` or `serve = "static"` under `[deploy]` in [pyo.toml](/docs/cli/pyo-toml).
+
+### Limits
+
+A static site can have up to 20,000 files and 1 GiB in all, and each file up to 100 MiB. A bigger one runs as a service, and the build log says why. Pyo keeps the files of each site's 10 newest deploys for rollbacks. Rolling back to an older deploy runs it as a service from its image.
+
+## Headers and redirects
+
+Put a `_headers` or `_redirects` file at the root of the output folder, as on Netlify and Cloudflare Pages. Pyo supports the part of their syntax described here. The build log names each line it leaves out, and neither file is served to visitors.
+
+### `_redirects`
+
+One rule per line: a path, where it goes, and a status. Lines starting with `#` are comments.
+
+```text title="_redirects"
+/old            /new
+/blog/*         /posts/:splat     302
+/users/:id      /profile/:id
+/docs           https://docs.example.com
+/app/*          /app/index.html   200
+/gone/*         /404.html         404
+```
+
+- **Status:** `301` when there's none. `302`, `303`, `307` and `308` redirect too. `200` serves the target's file at the same address, and `404` serves it with a `404`.
+- **Patterns:** `*` at the end matches the rest of the path, and `:splat` puts it in the target. `:name` matches one part of the path, and `:name` in the target puts it there.
+- **Order:** the first rule that matches wins. A redirect applies even where a file is. A `200` rule applies only where no file is.
+- **Query strings:** a redirect keeps the request's query string, unless the target has one.
+- **Not supported:** conditions like countries, languages or cookies, matching on query strings, and `200` to another site. A `!` after the status is accepted and changes nothing.
+
+### `_headers`
+
+A path on its own line, then the headers its responses get, each on its own indented line:
+
+```text title="_headers"
+/*
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  ! X-Frame-Options
+```
+
+- **Patterns:** the same as in `_redirects`, and `:splat` or `:name` in a value puts that part of the path there.
+- **Several matches:** every block that matches applies, in order. A header two blocks set gets both values, joined with a comma. `! Name` takes away a header an earlier block set.
+- **Not allowed:** headers the server sets itself, like `Content-Length` and `Content-Encoding`.
+
+Without a `_headers` file, each file gets its `Content-Type` from its extension, an `ETag`, and `Cache-Control: public, max-age=0, must-revalidate`, so browsers check for a new version on each visit.
 
 ## Before you deploy
 
-Keep the default port, `8080`. Pyo sets `PORT` to the service's first port, and Railpack's Caddy listens on `PORT`.
+Keep the default port, `8080`. Pyo sets `PORT` to the service's first port, and Railpack's Caddy listens on `PORT` when the site runs as a service.
 
 ## Health check
 
-When the build finds a static site, Pyo checks that `/` answers before the new version takes traffic. A redirect counts too. The service's **Health check** shows **Automatic (static site)**.
+When the build finds a static site that runs as a service, Pyo checks that `/` answers before the new version takes traffic. A redirect counts too. The service's **Health check** shows **Automatic (static site)**. A site served as static files needs no check: it goes live once `pyo-static` has its files.
 
 To use another check, change it on the service's **Resources** tab. Pyo then keeps yours. Choose **HTTP path** for another path, **TCP** to only wait for the port, or **None** to not wait at all.
 
@@ -59,7 +125,7 @@ Many generators' `start` script runs their development or preview server, like `
 | **Hugo**, built through npm (like `hugo-bin`) | `public`, or `-d` in the build script |
 | **Vite** | `dist`, or `outDir` in your Vite config |
 
-Eleventy and Hugo are served this way with no `start` script too. The build log says which folder it serves, and the site gets the [automatic health check](#health-check).
+Eleventy and Hugo are served this way with no `start` script too. The build log says which folder it serves.
 
 A generated site has a page for each path, so a path that matches nothing gets a `404` instead of the home page. A `Staticfile` of your own changes that.
 
@@ -128,6 +194,6 @@ Set the health check to **HTTP path** `/`, since Pyo only picks one for Railpack
 ## Good to know
 
 - **Served from your servers:** the files come from your servers, not a global <Term tip="A content delivery network keeps copies of your files in many places around the world, so they load fast everywhere.">CDN</Term>. For visitors far from them, put a CDN like Cloudflare in front.
-- **Always on:** the site runs as a small service that's always on, with its own replicas and resources. See [Scaling](/docs/scaling).
-- **Everything else works the same:** [domains](/docs/domains) and HTTPS, the [firewall](/docs/firewall), the [WAF](/docs/waf) and [deploy on every push](/docs/deploy#deploy-on-every-push).
-- **Security headers:** for plain HTML sites, Railpack's Caddy adds a few headers, including a `Content-Security-Policy`. If it blocks something your site needs, use your own Dockerfile.
+- **Inside the cluster:** a site served as static files has no address of its own inside the cluster. Other services reach it at its domain.
+- **As a service:** a site that [runs as a service](#run-it-as-a-service-instead) is a small service that's always on, with its own replicas and resources. See [Scaling](/docs/scaling).
+- **Security headers:** for plain HTML sites that run as a service, Railpack's Caddy adds a few headers, including a `Content-Security-Policy`. If it blocks something your site needs, use your own Dockerfile. Served as static files, a site gets only the headers its [`_headers`](#_headers) sets.
