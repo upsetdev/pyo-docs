@@ -96,8 +96,8 @@ Set these on both `pyo` and `pyo-worker`.
 
 | Variable | Default | What it does |
 | --- | --- | --- |
-| `PYO_UPDATE_CHECK` | On | Set to `off` to stop looking for new releases, for a server that can't reach GitHub. |
-| `PYO_UPDATE_SOURCE` | `https://api.github.com/repos/upsetdev/pyo` | A mirror of GitHub's release API to check instead. |
+| `PYO_UPDATE_CHECK` | On | Set to `off` to stop looking for new releases, for a server that can't reach GitHub. Nothing goes to `api.pyo.dev` or GitHub then, including [usage counts](/docs/updating-pyo#usage-counts). |
+| `PYO_UPDATE_SOURCE` | `https://api.pyo.dev`, then `https://api.github.com/repos/upsetdev/pyo` | A mirror of GitHub's release API to check instead. Only the mirror is asked then. |
 
 The install command reads these too, when you run it:
 
@@ -106,6 +106,7 @@ The install command reads these too, when you run it:
 | `PYO_VERSION` | The release to install, like `0.1.0`. Takes the place of `--version`. |
 | `PYO_YES` | Set to `1` to update without asking, after you've read the release's notices. Takes the place of `--yes`. |
 | `PYO_UPDATE_SOURCE` | The mirror to get the release from, as above. |
+| `PYO_TELEMETRY` | Set to `off` to skip the [install count](/docs/install#install-count) on a fresh install. |
 
 See [Updating Pyo](/docs/updating-pyo).
 

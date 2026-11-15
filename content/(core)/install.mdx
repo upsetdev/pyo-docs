@@ -76,6 +76,16 @@ curl -fsSL https://pyo.dev/install.sh | bash -s -- --version 0.1.0
 
 To update later, run the install command again. See [Updating Pyo](/docs/updating-pyo). To remove Pyo, see [Uninstalling Pyo](/docs/uninstall).
 
+## Install count
+
+When a fresh install is ready, the installer tells `api.pyo.dev` once, so we know how many people get Pyo running. It sends Pyo's version, the OS and the arch. It never sends the server's name, domains, addresses or who you are, and the source IP isn't stored. Running the command again to update sends nothing. The installer says when it counts.
+
+To skip it, set `PYO_TELEMETRY=off`:
+
+```bash
+curl -fsSL https://pyo.dev/install.sh | PYO_TELEMETRY=off bash
+```
+
 ## Securing Pyo
 
 On a server with a public IP, Pyo's dashboard is on the internet at `https://pyo.<public-ip>.nip.io` until you close it. Follow [Securing Pyo](/docs/securing-pyo) before you put anything real on it.

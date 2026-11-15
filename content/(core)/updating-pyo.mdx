@@ -7,13 +7,19 @@ An installation admin updates Pyo under **Settings → Updates**. Your services 
 
 ## Check for updates
 
-Pyo checks GitHub for a new stable release every 6 hours. The **Version** panel shows the version that's running, the latest release and when Pyo last checked. Choose **Check now** to look straight away.
+Pyo checks for a new stable release every 6 hours. It asks `api.pyo.dev`, which answers with the latest release from GitHub. If that fails or is slow, Pyo asks GitHub directly. The **Version** panel shows the version that's running, the latest release and when Pyo last checked. Choose **Check now** to look straight away.
 
 When a new release is out, admins see a dot on **Settings** and on **Updates**.
 
 Pyo only uses a release whose `release.json` is signed by Pyo's own release workflow (a [Sigstore](https://www.sigstore.dev) signature). If the signature is missing or doesn't match, the check fails and nothing is installed. A mirror set with `PYO_UPDATE_SOURCE` has to serve the release's signature too.
 
 To stop checking, turn off **Look for new releases**. On a server that can't reach GitHub, set `PYO_UPDATE_CHECK=off`, or point `PYO_UPDATE_SOURCE` at a mirror. See the [system reference](/docs/system-reference#updates).
+
+## Usage counts
+
+With each check, Pyo sends a random install ID and its version, so we can count how many installs run and which versions they're on. The ID is made once and says nothing about your servers. Nothing else is sent, like names, domains, addresses or who you are, and the source IP isn't stored. Each install's daily records are deleted after 90 days.
+
+To stop sending the ID, turn off **Send anonymous usage counts**. Pyo keeps checking for updates. Turning it on again starts a new ID. `PYO_UPDATE_CHECK=off` stops both.
 
 ## Update now
 
