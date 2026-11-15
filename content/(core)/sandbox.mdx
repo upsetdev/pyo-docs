@@ -1,11 +1,7 @@
 ---
 title: Sandbox
-description: Isolated machines on demand, for AI agents, code interpreters, previews and CI. Coming in v0.4.0.
+description: Isolated machines on demand, for AI agents, code interpreters, previews and CI.
 ---
-
-<Callout type="info">
-  Sandboxes are coming in Pyo v0.4.0. They aren't in a release yet, so this page describes what's planned. Names and code may change before the release.
-</Callout>
 
 A sandbox is an isolated machine you create through an API. Create one, run commands, read and write files, open a port as a URL, then throw it away. Use them for:
 
@@ -20,85 +16,253 @@ Sandboxes run on your own infrastructure, so your code and data never leave it. 
 
 Sandboxes run on their own **sandbox servers**, outside your clusters and build servers. A sandbox server runs no k3s or Docker, just a small Pyo daemon, so a busy sandbox can't slow down your services.
 
-Each sandbox is its own <Term tip="A very small virtual machine that boots in milliseconds, with its own kernel.">microVM</Term> on [Firecracker](https://firecracker-microvm.github.io), with its own kernel. Servers without KVM, like most cloud VPSs, use [gVisor](https://gvisor.dev) instead. Pyo checks each server when it joins and picks the runtime for you. A server's page shows which one it uses. Sandboxes never run as plain containers.
+Each sandbox is its own <Term tip="A very small virtual machine that boots in milliseconds, with its own kernel.">microVM</Term> on [Firecracker](https://firecracker-microvm.github.io), with its own kernel. Sandboxes never run as plain containers.
 
-Inside a sandbox, Docker works on Firecracker servers. On gVisor servers it doesn't fully work.
+Your code asks Pyo to create a sandbox, then talks to the sandbox server directly to run commands and move files, with a short-lived token Pyo signs. Pyo isn't in the way of each command, and sandboxes keep working while Pyo itself restarts.
 
-### Add a sandbox server
+The sandbox server answers on your [tailnet](/docs/tailscale). So the code that runs commands in a sandbox, and the browser you open its terminal in, need to be on your tailnet too. Only the ports you open are on the web.
 
-Open **Sandboxes** in the dashboard and choose **Add a sandbox server**. Pyo gives you a command to run on the new machine, with a one-time join code. It looks like this:
+### KVM or gVisor
+
+Each time a sandbox server starts, Pyo checks what it can run:
+
+- **Firecracker on KVM.** The server has KVM and a test microVM boots in under 300 ms. This is the fastest.
+- **Firecracker on nested KVM.** The server is itself a VM with KVM passed through. The test boot is slower, so sandboxes start slower too.
+- **gVisor.** The server has no usable KVM, like most cloud VPSs, but can run [gVisor](https://gvisor.dev).
+
+A server with neither is turned away when it joins, with the reason. If a server loses KVM, it becomes a gVisor server at its next start. The **Clusters** page shows each sandbox server's runtime with a one-line summary.
+
+<Callout type="info">
+  gVisor servers can join, but they don't run sandboxes or make templates yet. Use a server with KVM, like a dedicated server or a VPS with nested virtualization.
+</Callout>
+
+A sandbox's **Isolation** is **Auto** by default, which picks Firecracker first. **VM only** (`isolation: "vm"`) never runs it on gVisor.
+
+## Add a sandbox server
+
+A sandbox server needs:
+
+- Linux on x86-64 or arm64, with kernel 5.10 or newer and cgroup v2
+- KVM, for Firecracker
+- a machine of its own. A machine with k3s on it is turned away.
+- [Tailscale](/docs/tailscale) set up in Pyo
+
+Open **Sandboxes** in the dashboard and choose **Add a sandbox server**, or use the CLI:
 
 ```bash
-curl -fsSL https://pyo.dev/sandbox.sh | bash
+pyo sandbox servers add sbx-1
 ```
 
-The server joins over [Tailscale](/docs/tailscale), so adding one needs Tailscale set up in Pyo. Only ports 80 and 443 are public on a sandbox server. Its daemon answers only on your tailnet.
+Team owners and admins can add one. Pyo gives you a command to run on the new machine as root. It looks like this:
 
-A sandbox server needs Linux with kernel 5.10 or newer and cgroup v2.
-
-## Use sandboxes
-
-Your code talks to Pyo to create a sandbox, then talks to the sandbox server directly to run commands and move files. Sandboxes keep working while Pyo itself restarts.
-
-### TypeScript SDK
-
-Install `@pyo/sandbox` and create a sandbox from a template:
-
-```ts
-import { Sandbox } from "@pyo/sandbox";
-
-const sbx = await Sandbox.create({ template: "node-22", ttl: "1h" });
-const out = await sbx.exec("node -v");
-await sbx.files.write("/app/index.js", "console.log('hi')");
-const url = await sbx.ports.open(3000);
+```bash
+curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- \
+  --pyo pyo.tail1234.ts.net:5006 --server sbs_abc123 --name sbx-1 \
+  --code 9f2c... --tailscale-key tskey-auth-... --version 0.4.0
 ```
 
-`ttl` sets how long the sandbox lives. `ports.open` returns a URL with HTTPS that reaches that port inside the sandbox.
+It joins your tailnet, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
 
-The SDK signs in with an [API key](/docs/api) that has the **Sandboxes** scope.
+The server's daemon answers only on your tailnet. Only ports 80 and 443 are public, for the edge proxy that serves sandbox ports.
 
-### MCP
+Sandbox servers show on the **Clusters** page as their own group, with their runtime, CPUs, memory, disk and sandboxes.
 
-Once a sandbox server joins, [MCP](/docs/mcp) gets sandbox tools, so an assistant can run code for you in a sandbox:
+### How the files are checked
 
-- `create_sandbox`
-- `run_code`
-- `exec`
-- `read_file` and `write_file`
-- `open_port`
-- `delete`
+The sandbox server's files come with each Pyo release. Before anything changes on the server, `sandbox.sh` checks the release's `release.json` against its Sigstore signature, as the [installer](/docs/updating-pyo#check-for-updates) does. Then it checks the files against the SHA-256 that `release.json` lists for that architecture in its `sandbox` field. If either doesn't match, nothing is installed.
 
-### CLI
+### sandbox.sh options
 
-The [`pyo` CLI](/docs/cli) gets a `pyo sandbox` command to create sandboxes, run commands in them and delete them.
+The dashboard fills in the options that join the server. These change how it installs:
 
-### Dashboard
+| Option | What it does |
+| --- | --- |
+| `--version X` | The Pyo release whose sandbox files to install, like `0.4.0`. |
+| `--bundle FILE` | Sandbox files from a file or URL instead of the release. Also `PYO_SANDBOX_BUNDLE`. They're checked against `--bundle-sha256`, or else against the signed `release.json` of `--version`. |
+| `--bundle-sha256 SUM` | The SHA-256 to check `--bundle` against. Also `PYO_SANDBOX_BUNDLE_SHA256`. |
+| `--dev` | Skip the check, for files you built yourself. Also `PYO_SANDBOX_DEV=1`. |
+| `--edge-domain D` | Serve sandbox ports at `<port>-<sandbox>.D` on ports 80 and 443. Also `PYO_SANDBOX_EDGE_DOMAIN`. See [Edge domain](#edge-domain). |
+| `--edge-cert FILE` | The certificate for `*.D`, as PEM with the full chain. Default `/etc/pyo-sandbox/edge/cert.pem`. |
+| `--edge-key FILE` | Its private key. Default `/etc/pyo-sandbox/edge/key.pem`. |
 
-The **Sandboxes** page lists your sandboxes. A sandbox's page has a terminal, its files, the commands it ran and its CPU and memory. When you create one, the dashboard also shows the same choices as SDK code, ready to copy.
+To update the daemon, run the command again with a newer `--version`. A server that has joined needs no code then, and running sandboxes keep running.
+
+To take Pyo off the server, remove it on the **Clusters** page or with `pyo sandbox servers rm`, then run this on it:
+
+```bash
+curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- --uninstall
+```
+
+Its sandboxes end. Tailscale stays.
+
+## Edge domain
+
+Opened ports are served by the sandbox server's edge proxy, at `https://<port>-<sandbox>.<edge domain>`, like `https://3000-sbx-abc.sbx.example.com`. Give a server an edge domain when you add it, under **Edge domain**, or with `--edge-domain`. Without one, ports can't be opened on that server.
+
+The edge domain needs a wildcard DNS record, `*.sbx.example.com`, pointing at the server's public address. HTTPS needs a wildcard certificate for it.
+
+### With Cloudflare
+
+When your [Cloudflare](/docs/cloudflare) connection can edit the domain's zone, the server's menu on the **Clusters** page offers:
+
+- **Create DNS record**, which adds the wildcard record pointing at the server's public addresses, not proxied. A record already on that name is never changed.
+- **Get certificate**, which gets a wildcard certificate from Let's Encrypt and puts it on the server. Pyo renews it 30 days before it runs out. **Renew certificate** renews it now.
+
+Pyo gets the certificate itself, so your Cloudflare token never goes to the sandbox server.
+
+### Your own certificate
+
+Without Cloudflare, put a wildcard certificate on the server yourself, at `/etc/pyo-sandbox/edge/cert.pem` and `/etc/pyo-sandbox/edge/key.pem`, or the paths you gave with `--edge-cert` and `--edge-key`. The edge serves it within a minute, with no restart. Until there's a certificate, ports are served over plain HTTP.
 
 ## Templates
 
-A sandbox starts from a template. Pyo builds templates from a container image, a Git repository or a Dockerfile, with the same builder as your services. Find them under **Sandbox templates**.
+A sandbox starts from a sandbox template, made from a container image. Find them under **Sandbox templates**, in the sidebar's **Sandboxes** menu, or use the CLI:
+
+```bash
+pyo sandbox templates create node-22 node:22
+```
+
+The image can be public on any registry, or in [Pyo's registry](/docs/registries#push-your-own-images). Every sandbox server that may use the template pulls the image, unpacks it, boots it once and saves a snapshot to start sandboxes from. A template is ready once one server has it. Each template shows its state on each server: pending, building (pulling, unpacking or snapshotting), ready or failed, with its size once ready.
+
+An image may take up to 10 GiB, and the server needs the disk space to unpack it. A server builds one template at a time.
+
+Templates belong to your team, or to the installation, which every team can use. Deleting a template removes it from the servers that made it.
+
+## Networking
+
+A sandbox has the internet by default. Choose **No network** (`network: "none"`) for a sandbox with no network at all. Opened ports still work then, since the edge reaches them through the sandbox server, not the network.
+
+A sandbox with network can't reach:
+
+- the sandbox server itself, on any of its addresses
+- your tailnet
+- other sandboxes
+- private and link-local ranges, like `10.0.0.0/8`, `192.168.0.0/16` and `169.254.169.254`
+- anything over IPv6
+
+DNS goes to `1.1.1.1` and `8.8.8.8`. Nothing from outside can open a connection into a sandbox. Only replies come back.
+
+Sandboxes get addresses from `198.18.0.0/16`, a range nothing routes. If that overlaps the server's own networks, the daemon won't turn networking on. To change the range or the DNS servers, or to block more ranges, edit `/etc/pyo-sandbox/local.json` on the server and restart `pyo-sandbox`.
+
+### Docker and ufw on the server
+
+Docker and ufw set the server's forwarding policy to drop. When it is, the daemon adds two rules of its own, to `DOCKER-USER` when Docker made it, or else to `FORWARD`, so sandbox traffic gets out and its replies come back. It never changes the policy itself. With ufw active, `sandbox.sh` also opens the daemon's port on `tailscale0`, and ports 80 and 443 for the edge. Any other firewall in front of the server needs 80 and 443 open too.
 
 ## Limits
 
-Each team has limits on running sandboxes, CPU, memory, disk and how long a sandbox can live.
+Each sandbox can have:
 
-## What's in v0.4.0
+| | Default | Range |
+| --- | --- | --- |
+| CPUs | 1 | 1 to 32 |
+| Memory | 512 MiB | 128 MiB to 64 GiB |
+| Disk | 2 GiB | 64 MiB to 256 GiB |
+| Lifetime | 5 minutes | up to 24 hours |
 
-- The **Sandboxes** dashboard, with sandbox templates.
-- Sandbox servers, with Firecracker or gVisor picked automatically.
-- Create sandboxes, run commands, read and write files, open ports as URLs, and set how long they live.
-- The TypeScript SDK, MCP tools and the `pyo sandbox` CLI command.
-- A **Sandboxes** scope for API keys, and limits per team.
+A sandbox ends when its lifetime runs out. Extend it while it runs.
 
-## Planned after v0.4.0
+Each team also has limits on all its sandboxes together. Paused ones count.
 
-These aren't in v0.4.0:
+| Limit | Default |
+| --- | --- |
+| Sandboxes at once | 10 |
+| CPUs | 16 |
+| Memory | 16 GiB |
+| Disk | 100 GiB |
+| Longest lifetime | 24 hours |
 
-- Starts in under 50 ms from a snapshot of the template.
-- Pause and resume, so a sandbox can be a lasting workspace.
+The installation's admin changes them in the team's **Settings**, under **Sandboxes**. Setting **Sandboxes at once** to 0 turns sandboxes off for the team.
+
+## Use sandboxes
+
+An [API key](/docs/api#what-a-key-can-do) needs **Sandboxes** or **Full** access to use sandboxes. **Sandboxes** access can read, and create and use sandboxes, but change nothing else.
+
+### TypeScript SDK
+
+Install `@pyodev/sandbox`:
+
+```bash
+npm install @pyodev/sandbox
+```
+
+It reads `PYO_URL`, `PYO_API_KEY` and `PYO_TEAM` from the environment, or takes them as options. It works in Node 20 and later, and in Bun.
+
+```ts
+import { Sandbox } from "@pyodev/sandbox";
+
+const sbx = await Sandbox.create({ template: "node-22", ttl: "1h" });
+
+// Commands
+const r = await sbx.exec("node -v");
+console.log(r.stdout, r.exitCode);
+
+// Files
+await sbx.files.write("/app/index.js", "console.log('hi')");
+const text = await sbx.files.read("/app/index.js");
+
+// A terminal
+const pty = await sbx.pty({ cols: 120, rows: 30, onData: (b) => process.stdout.write(b) });
+pty.write("ls\r");
+
+// Ports
+await sbx.spawn("npx serve -l 3000");
+const url = await sbx.ports.open(3000);
+
+await sbx.delete();
+```
+
+- **Commands:** `exec` waits for a command and returns its output and exit code. A command times out after 60 seconds unless you set `timeoutMs`, and keeps up to 8 MiB of each output. `spawn` starts one and returns at once, for servers and interactive input.
+- **Files:** read, write, list, stat and remove files. Each call moves up to 64 MiB.
+- **Terminals:** `pty` opens a terminal, with resize.
+- **Ports:** `ports.open` returns the port's URL on the [edge](#edge-domain). A private port, with `{ public: false }`, needs the sandbox token on each request. `ports.connect` opens a TCP connection to a port inside the sandbox, even with no network.
+- **Lifetime:** `extend`, `pause`, `resume` and `delete`. A paused sandbox keeps its memory and files and resumes where it was.
+
+The token for the sandbox server lasts an hour. The SDK gets a new one from Pyo five minutes before it runs out. To use a sandbox from a browser without an API key, your backend passes on `sbx.connection()` and refreshes the token for it.
+
+The SDK also has ready-made tools for the Claude API and the Vercel AI SDK. See its [README](https://github.com/upsetdev/pyo-sandbox-js) for every option.
+
+### MCP
+
+Once your team can use a sandbox server, [MCP](/docs/mcp) gets sandbox tools, so an assistant can run code for you in a sandbox. Give the assistant **Sandboxes** or **Full** access.
+
+| Tool | What it does |
+| --- | --- |
+| `create_sandbox` | Creates a sandbox and returns its id |
+| `run_code` | Runs Python, Node or Bash code and returns its output |
+| `exec` | Runs a shell command |
+| `read_file` and `write_file` | Read and write a file |
+| `open_port` and `close_port` | Serve a port at a URL, or stop serving it |
+| `pause_sandbox` | Pauses a sandbox |
+| `delete_sandbox` | Ends a sandbox and throws away its files |
+
+These go through Pyo, so the assistant doesn't need your tailnet. See the [full tool list](/docs/mcp/tools).
+
+### CLI
+
+The [`pyo` CLI](/docs/cli) has `pyo sandbox`:
+
+```bash
+pyo sandbox create node-22 --ttl 30m
+pyo sandbox exec sbx_abc123 "node -v"
+pyo sandbox shell sbx_abc123
+pyo sandbox cp ./app.js sbx_abc123:/app/app.js
+pyo sandbox ports open sbx_abc123 3000
+pyo sandbox rm sbx_abc123
+```
+
+It also has `ls`, `get`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
+
+### Dashboard
+
+The **Sandboxes** page lists your sandboxes. **New sandbox** creates one, and shows the same choices as SDK code, ready to copy. A sandbox's page has its **Overview** with its ports, a **Terminal**, its **Files**, the **Commands** it ran and its **Metrics**.
+
+## Planned
+
+These aren't in Pyo yet:
+
+- Templates from a Git repository or a Dockerfile.
+- Sandboxes on gVisor servers.
+- Pausing a sandbox on its own when it's idle.
 - Allow and deny lists for a sandbox's outgoing traffic.
 - A Python SDK.
 - Promote a sandbox to a service, with a domain, HTTPS and autoscaling.
-- Read-only access to one of the team's databases, off by default.
