@@ -14,6 +14,8 @@ It's a <Term tip="A free service that answers any name ending in an IP address w
 
 By default, a cluster uses **Public IP** when it takes public traffic and a server has its public address itself, on its network card or as its external IP, or a load balancer gives it one. A server behind <Term tip="A router or provider that shares one public address between machines. Connections from the internet only reach a machine when a port is forwarded to it.">NAT</Term>, like one at home or with some cloud providers, only knows its public address from the internet's side. Ports 80 and 443 may not reach it, so the cluster uses **Tailscale** and the setting says **Behind NAT**. Choose **Public IP** there if ports 80 and 443 are forwarded to the server.
 
+Without Tailscale, a server behind NAT has no free domain. A new service then opens on your own network over HTTP, at the server's address and a port Pyo picks, like `http://192.168.1.20:31234`. Set up [Tailscale](/docs/tailscale) for HTTPS, or forward ports 80 and 443 and add your own domain.
+
 ### Tailnet domains
 
 With [Tailscale](/docs/tailscale) set up, a service can also get a name on your tailnet, like `blog.<tailnet>.ts.net`. Only devices on your tailnet can open it, over HTTPS with Tailscale's certificate. Choose **Tailnet** when you add a domain. It's there on clusters whose servers are on your tailnet. A name another device or Service on your tailnet already has shows **Taken on your tailnet**, and `pyo` and `registry` are kept for Pyo.

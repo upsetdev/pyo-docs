@@ -25,6 +25,14 @@ Pyo builds the image if needed, starts the service and follows the <Term tip="Th
 
 If the deploy fails, Pyo puts the previous version back automatically.
 
+The deploy step says where your service will open. On a server with a public IP, it's live on the web with HTTPS. With free domains on [Tailscale](/docs/tailscale), it's on your tailnet.
+
+### On a home server
+
+A server at home, behind <Term tip="A router or provider that shares one public address between machines. Connections from the internet only reach a machine when a port is forwarded to it.">NAT</Term> and without Tailscale, gets no free domain. Your first service then opens on your own network over plain HTTP, at the server's address and a port Pyo picks, like `http://192.168.1.20:31234`. The deployment page shows the address.
+
+For HTTPS, set up [Tailscale](/docs/tailscale). Or forward ports 80 and 443 on your router to the server and add your own domain.
+
 ## 4. Put it on the web
 
 Add a domain to the service. A free domain works right away with no <Term tip="The system that points a domain name at a server's address. For your own domain, you add a record at your domain provider.">DNS</Term> setup. You can add your own domain at any time. See [Adding a domain](/docs/domains).

@@ -10,7 +10,7 @@ description: Run Pyo on a laptop, VPS, dedicated server or homelab.
 - **Resources:** at least 2 CPU cores, 2 GB of memory and 40 GB of disk. See [Memory](#memory) for how much to choose.
 - **Ports:** 8000 and 5005 free, plus 80, 443 and 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services and Pyo's dashboard.
 
-<Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificates need a machine that's reachable from the internet. On a private network, like most laptops, free domains get a <Term tip="A certificate Pyo makes itself. The connection is still encrypted, but browsers show a warning because no public authority vouches for it.">self-signed certificate</Term> instead.
+<Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificates need a machine that's reachable from the internet on ports 80 and 443. On a home network or a laptop, without [Tailscale](/docs/tailscale), Pyo and your services open over plain HTTP on your own network. See [On a home server](#on-a-home-server).
 
 ### Memory
 
@@ -56,7 +56,7 @@ Lost your own password later? Run `sudo pyo-reset-login` on the server for a one
 
 ## Where Pyo is
 
-One server needs no Tailscale. Pyo is at:
+One server with a public IP needs no Tailscale. Pyo is at:
 
 | Address | From |
 | --- | --- |
@@ -67,6 +67,10 @@ One server needs no Tailscale. Pyo is at:
 Pyo answers port 8000 only from the machine itself, private networks and your tailnet. Anything else is turned away, whatever it sends. Over plain HTTP, sign in with your password or a one-time code. [Passkeys](/docs/passkeys) need HTTPS.
 
 Once you add a second server or another cluster, set up [Tailscale](/docs/tailscale). Pyo is then also at `https://pyo.<tailnet>.ts.net`, and you can close the public dashboard.
+
+### On a home server
+
+A server behind NAT, like one at home, has no HTTPS address of its own. Pyo is at its address on your network over HTTP, and so are your services. A service with no domain opens at the server's address and a port Pyo picks, like `http://192.168.1.20:31234`. Set up [Tailscale](/docs/tailscale) to get HTTPS for Pyo and your services.
 
 ## Install a particular release
 

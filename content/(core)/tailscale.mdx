@@ -3,7 +3,7 @@ title: Connecting with Tailscale
 description: Join servers and clusters over your tailnet.
 ---
 
-One server needs no Tailscale. Pyo is on its public IP over HTTPS and on your own network over HTTP. See [Where Pyo is](/docs/install#where-pyo-is).
+One server with a public IP needs no Tailscale. Pyo is on its public IP over HTTPS and on your own network over HTTP. A server at home, behind NAT, has no HTTPS address without Tailscale. Pyo and your services are then only on your own network over HTTP. See [Where Pyo is](/docs/install#where-pyo-is).
 
 Pyo uses [Tailscale](https://tailscale.com) when you add a second server or connect another cluster. Servers then talk over your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>, so one cluster can span data centers, providers and your <Term tip="Servers you run at home.">homelab</Term>, with no open ports between them.
 
