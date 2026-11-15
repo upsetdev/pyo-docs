@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.2.5"
+    "version": "0.2.6"
   },
   "servers": [
     {
@@ -1653,6 +1653,70 @@
         "x-pyo-access": "read"
       }
     },
+    "/cloudflare": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Cloudflare zones",
+        "description": "The team's Cloudflare connection: the zones its token covers as of the\nlast test, and whether Pyo can edit DNS in each. Pyo creates a domain's\nDNS record when one of these zones covers it. Never the token: owners\nand admins also see its last four characters (`hint`).\n\nAPI key access: **read**.",
+        "operationId": "getCloudflare",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`connected`, and when connected `zones` (each with `id`, `name`, `canEdit` and, when it can't, `missing`: the permission the token lacks), `createdAt`, `testedAt`, and for owners and admins `hint` and `createdBy`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
     "/databases": {
       "get": {
         "tags": [
@@ -1674,7 +1738,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`databases`, each with `id`, `name`, `engine`, `version`, `size`, `cpu`, `memory`, `storageGi`, `instances`, `pooler`, `rest`, `deletionProtection`, `status` (with `backup`: `firstRecoverabilityPoint`, `lastSuccessfulBackup`, `lastArchivedWal`, `lastFailedBackup`, `message`), `backup`, `restoredFrom`, `readReplicas`, `extensions`, `setup`, `members`, `connections` and `variables` (passwords masked). `backup` has `enabled`, `retentionDays` and `hour` for Postgres and MySQL. For KV, once turned on, it has `enabled`, `schedule`, `hour`, `keep` and `backupDatabaseId` (its id in Backups). `readReplicas` is null when off, or has `instances`, `ready`, `reported` and `members` (each with `name`, `ready`, `server` and `lagSeconds`). `extensions` is null for MySQL. For Postgres and KV, it lists each extension or module that's on or being turned off, with `name`, `enabled`, `state` (\"enabled\", \"pending\", \"restarting\", \"disabling\" or \"failed\") and a `message`. `setup` is null once the cluster's databases are set up. While they're being set up or updated, it has `state` (\"installing\" or \"failed\") and a `message`. `members` lists each instance's `name`, `role` (\"primary\" or \"replica\"), `ready` and the `server` it runs on, primary first.",
+            "description": "`databases`, each with `id`, `name`, `engine`, `version`, `size`, `cpu`, `memory`, `storageGi`, `instances`, `pooler`, `rest`, `deletionProtection`, `status` (with `backup`: `firstRecoverabilityPoint`, `lastSuccessfulBackup`, `lastArchivedWal`, `lastFailedBackup`, `message`), `backup`, `restoredFrom`, `readReplicas`, `extensions`, `setup`, `members`, `connections` and `variables` (passwords masked). `backup` has `enabled`, `retentionDays` and `hour` for Postgres and MySQL. For KV, once turned on, it has `enabled`, `schedule`, `hour`, `keep` and `backupDatabaseId` (its id in Backups). `readReplicas` is null when off, or has `instances`, `ready`, `reported` and `members` (each with `name`, `ready`, `server` and `lagSeconds`). `extensions` is null for MySQL. For Postgres and KV, it lists each extension or module that's on or being turned off, with `name`, `enabled`, `state` (\"enabled\", \"pending\", \"restarting\", \"disabling\" or \"failed\") and a `message`. `setup` is null once the cluster's databases are set up. While they're being set up or updated, it has `state` (\"installing\" or \"failed\") and a `message`. While a new database waits for its engine's operator to start, `state` is \"starting\" and `message` names it. `members` lists each instance's `name`, `role` (\"primary\" or \"replica\"), `ready` and the `server` it runs on, primary first.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2622,7 +2686,7 @@
         "tags": [
           "GitHub"
         ],
-        "summary": "The file a Git build of a repository would use by default: its Dockerfile,\nelse its Containerfile, in the build context. None: the build is\nzero-config (Railpack).",
+        "summary": "The Dockerfile a Git build of a repository would use by default, in the\nbuild context. None: the build is zero-config (Railpack).",
         "description": "API key access: **read**.",
         "operationId": "getGithubBuildFile",
         "parameters": [
@@ -2665,7 +2729,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`file`: \"Dockerfile\" or \"Containerfile\" (a Dockerfile wins when there are both), or null when there's neither.",
+            "description": "`file`: the Dockerfile Pyo would use, or null when there's none.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2706,6 +2770,320 @@
           },
           "500": {
             "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/git/repos": {
+      "get": {
+        "tags": [
+          "Git providers"
+        ],
+        "summary": "Git repositories",
+        "description": "The repositories the team's Git connections (GitLab) can deploy: those\ntheir token has the Maintainer role on, latest activity first.\n\nAPI key access: **read**.",
+        "operationId": "listGitRepos",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Only repositories whose path contains this.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`repositories`: each with `connectionId`, `provider`, `host`, `fullName`, `name`, `group`, `private`, `defaultBranch`, `htmlUrl` and `pushedAt`. `errors`: connections that couldn't be listed, with `connectionId` and `message`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No `team`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/git/branches": {
+      "get": {
+        "tags": [
+          "Git providers"
+        ],
+        "summary": "Git branches",
+        "description": "A repository's branches, through one of the team's Git connections.\n\nAPI key access: **read**.",
+        "operationId": "listGitBranches",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connection",
+            "in": "query",
+            "description": "The Git connection's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "query",
+            "description": "The repository: its path (\"group/project\") or URL.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Only branches whose name contains this.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`branches`: each with `name`, `commit`, `default` and `protected`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A missing or invalid field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team or connection, or you aren't in the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached or refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/git/build-file": {
+      "get": {
+        "tags": [
+          "Git providers"
+        ],
+        "summary": "Git build file",
+        "description": "The Dockerfile a build of a repository of the team's Git connections\nwould use by default, in the build context. Null: the build is\nzero-config (Railpack).\n\nAPI key access: **read**.",
+        "operationId": "getGitBuildFile",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connection",
+            "in": "query",
+            "description": "The Git connection's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "query",
+            "description": "The repository: its path (\"group/project\") or URL.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branch",
+            "in": "query",
+            "description": "The branch to look at.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "The build context, a folder of the repository (\".\" for its root).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`file`: the Dockerfile Pyo would use, or null when there's none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A missing or invalid field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team or connection, or you aren't in the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached or refused.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2789,6 +3167,99 @@
           },
           "502": {
             "description": "GitHub couldn't be read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/cloud/options": {
+      "get": {
+        "tags": [
+          "Servers"
+        ],
+        "summary": "Server types and prices",
+        "description": "What a new server at a cloud provider can be, read live from it with the\nteam's token: its locations, and its server types with their specs,\narchitecture, where each can be made now and its monthly price in each\nlocation (before VAT, with its IPv4 address). Pyo's servers run x86-64,\nso Arm types have `supported` false.\n\nAPI key access: **read**.",
+        "operationId": "getCloudOptions",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "The provider: \"hetzner\".",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`provider`, `currency`, `locations` (each with `name`, `city`, `country` and `networkZone`) and `serverTypes` (each with `name`, `description`, `cores`, `memoryGb`, `diskGb`, `cpuType`, `architecture`, `supported`, `prices` by location and `available` locations).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The team hasn't connected the provider.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider failed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3689,6 +4160,46 @@
           }
         }
       },
+      "ConnectCloudflareOp": {
+        "type": "object",
+        "title": "Connect cloudflare",
+        "description": "Connect the team's Cloudflare account, or replace its token. The token needs Zone:Read and DNS:Edit on the zones Pyo may use. Pyo lists its zones, checks it can edit DNS in each (it makes and deletes a TXT record `_pyo-check.<zone>`), then keeps it encrypted. It's never shown again. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "teamId",
+          "token"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "connectCloudflare"
+            ]
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "op": "connectCloudflare",
+          "teamId": "team_8kq2x7ad",
+          "token": "example"
+        },
+        "examples": [
+          {
+            "op": "connectCloudflare",
+            "teamId": "team_8kq2x7ad",
+            "token": "example"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Integrations"
+        ]
+      },
       "ConnectDatabaseOp": {
         "type": "object",
         "title": "Connect database",
@@ -3807,6 +4318,184 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Builders"
+        ]
+      },
+      "CreateCloudClusterOp": {
+        "type": "object",
+        "title": "Create cloud cluster",
+        "description": "Add a cluster whose first server Pyo makes at a cloud provider (team admins). It runs connect.sh there the way Add cluster's command does, over your tailnet. Without `confirm` it answers 409 with the monthly price. Confirm that with the user, then send it again with `confirm: true`.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id",
+          "teamId",
+          "name",
+          "serverId",
+          "location",
+          "serverType"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "createCloudCluster"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "A new id you choose: `cl_` then 4 to 40 lowercase letters, digits, dashes or underscores."
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "The cluster's name. Its first server is named `<name>-1`."
+          },
+          "serverId": {
+            "type": "string",
+            "description": "A new id you choose for its server: `cs_` then 4 to 40 lowercase letters, digits, dashes or underscores."
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"hetzner\" (the default)."
+          },
+          "location": {
+            "type": "string"
+          },
+          "serverType": {
+            "type": "string"
+          },
+          "sshKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confirm": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "id": "cl_8kq2x7ad",
+          "location": "Singapore, SG",
+          "name": "edge",
+          "op": "createCloudCluster",
+          "serverId": "srv_8kq2x7ad",
+          "serverType": "example",
+          "teamId": "team_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "id": "cl_8kq2x7ad",
+            "location": "Singapore, SG",
+            "name": "edge",
+            "op": "createCloudCluster",
+            "serverId": "srv_8kq2x7ad",
+            "serverType": "example",
+            "teamId": "team_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
+      "CreateCloudServerOp": {
+        "type": "object",
+        "title": "Create cloud server",
+        "description": "Make a server at a cloud provider and join it to a cluster over your tailnet (team admins). Read the locations, server types and prices with getCloudOptions first. Its startup script holds only one-time keys: on its first boot it joins your tailnet, then fetches its join details from Pyo over the tailnet. Pyo labels it as this installation's and puts it behind a firewall that allows only the web (80 and 443) and Tailscale. Follow it in `cloudServers` of getState: creating, booting, joining, then ready. Without `confirm` it answers 409 with the monthly price. Confirm that with the user, then send it again with `confirm: true`.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id",
+          "clusterId",
+          "name",
+          "location",
+          "serverType"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "createCloudServer"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "A new id you choose: `cs_` then 4 to 40 lowercase letters, digits, dashes or underscores."
+          },
+          "clusterId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name in the cluster, on your tailnet and at the provider."
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"hetzner\" (the default)."
+          },
+          "location": {
+            "type": "string",
+            "description": "A location's `name` from getCloudOptions (\"fsn1\")."
+          },
+          "serverType": {
+            "type": "string",
+            "description": "A server type's `name` from getCloudOptions (\"cx22\")."
+          },
+          "builder": {
+            "type": "boolean",
+            "description": "A build-only server: only Pyo's builder runs on it."
+          },
+          "sshKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Your OpenSSH public key, to sign in to it over your tailnet."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confirm": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "clusterId": "cl_8kq2x7ad",
+          "id": "cs_8kq2x7ad",
+          "location": "Singapore, SG",
+          "name": "web",
+          "op": "createCloudServer",
+          "serverType": "cx22"
+        },
+        "examples": [
+          {
+            "clusterId": "cl_8kq2x7ad",
+            "id": "cs_8kq2x7ad",
+            "location": "Singapore, SG",
+            "name": "web",
+            "op": "createCloudServer",
+            "serverType": "cx22"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Servers"
         ]
       },
       "CreateClusterOp": {
@@ -4073,6 +4762,54 @@
           "Deployments"
         ]
       },
+      "CreateDnsRecordOp": {
+        "type": "object",
+        "title": "Create dns record",
+        "description": "Create a domain's DNS record in the team's Cloudflare account, when one of its connected zones covers the hostname: an A record to the cluster's public IP, with the comment \"Made by Pyo (<installation id>)\". Pyo never overwrites a record. When another A, AAAA or CNAME record has the name, `status` is \"conflict\" and `existing` lists them. Send it again with `replace` to delete those and create Pyo's (team owners and admins). `status` \"exists\" means it already points there. With `proxied`, Cloudflare proxies it once the domain's certificate is issued.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "serviceId",
+          "domainId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "createDnsRecord"
+            ]
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "proxied": {
+            "type": "boolean",
+            "description": "Proxied by Cloudflare. Off by default."
+          },
+          "replace": {
+            "type": "boolean",
+            "description": "Replace the records in the way."
+          }
+        },
+        "example": {
+          "domainId": "dom_8kq2x7ad",
+          "op": "createDnsRecord",
+          "serviceId": "svc_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "domainId": "dom_8kq2x7ad",
+            "op": "createDnsRecord",
+            "serviceId": "svc_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Domains"
+        ]
+      },
       "CreateProjectOp": {
         "type": "object",
         "title": "Create project",
@@ -4133,7 +4870,7 @@
       "CreateRegistryTokenOp": {
         "type": "object",
         "title": "Create registry token",
-        "description": "Create a token to push (or only pull) the team's own images in Pyo registry, as `<host>:5443/<team>/<project>/<service>:<tag>`. These are slugs, and `<host>` is the installation's tailnet name. A push needs that project and service to exist. It works over HTTPS from a device on the installation's tailnet. Team owners and admins. The token comes back only once, with the username, address and team path to log in and push with.\n\nAPI key access: **full**.",
+        "description": "Create a token to push (or only pull) the team's own images in Pyo registry, as `<host>/<team>/<project>/<service>:<tag>`. These are slugs, and `<host>` is the registry's name on the installation's tailnet (registry.<tailnet>.ts.net). A push needs that project and service to exist. It works over HTTPS from a device on the installation's tailnet. Team owners and admins. The token comes back only once, with the username, address and team path to log in and push with.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "id",
@@ -4365,6 +5102,46 @@
           "Teams"
         ]
       },
+      "DeleteCloudServerOp": {
+        "type": "object",
+        "title": "Delete cloud server",
+        "description": "Delete a server Pyo made at a cloud provider (team admins): its services move off it, it leaves the cluster and your tailnet, then it's deleted at the provider. Only servers with this installation's label are ever deleted there. A cluster's first server goes once the cluster is removed. Without `confirm` it answers 409 with the monthly cost that stops. Confirm that with the user, then send it again with `confirm: true`.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "deleteCloudServer"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "The cloud server's id (`cs_…`), from `cloudServers` in getState."
+          },
+          "confirm": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "confirm": true,
+          "id": "cs_8kq2x7ad",
+          "op": "deleteCloudServer"
+        },
+        "examples": [
+          {
+            "confirm": true,
+            "id": "cs_8kq2x7ad",
+            "op": "deleteCloudServer"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Servers"
+        ]
+      },
       "DeleteDatabaseBackupOp": {
         "type": "object",
         "title": "Delete database backup",
@@ -4431,6 +5208,46 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Databases"
+        ]
+      },
+      "DeleteDnsRecordOp": {
+        "type": "object",
+        "title": "Delete dns record",
+        "description": "Delete the DNS record Pyo made for a domain in Cloudflare. Only a record Pyo made, still with its comment, is deleted. Remove the domain after this.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "serviceId",
+          "domainId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "deleteDnsRecord"
+            ]
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "domainId": "dom_8kq2x7ad",
+          "op": "deleteDnsRecord",
+          "serviceId": "svc_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "domainId": "dom_8kq2x7ad",
+            "op": "deleteDnsRecord",
+            "serviceId": "svc_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Domains"
         ]
       },
       "DeleteProjectOp": {
@@ -5523,7 +6340,7 @@
               "string",
               "null"
             ],
-            "description": "Where Pyo is reached over HTTPS on its tailnet (https://<host>.<tailnet>.ts.net:8443). Null when it's only on its own machine."
+            "description": "Pyo's HTTPS address: on the tailnet (https://pyo.<tailnet>.ts.net), else on its public IP. Null when it has neither."
           }
         }
       },
@@ -5777,6 +6594,12 @@
             "$ref": "#/components/schemas/RemoveGithubInstallationOp"
           },
           {
+            "$ref": "#/components/schemas/TestGitConnectionOp"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveGitConnectionOp"
+          },
+          {
             "$ref": "#/components/schemas/CreateDeployHookOp"
           },
           {
@@ -5906,6 +6729,15 @@
             "$ref": "#/components/schemas/SetServerLocationOp"
           },
           {
+            "$ref": "#/components/schemas/CreateCloudServerOp"
+          },
+          {
+            "$ref": "#/components/schemas/CreateCloudClusterOp"
+          },
+          {
+            "$ref": "#/components/schemas/DeleteCloudServerOp"
+          },
+          {
             "$ref": "#/components/schemas/CreateBuilderOp"
           },
           {
@@ -5915,7 +6747,13 @@
             "$ref": "#/components/schemas/RotateBuilderTokenOp"
           },
           {
-            "$ref": "#/components/schemas/SaveIntegrationOp"
+            "$ref": "#/components/schemas/SaveHetznerOp"
+          },
+          {
+            "$ref": "#/components/schemas/TestHetznerOp"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveHetznerOp"
           },
           {
             "$ref": "#/components/schemas/CheckSecretImportOp"
@@ -5933,7 +6771,19 @@
             "$ref": "#/components/schemas/RevokeRegistryTokenOp"
           },
           {
-            "$ref": "#/components/schemas/RemoveIntegrationOp"
+            "$ref": "#/components/schemas/ConnectCloudflareOp"
+          },
+          {
+            "$ref": "#/components/schemas/TestCloudflareOp"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveCloudflareOp"
+          },
+          {
+            "$ref": "#/components/schemas/CreateDnsRecordOp"
+          },
+          {
+            "$ref": "#/components/schemas/DeleteDnsRecordOp"
           },
           {
             "$ref": "#/components/schemas/ImportComposeOp"
@@ -5950,17 +6800,23 @@
             "cancel": "#/components/schemas/CancelOp",
             "cancelServerRemoval": "#/components/schemas/CancelServerRemovalOp",
             "checkSecretImport": "#/components/schemas/CheckSecretImportOp",
+            "connectCloudflare": "#/components/schemas/ConnectCloudflareOp",
             "connectDatabase": "#/components/schemas/ConnectDatabaseOp",
             "createBuilder": "#/components/schemas/CreateBuilderOp",
+            "createCloudCluster": "#/components/schemas/CreateCloudClusterOp",
+            "createCloudServer": "#/components/schemas/CreateCloudServerOp",
             "createCluster": "#/components/schemas/CreateClusterOp",
             "createDatabase": "#/components/schemas/CreateDatabaseOp",
             "createDeployHook": "#/components/schemas/CreateDeployHookOp",
+            "createDnsRecord": "#/components/schemas/CreateDnsRecordOp",
             "createProject": "#/components/schemas/CreateProjectOp",
             "createRegistryToken": "#/components/schemas/CreateRegistryTokenOp",
             "createService": "#/components/schemas/CreateServiceOp",
             "createTeam": "#/components/schemas/CreateTeamOp",
+            "deleteCloudServer": "#/components/schemas/DeleteCloudServerOp",
             "deleteDatabase": "#/components/schemas/DeleteDatabaseOp",
             "deleteDatabaseBackup": "#/components/schemas/DeleteDatabaseBackupOp",
+            "deleteDnsRecord": "#/components/schemas/DeleteDnsRecordOp",
             "deleteProject": "#/components/schemas/DeleteProjectOp",
             "deleteService": "#/components/schemas/DeleteServiceOp",
             "deleteTeam": "#/components/schemas/DeleteTeamOp",
@@ -5975,12 +6831,14 @@
             "joinServer": "#/components/schemas/JoinServerOp",
             "removeBuilder": "#/components/schemas/RemoveBuilderOp",
             "removeCertificate": "#/components/schemas/RemoveCertificateOp",
+            "removeCloudflare": "#/components/schemas/RemoveCloudflareOp",
             "removeCluster": "#/components/schemas/RemoveClusterOp",
             "removeCronJob": "#/components/schemas/RemoveCronJobOp",
             "removeDeployHook": "#/components/schemas/RemoveDeployHookOp",
             "removeFirewallRule": "#/components/schemas/RemoveFirewallRuleOp",
+            "removeGitConnection": "#/components/schemas/RemoveGitConnectionOp",
             "removeGithubInstallation": "#/components/schemas/RemoveGithubInstallationOp",
-            "removeIntegration": "#/components/schemas/RemoveIntegrationOp",
+            "removeHetzner": "#/components/schemas/RemoveHetznerOp",
             "removeMember": "#/components/schemas/RemoveMemberOp",
             "removeRegistryLogin": "#/components/schemas/RemoveRegistryLoginOp",
             "removeServer": "#/components/schemas/RemoveServerOp",
@@ -6006,7 +6864,7 @@
             "runDatabaseBackup": "#/components/schemas/RunDatabaseBackupOp",
             "runTeamBackup": "#/components/schemas/RunTeamBackupOp",
             "saveCronJob": "#/components/schemas/SaveCronJobOp",
-            "saveIntegration": "#/components/schemas/SaveIntegrationOp",
+            "saveHetzner": "#/components/schemas/SaveHetznerOp",
             "saveRegistryLogin": "#/components/schemas/SaveRegistryLoginOp",
             "saveService": "#/components/schemas/SaveServiceOp",
             "saveTeamBackupSettings": "#/components/schemas/SaveTeamBackupSettingsOp",
@@ -6028,6 +6886,9 @@
             "setServiceWaf": "#/components/schemas/SetServiceWafOp",
             "setTeamBackupSelection": "#/components/schemas/SetTeamBackupSelectionOp",
             "stopService": "#/components/schemas/StopServiceOp",
+            "testCloudflare": "#/components/schemas/TestCloudflareOp",
+            "testGitConnection": "#/components/schemas/TestGitConnectionOp",
+            "testHetzner": "#/components/schemas/TestHetznerOp",
             "updateCluster": "#/components/schemas/UpdateClusterOp",
             "updateDatabase": "#/components/schemas/UpdateDatabaseOp",
             "updateDatabaseBackup": "#/components/schemas/UpdateDatabaseBackupOp",
@@ -6443,6 +7304,40 @@
           "Domains"
         ]
       },
+      "RemoveCloudflareOp": {
+        "type": "object",
+        "title": "Remove cloudflare",
+        "description": "Forget the team's Cloudflare token. DNS records Pyo made stay in Cloudflare. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "teamId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "removeCloudflare"
+            ]
+          },
+          "teamId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "op": "removeCloudflare",
+          "teamId": "team_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "op": "removeCloudflare",
+            "teamId": "team_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Integrations"
+        ]
+      },
       "RemoveClusterOp": {
         "type": "object",
         "title": "Remove cluster",
@@ -6591,6 +7486,40 @@
           "Firewall"
         ]
       },
+      "RemoveGitConnectionOp": {
+        "type": "object",
+        "title": "Remove git connection",
+        "description": "Disconnect a Git connection, and remove the webhooks Pyo made. Not\nwhile a service deploys from it. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "removeGitConnection"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "gitc_8kq2x7ad",
+          "op": "removeGitConnection"
+        },
+        "examples": [
+          {
+            "id": "gitc_8kq2x7ad",
+            "op": "removeGitConnection"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Git providers"
+        ]
+      },
       "RemoveGithubInstallationOp": {
         "type": "object",
         "title": "Remove GitHub installation",
@@ -6632,38 +7561,32 @@
           "GitHub"
         ]
       },
-      "RemoveIntegrationOp": {
+      "RemoveHetznerOp": {
         "type": "object",
-        "title": "Remove integration",
-        "description": "Remove a team integration's key.\n\nAPI key access: **full**.",
+        "title": "Remove hetzner",
+        "description": "Forget the team's Hetzner token. Servers Pyo made there keep running.\n\nAPI key access: **full**.",
         "required": [
           "op",
-          "teamId",
-          "kind"
+          "teamId"
         ],
         "properties": {
           "op": {
             "type": "string",
             "enum": [
-              "removeIntegration"
+              "removeHetzner"
             ]
           },
           "teamId": {
             "type": "string"
-          },
-          "kind": {
-            "type": "string"
           }
         },
         "example": {
-          "kind": "tailscale",
-          "op": "removeIntegration",
+          "op": "removeHetzner",
           "teamId": "team_8kq2x7ad"
         },
         "examples": [
           {
-            "kind": "tailscale",
-            "op": "removeIntegration",
+            "op": "removeHetzner",
             "teamId": "team_8kq2x7ad"
           }
         ],
@@ -7663,45 +8586,39 @@
           "Cron jobs"
         ]
       },
-      "SaveIntegrationOp": {
+      "SaveHetznerOp": {
         "type": "object",
-        "title": "Save integration",
-        "description": "Save a team integration's key (`kind` \"tailscale\": an auth key, used when servers join over Tailscale).\n\nAPI key access: **full**.",
+        "title": "Save hetzner",
+        "description": "Connect a team to Hetzner Cloud (team admins): a project API token with Read & Write, from the project's Security page. Pyo checks it by listing the locations, and keeps it encrypted. Servers join over your tailnet, so Tailscale comes first.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "teamId",
-          "kind",
-          "secret"
+          "token"
         ],
         "properties": {
           "op": {
             "type": "string",
             "enum": [
-              "saveIntegration"
+              "saveHetzner"
             ]
           },
           "teamId": {
             "type": "string"
           },
-          "kind": {
-            "type": "string"
-          },
-          "secret": {
+          "token": {
             "type": "string"
           }
         },
         "example": {
-          "kind": "tailscale",
-          "op": "saveIntegration",
-          "secret": "tskey-auth-k1a2b3c4d5",
-          "teamId": "team_8kq2x7ad"
+          "op": "saveHetzner",
+          "teamId": "team_8kq2x7ad",
+          "token": "example"
         },
         "examples": [
           {
-            "kind": "tailscale",
-            "op": "saveIntegration",
-            "secret": "tskey-auth-k1a2b3c4d5",
-            "teamId": "team_8kq2x7ad"
+            "op": "saveHetzner",
+            "teamId": "team_8kq2x7ad",
+            "token": "example"
           }
         ],
         "x-pyo-access": "full",
@@ -8885,6 +9802,108 @@
           "Services"
         ]
       },
+      "TestCloudflareOp": {
+        "type": "object",
+        "title": "Test cloudflare",
+        "description": "Check the saved Cloudflare token again: the zones it covers now, and what it's missing (`problems`). Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "teamId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "testCloudflare"
+            ]
+          },
+          "teamId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "op": "testCloudflare",
+          "teamId": "team_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "op": "testCloudflare",
+            "teamId": "team_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Integrations"
+        ]
+      },
+      "TestGitConnectionOp": {
+        "type": "object",
+        "title": "Test git connection",
+        "description": "Check what a Git connection's token can do now. `problems` says what's\nmissing, and `working` whether it works at all. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "testGitConnection"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "gitc_8kq2x7ad",
+          "op": "testGitConnection"
+        },
+        "examples": [
+          {
+            "id": "gitc_8kq2x7ad",
+            "op": "testGitConnection"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Git providers"
+        ]
+      },
+      "TestHetznerOp": {
+        "type": "object",
+        "title": "Test hetzner",
+        "description": "List the locations the team's Hetzner token sees.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "teamId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "testHetzner"
+            ]
+          },
+          "teamId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "op": "testHetzner",
+          "teamId": "team_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "op": "testHetzner",
+            "teamId": "team_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Integrations"
+        ]
+      },
       "UpdateClusterOp": {
         "type": "object",
         "title": "Update cluster",
@@ -9753,6 +10772,10 @@
     {
       "name": "GitHub",
       "description": "Repositories to deploy from."
+    },
+    {
+      "name": "Git providers",
+      "description": "GitLab connections and their repositories to deploy from."
     },
     {
       "name": "Integrations",

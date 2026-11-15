@@ -630,7 +630,8 @@ Usage: pyo domain [OPTIONS] <COMMAND>
 Commands:
   list    The service's domains and their status
   add     Serve the service on a hostname. It applies without a redeploy
-  remove  Stop serving the service on a hostname
+  remove  Stop serving the service on a hostname. Deletes the DNS record Pyo made for it in Cloudflare
+  dns     Create a domain's DNS record in Cloudflare, or try again. Never overwrites a record
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -676,6 +677,8 @@ Options:
       --port <PORT>        The HTTP port to route to, by name or number (default: the first)
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
       --wait               Wait until it's live
+      --no-cloudflare      Don't create the DNS record in Cloudflare, even when a connected zone covers it
+      --proxied            Proxied by Cloudflare (once its certificate is issued)
   -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
   -h, --help               Print help
   -V, --version            Print version
@@ -683,10 +686,10 @@ Options:
 
 ### `pyo domain remove`
 
-Stop serving the service on a hostname
+Stop serving the service on a hostname. Deletes the DNS record Pyo made for it in Cloudflare
 
 ```text
-Stop serving the service on a hostname
+Stop serving the service on a hostname. Deletes the DNS record Pyo made for it in Cloudflare
 
 Usage: pyo domain remove [OPTIONS] <HOSTNAME>
 
@@ -696,10 +699,127 @@ Arguments:
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
   -y, --yes                Don't ask to confirm
+      --keep-dns-record    Keep the DNS record Pyo made in Cloudflare
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
   -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
   -h, --help               Print help
   -V, --version            Print version
+```
+
+### `pyo domain dns`
+
+Create a domain's DNS record in Cloudflare, or try again. Never overwrites a record
+
+```text
+Create a domain's DNS record in Cloudflare, or try again. Never overwrites a record
+
+Usage: pyo domain dns [OPTIONS] <HOSTNAME>
+
+Arguments:
+  <HOSTNAME>  e.g. app.example.com
+
+Options:
+      --proxied            Proxied by Cloudflare (once its certificate is issued)
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --replace            Replace the records in the way. Owners and admins
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+## `pyo cloudflare`
+
+The team's Cloudflare account: Pyo creates DNS records for domains in its zones. Owners and admins connect it
+
+```text
+The team's Cloudflare account: Pyo creates DNS records for domains in its zones. Owners and admins connect it
+
+Usage: pyo cloudflare [OPTIONS] <COMMAND>
+
+Commands:
+  connect  Connect Cloudflare, or replace its token. The token needs Zone:Read and DNS:Edit
+  test     Check the token: the zones it covers and what it's missing
+  zones    The zones Pyo can create records in
+  remove   Forget the token. Records Pyo made stay in Cloudflare
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo cloudflare connect`
+
+Connect Cloudflare, or replace its token. The token needs Zone:Read and DNS:Edit
+
+```text
+Connect Cloudflare, or replace its token. The token needs Zone:Read and DNS:Edit
+
+Usage: pyo cloudflare connect [OPTIONS]
+
+Options:
+      --token-file <TOKEN_FILE>  A file with the token, or - for stdin. Or set CLOUDFLARE_API_TOKEN
+      --url <URL>                Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>            An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>              The team (slug or id). Defaults to your first team
+  -h, --help                     Print help
+  -V, --version                  Print version
+```
+
+### `pyo cloudflare test`
+
+Check the token: the zones it covers and what it's missing
+
+```text
+Check the token: the zones it covers and what it's missing
+
+Usage: pyo cloudflare test [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo cloudflare zones`
+
+The zones Pyo can create records in
+
+```text
+The zones Pyo can create records in
+
+Usage: pyo cloudflare zones [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo cloudflare remove`
+
+Forget the token. Records Pyo made stay in Cloudflare
+
+```text
+Forget the token. Records Pyo made stay in Cloudflare
+
+Usage: pyo cloudflare remove [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+  -y, --yes            Don't ask to confirm
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
 ```
 
 ## `pyo firewall`
@@ -855,21 +975,22 @@ Options:
 
 ## `pyo import`
 
-Bring services over from Coolify or Dokploy: see what they become, then import them. Owners and admins
+Bring services over from Coolify, Dokploy, Railway or Vercel: see what they become, then import them. Owners and admins
 
 ```text
-Bring services over from Coolify or Dokploy: see what they become, then import them. Owners and admins
+Bring services over from Coolify, Dokploy, Railway or Vercel: see what they become, then import them. Owners and admins
 
-Usage: pyo import [OPTIONS] --from <FROM> --source-token <SOURCE_TOKEN> <PLATFORM>
+Usage: pyo import [OPTIONS] --source-token <SOURCE_TOKEN> <PLATFORM>
 
 Arguments:
-  <PLATFORM>  The platform: coolify or dokploy [possible values: coolify, dokploy]
+  <PLATFORM>  The platform: coolify, dokploy, railway or vercel [possible values: coolify, dokploy, railway, vercel]
 
 Options:
-      --from <FROM>                  Its address, e.g. https://coolify.example.com
+      --from <FROM>                  Its address, e.g. https://coolify.example.com. Not for Railway or Vercel
       --url <URL>                    Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --source-token <SOURCE_TOKEN>  Its API token (Coolify's with read and read:sensitive). Used for this import only [env: PYO_IMPORT_TOKEN]
+      --source-token <SOURCE_TOKEN>  Its API token (Coolify's with read and read:sensitive, a Railway account, workspace or project token, a Vercel token). Used for this import only [env: PYO_IMPORT_TOKEN]
       --token <TOKEN>                An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --source-team <SOURCE_TEAM>    Vercel only: the team to read (its slug or id). The token's own scope by default
       --team <TEAM>                  The team to import into (slug or id). Defaults to your first team
       --cluster <CLUSTER>            The cluster to run it on (name or id). Defaults to the team's default cluster
       --deploy                       Deploy the services once they're made
@@ -938,6 +1059,187 @@ Options:
 
   -V, --version
           Print version
+```
+
+## `pyo hetzner`
+
+Hetzner Cloud: the team's API token, for making servers there
+
+```text
+Hetzner Cloud: the team's API token, for making servers there
+
+Usage: pyo hetzner [OPTIONS] <COMMAND>
+
+Commands:
+  connect     Save a project API token with Read & Write. Owners and admins
+  test        List the locations the saved token sees
+  disconnect  Forget the token. Servers Pyo made there keep running
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo hetzner connect`
+
+Save a project API token with Read & Write. Owners and admins
+
+```text
+Save a project API token with Read & Write. Owners and admins
+
+Usage: pyo hetzner connect [OPTIONS]
+
+Options:
+      --hetzner-token <HETZNER_TOKEN>  The token. Without it, it's read from PYO_HETZNER_TOKEN, a pipe, or asked for [env: PYO_HETZNER_TOKEN]
+      --url <URL>                      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>                  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>                    The team (slug or id). Defaults to your first team
+  -h, --help                           Print help
+  -V, --version                        Print version
+```
+
+### `pyo hetzner test`
+
+List the locations the saved token sees
+
+```text
+List the locations the saved token sees
+
+Usage: pyo hetzner test [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo hetzner disconnect`
+
+Forget the token. Servers Pyo made there keep running
+
+```text
+Forget the token. Servers Pyo made there keep running
+
+Usage: pyo hetzner disconnect [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+  -y, --yes            Don't ask to confirm
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+## `pyo server`
+
+Servers Pyo makes at Hetzner and joins to a cluster over your tailnet
+
+```text
+Servers Pyo makes at Hetzner and joins to a cluster over your tailnet
+
+Usage: pyo server [OPTIONS] <COMMAND>
+
+Commands:
+  types   Server types and their monthly prices at Hetzner
+  create  Make a server at Hetzner and join it to a cluster. Shows the price and asks first
+  list    The servers Pyo made at Hetzner, and how they're doing
+  delete  Move a server's services off it, take it out of its cluster and your tailnet, and delete it at Hetzner
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo server types`
+
+Server types and their monthly prices at Hetzner
+
+```text
+Server types and their monthly prices at Hetzner
+
+Usage: pyo server types [OPTIONS]
+
+Options:
+      --location <LOCATION>  One location, e.g. fsn1
+      --url <URL>            Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --team <TEAM>          The team (slug or id). Defaults to your first team
+      --token <TOKEN>        An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -h, --help                 Print help
+  -V, --version              Print version
+```
+
+### `pyo server create`
+
+Make a server at Hetzner and join it to a cluster. Shows the price and asks first
+
+```text
+Make a server at Hetzner and join it to a cluster. Shows the price and asks first
+
+Usage: pyo server create [OPTIONS] --location <LOCATION> --type <SERVER_TYPE>
+
+Options:
+      --cluster <CLUSTER>          The cluster it joins (name or id). Defaults to the team's default cluster
+      --url <URL>                  Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --new-cluster <NEW_CLUSTER>  Make a new cluster with this name instead. The server is its first
+      --token <TOKEN>              An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+      --name <NAME>                Its name. Defaults to <cluster>-<n>
+      --location <LOCATION>        A Hetzner location, e.g. fsn1 (see pyo server types)
+      --type <SERVER_TYPE>         A server type, e.g. cx22 (see pyo server types)
+      --builder                    A build-only server
+      --ssh-key <FILE>             Your SSH public key file, to sign in over your tailnet
+      --tag <TAGS>                 A tag for placing services (repeatable)
+      --team <TEAM>                The team (slug or id). Defaults to your first team
+  -y, --yes                        Don't ask to confirm the price
+      --detach                     Start it and exit, without following it
+  -h, --help                       Print help
+  -V, --version                    Print version
+```
+
+### `pyo server list`
+
+The servers Pyo made at Hetzner, and how they're doing
+
+```text
+The servers Pyo made at Hetzner, and how they're doing
+
+Usage: pyo server list [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo server delete`
+
+Move a server's services off it, take it out of its cluster and your tailnet, and delete it at Hetzner
+
+```text
+Move a server's services off it, take it out of its cluster and your tailnet, and delete it at Hetzner
+
+Usage: pyo server delete [OPTIONS] <NAME>
+
+Arguments:
+  <NAME>  Its name or id
+
+Options:
+      --cluster <CLUSTER>  Its cluster, when names repeat
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_TOKEN]
+  -y, --yes                Don't ask to confirm
+  -h, --help               Print help
+  -V, --version            Print version
 ```
 
 ## `pyo upgrade`
