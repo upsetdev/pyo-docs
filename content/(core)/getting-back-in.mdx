@@ -1,0 +1,39 @@
+---
+title: Getting back in
+description: Choose a new password when you can't sign in.
+---
+
+Lost your password? Pyo gives you a one-time sign-in link to choose a new one. There are three ways to get one.
+
+Every link works once, for 30 minutes. A new link for the same account replaces the old one. Using a link sets your new password, signs you in and signs the account out of its other sessions.
+
+## On the server
+
+Run this on the server Pyo runs on:
+
+```bash
+sudo pyo-reset-login
+```
+
+It prints a link for Pyo's admin. To get one for another account, add its email:
+
+```bash
+sudo pyo-reset-login you@example.com
+```
+
+The link is printed at Pyo's HTTPS address, its address on your network and `localhost`. Open any of them.
+
+This is how the only admin gets back in. It needs no email setup, only access to the server.
+
+## Forgot password?
+
+The sign-in page shows **Forgot password?** when [email](/docs/email) is set up. Enter your email, and Pyo sends a link to it. The page says the same thing whether or not an account has that address.
+
+## A team owner resets it
+
+A team owner can reset a member's sign-in under **Members**, from the member's menu with **Reset sign-in**.
+
+- With [email](/docs/email) set up, Pyo emails the link to the member.
+- Without email, the owner gets the link to copy and pass on. This only works for a member who belongs to that team only. For anyone else, set up email or use `pyo-reset-login`.
+
+Each reset is recorded in the team's **Activity**.

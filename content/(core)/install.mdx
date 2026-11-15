@@ -52,6 +52,8 @@ If you lose the printed password before signing in, read it back on the server:
 sudo k3s kubectl -n pyo-system get secret pyo-admin -o jsonpath='{.data.password}' | base64 -d
 ```
 
+Lost your own password later? Run `sudo pyo-reset-login` on the server for a one-time link. See [Getting back in](/docs/getting-back-in).
+
 ## Where Pyo is
 
 One server needs no Tailscale. Pyo is at:
