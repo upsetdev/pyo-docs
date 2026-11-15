@@ -40,7 +40,7 @@ if (!MCP_ONLY) {
     "",
     NOTICE,
     "",
-    "Add `--help` to any command to see this in your terminal. `--url` and `--token`, or `PYO_URL` and `PYO_TOKEN`, work on every command.",
+    "Add `--help` to any command to see this in your terminal. `--url` and `--token`, or `PYO_URL` and `PYO_API_KEY`, work on every command.",
     "",
     ...commands.flatMap((name) => [
       section("##", [name]),

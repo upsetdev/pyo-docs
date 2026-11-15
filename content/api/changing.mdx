@@ -7,7 +7,7 @@ Every change is a `POST` to `/api/v1/ops`, with the operation's name in `op` and
 
 ```bash
 curl -X POST https://your-pyo/api/v1/ops \
-  -H "Authorization: Bearer $PYO_TOKEN" \
+  -H "Authorization: Bearer $PYO_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "op": "scaleService", "id": "<service-id>", "replicas": 3 }'
 ```
