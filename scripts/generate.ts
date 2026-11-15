@@ -53,8 +53,10 @@ if (!MCP_ONLY) {
 // ── MCP tools ────────────────────────────────────────────────────────────────
 // The same catalog mcp.rs builds: its written tools first, then one tool per
 // API endpoint and /ops operation in openapi/pyo.json, minus the ones a
-// written tool covers. The constants below are read from mcp.rs itself.
+// written tool covers. The constants below are read from mcp.rs itself. The
+// sandbox tools are written in sandbox/mcp.rs, after mcp.rs's own.
 const source = readFileSync(`${PYO_REPO}/crates/pyo-api/src/mcp.rs`, "utf8");
+const sandboxSource = readFileSync(`${PYO_REPO}/crates/pyo-api/src/sandbox/mcp.rs`, "utf8");
 const spec = JSON.parse(readFileSync(`${root}openapi/pyo.json`, "utf8"));
 const schemas = spec.components.schemas;
 
@@ -76,9 +78,15 @@ const SECRETS = [...constant("SECRETS").matchAll(/"([^"]+)"/g)].map((m) => m[1])
 const snake = (id: string) => id.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
 const kebab = (id: string) => snake(id).replace(/_/g, "-");
 const tagSlug = (tag: string) => tag.toLowerCase().replace(/\s+/g, "-");
-type Access = "Read" | "Deploy" | "Full";
+type Access = "Read" | "Deploy" | "Sandboxes" | "Full";
 const accessOf = (a: string | undefined): Access =>
-  a === "full" || a === "varies" || a === undefined ? "Full" : a === "deploy" ? "Deploy" : "Read";
+  a === "full" || a === "varies" || a === undefined
+    ? "Full"
+    : a === "deploy"
+      ? "Deploy"
+      : a === "sandboxes"
+        ? "Sandboxes"
+        : "Read";
 /** The first paragraph of a spec description, on one line. */
 const firstPara = (d = "") =>
   d.split(/\n\s*\n/)[0].replace(/\s*\n\s*/g, " ").trim();
@@ -126,13 +134,15 @@ function topKeys(text: string, from: number): string[] {
 }
 
 type Tool = { name: string; text: string; access: Access; link: string; inputs?: string[]; required?: string[]; tag: string };
-const curatedAt = source.indexOf("fn curated()");
-const starts = [...source.slice(curatedAt).matchAll(/json!\(\{ "name": "([a-z_]+)", "title": "([^"]+)", "description": "((?:[^"\\]|\\.)*)"/g)];
-if (!starts.length) throw new Error("Found no written tools in mcp.rs");
-const written: Tool[] = starts.map((m, i) => {
+/** The tools written in `text`'s function `fn`, in their order. */
+const writtenIn = (text: string, fn: string, file: string): Tool[] => {
+const curatedAt = text.indexOf(fn);
+const starts = [...text.slice(curatedAt).matchAll(/json!\(\{ "name": "([a-z_]+)", "title": "([^"]+)", "description": "((?:[^"\\]|\\.)*)"/g)];
+if (curatedAt < 0 || !starts.length) throw new Error(`Found no written tools in ${file}`);
+return starts.map((m, i) => {
   const at = curatedAt + m.index!;
-  const end = starts[i + 1] ? curatedAt + starts[i + 1].index! : source.indexOf("\n    ]", at);
-  const body = source.slice(at, end);
+  const end = starts[i + 1] ? curatedAt + starts[i + 1].index! : text.indexOf("\n    ]", at);
+  const body = text.slice(at, end);
   const behind = CURATED_RUNS.get(m[1]);
   if (!behind) throw new Error(`${m[1]} has no entry in CURATED_RUNS`);
   const schemaAt = body.indexOf("schema(json!(");
@@ -146,6 +156,11 @@ const written: Tool[] = starts.map((m, i) => {
     tag: "",
   };
 });
+};
+const written = [
+  ...writtenIn(source, "fn curated()", "mcp.rs"),
+  ...writtenIn(sandboxSource, "fn defs()", "sandbox/mcp.rs"),
+];
 const generated: Tool[] = [...entries.entries()]
   .filter(([id]) => !COVERED.has(id) && !NOT_TOOLS.has(id))
   .map(([id, e]) => ({
@@ -195,7 +210,8 @@ const tagTable = (tag: string) =>
   ].join("\n");
 
 const all = [...written, ...generated];
-const count = (a: Access) => all.filter((t) => a === "Full" || t.access === "Read" || (a === "Deploy" && t.access === "Deploy")).length;
+// What each access sees, as KeyAccess::allows: its own, plus Read, and Full sees all.
+const count = (a: Access) => all.filter((t) => a === "Full" || t.access === "Read" || t.access === a).length;
 
 writeFileSync(
   `${root}content/mcp/tools.mdx`,
@@ -209,7 +225,9 @@ writeFileSync(
     "",
     `Pyo's MCP server has ${all.length} tools. They act as the person who approved the assistant, with the same permission checks as the dashboard.`,
     "",
-    `An assistant only sees the tools its access allows: ${count("Read")} with **Read only**, ${count("Deploy")} with **Deploy** and all ${count("Full")} with **Full**. See [access](/docs/mcp#choose-what-it-can-do).`,
+    `An assistant only sees the tools its access allows: ${count("Read")} with **Read only**, ${count("Deploy")} with **Deploy**, ${count("Sandboxes")} with **Sandboxes** and all ${count("Full")} with **Full**. See [access](/docs/mcp#choose-what-it-can-do).`,
+    "",
+    "The sandbox tools show once your team can use a [sandbox server](/docs/sandbox).",
     "",
     "Most tools do the same as an API operation, and take the same fields. Its reference page lists them.",
     "",
@@ -223,4 +241,4 @@ writeFileSync(
   ].join("\n"),
 );
 
-console.log(`${MCP_ONLY ? "tools.mdx only, " : `${commands.length} commands, `}${all.length} tools (read ${count("Read")}, deploy ${count("Deploy")}, full ${count("Full")})`);
+console.log(`${MCP_ONLY ? "tools.mdx only, " : `${commands.length} commands, `}${all.length} tools (read ${count("Read")}, deploy ${count("Deploy")}, sandboxes ${count("Sandboxes")}, full ${count("Full")})`);
