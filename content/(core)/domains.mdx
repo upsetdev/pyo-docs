@@ -43,6 +43,19 @@ Pyo picks a certificate for you:
 
 You can also use [your own certificate](/docs/certificates), including wildcards.
 
+### When a certificate isn't issued
+
+While Let's Encrypt works on a certificate, the domain shows **Issuing certificate**. If it fails, or is still pending after 10 minutes, the domain shows **Certificate failed** with the reason. On the team's **Domains** list, hover over it to read the reason. Pyo keeps trying on its own.
+
+| Message | What it means |
+| --- | --- |
+| Let's Encrypt is busy for free nip.io addresses this week | Every nip.io user shares one Let's Encrypt limit. On busy weeks it runs out. Add your own domain for HTTPS now. |
+| Let's Encrypt's limit for this domain is reached for now | Too many certificates were issued for your domain lately. Pyo tries again later. |
+| Let's Encrypt can't reach this server on port 80 | Let's Encrypt checks the domain over port 80. On a home server behind NAT, forward ports 80 and 443 on your router to it. Elsewhere, check that the server's firewall lets port 80 in. |
+| The domain doesn't point at this server yet | Its DNS record is missing or points somewhere else. |
+| The domain's CAA record doesn't allow Let's Encrypt | Add `letsencrypt.org` to the domain's CAA record. |
+| No certificate after 10 minutes | It's been pending too long. The rest of the message says why. |
+
 Requests to your domains go through [Pyo Gateway](/docs/gateway) on each server.
 
 ## Other kinds of traffic
