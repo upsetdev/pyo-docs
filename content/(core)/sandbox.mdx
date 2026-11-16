@@ -254,6 +254,7 @@ await sbx.delete();
 - **Terminals:** `pty` opens a terminal, with resize.
 - **Ports:** `ports.open` returns the port's URL on the [edge](#edge-domain). A private port, with `{ public: false }`, needs the sandbox token on each request. `ports.connect` opens a TCP connection to a port inside the sandbox, even with no network.
 - **Lifetime:** `extend`, `pause`, `resume` and `delete`. A paused sandbox keeps its memory and files and resumes where it was.
+- **Servers:** `Sandbox.servers()` lists the team's sandbox servers, each with its `runtime`, `firecracker` or `gvisor`.
 
 The token for the sandbox server lasts an hour. The SDK gets a new one from Pyo five minutes before it runs out. To use a sandbox from a browser without an API key, your backend passes on `sbx.connection()` and refreshes the token for it.
 
