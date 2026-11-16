@@ -467,13 +467,14 @@ Make a sandbox from a sandbox template and print its id
 Usage: pyo sandbox create [OPTIONS] [TEMPLATE]
 
 Arguments:
-  [TEMPLATE]  The sandbox template, like node-22 (see pyo sandbox templates ls). Default base: Debian 13 with git, Python, uv, Node.js and pnpm
+  [TEMPLATE]  The sandbox template, like node-22 (see pyo sandbox templates ls). Default base: Debian 13 with git, Python, uv, Node.js and pnpm. A server makes base the first time it's used there
 
 Options:
-      --cpus <CPUS>             CPUs. Default 1
+      --server <SERVER>         The sandbox server to run it on, by name or id. Pyo picks one when left out
       --url <URL>               Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --memory <MEMORY>         Memory in MiB. Default 512
+      --cpus <CPUS>             CPUs. Default 1
       --token <TOKEN>           An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --memory <MEMORY>         Memory in MiB. Default 512
       --disk <DISK>             Writable disk in MiB. Default 2048
       --ttl <TTL>               How long it lives, like 30m or 1h. Default 5m
       --pause-when-idle <SECS>  Pause after this many seconds without use
