@@ -154,13 +154,54 @@ Without Cloudflare, put a wildcard certificate on the server yourself, at `/etc/
 
 ## Templates
 
-A sandbox starts from a sandbox template, made from a container image. Find them under **Sandbox templates**, in the sidebar's **Sandboxes** menu, or use the CLI:
+A sandbox starts from a sandbox template, made from a container image. Find them under **Sandbox templates**, in the sidebar's **Sandboxes** menu.
+
+### The base template
+
+Every Pyo has `base`, a template Pyo makes for you. A sandbox starts from it when you don't name a template, and **New sandbox** picks it first.
+
+It has:
+
+- **System:** Debian 13 (trixie), with curl, wget, git, openssh-client, jq, zip, unzip, less, procps, sudo, vim and tzdata.
+- **Build tools:** gcc, g++ and make.
+- **Python:** Python 3.13 with pip, venv and [uv](https://docs.astral.sh/uv/).
+- **Node.js:** Node.js 26 LTS with npm, and pnpm through corepack.
+
+Commands run as root in `/root`. pip installs into the system Python, since a sandbox is thrown away.
+
+`base` belongs to the installation, so every team has it. It can't be deleted, and no other template can be named `base`.
+
+### How base updates
+
+Its image is `ghcr.io/upsetdev/pyo/sandbox-base`, pinned by digest in each Pyo release and signed like Pyo's other images. When you update Pyo, `base` moves to the new release's image:
+
+- Each sandbox server makes the new `base` in the background.
+- New sandboxes start from it once it's ready on their server. Until then they start from the one before.
+- Running and paused sandboxes keep the one they started from. The server deletes it once no sandbox uses it.
+
+A sandbox server that joins makes `base` right away, on Firecracker and on gVisor.
+
+### Your own templates
+
+Make a template from any image:
 
 ```bash
 pyo sandbox templates create node-22 node:22
 ```
 
 The image can be public on any registry, or in [Pyo's registry](/docs/registries#push-your-own-images). Every sandbox server that may use the template pulls the image and unpacks it. A Firecracker server then boots it once and saves a snapshot to start sandboxes from. A gVisor server starts each sandbox from the unpacked disk. A template is ready once one server has it. Each template shows its state on each server: pending, building (pulling, unpacking or snapshotting), ready or failed, with its size once ready.
+
+To add your own tools to `base`, build on its image and push the result to Pyo's registry:
+
+```dockerfile
+# Your Pyo's version
+FROM ghcr.io/upsetdev/pyo/sandbox-base:0.4.1
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \
+ && rm -rf /var/lib/apt/lists/*
+RUN uv pip install --system pandas
+```
+
+Pyo doesn't use an image's `USER`, `ENV` or `WORKDIR` yet. Commands run as root in `/root`, with `PATH` set to the usual system folders, so put tools in `/usr/local/bin` or `/usr/bin`.
 
 An image may take up to 10 GiB, and the server needs the disk space to unpack it. A server builds one template at a time.
 
@@ -228,7 +269,8 @@ It reads `PYO_URL`, `PYO_API_KEY` and `PYO_TEAM` from the environment, or takes 
 ```ts
 import { Sandbox } from "@pyodev/sandbox";
 
-const sbx = await Sandbox.create({ template: "node-22", ttl: "1h" });
+// From base. Pass template to start from another one.
+const sbx = await Sandbox.create({ ttl: "1h" });
 
 // Commands
 const r = await sbx.exec("node -v");
@@ -266,7 +308,7 @@ Once your team can use a sandbox server, [MCP](/docs/mcp) gets sandbox tools, so
 
 | Tool | What it does |
 | --- | --- |
-| `create_sandbox` | Creates a sandbox and returns its id |
+| `create_sandbox` | Creates a sandbox, from `base` unless the assistant names a template, and returns its id |
 | `run_code` | Runs Python, Node or Bash code and returns its output |
 | `exec` | Runs a shell command |
 | `read_file` and `write_file` | Read and write a file |
@@ -281,7 +323,7 @@ These go through Pyo, so the assistant doesn't need your tailnet. See the [full 
 The [`pyo` CLI](/docs/cli) has `pyo sandbox`:
 
 ```bash
-pyo sandbox create node-22 --ttl 30m
+pyo sandbox create --ttl 30m
 pyo sandbox exec sbx_abc123 "node -v"
 pyo sandbox shell sbx_abc123
 pyo sandbox cp ./app.js sbx_abc123:/app/app.js
@@ -289,7 +331,7 @@ pyo sandbox ports open sbx_abc123 3000
 pyo sandbox rm sbx_abc123
 ```
 
-It also has `ls`, `get`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
+`pyo sandbox create` starts from `base`. Name a template to start from another one, like `pyo sandbox create node-22`. It also has `ls`, `get`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
 
 ### Dashboard
 

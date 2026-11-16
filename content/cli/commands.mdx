@@ -464,10 +464,10 @@ Make a sandbox from a sandbox template and print its id
 ```text
 Make a sandbox from a sandbox template and print its id
 
-Usage: pyo sandbox create [OPTIONS] <TEMPLATE>
+Usage: pyo sandbox create [OPTIONS] [TEMPLATE]
 
 Arguments:
-  <TEMPLATE>  The sandbox template, like node-22 (see pyo sandbox templates ls)
+  [TEMPLATE]  The sandbox template, like node-22 (see pyo sandbox templates ls). Default base: Debian 13 with git, Python, uv, Node.js and pnpm
 
 Options:
       --cpus <CPUS>             CPUs. Default 1
