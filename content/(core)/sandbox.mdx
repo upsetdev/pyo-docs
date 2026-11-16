@@ -16,7 +16,7 @@ Sandboxes run on your own infrastructure, so your code and data never leave it. 
 
 Sandboxes run on their own **sandbox servers**, outside your clusters and build servers. A sandbox server runs no k3s or Docker, just a small Pyo daemon, so a busy sandbox can't slow down your services.
 
-Each sandbox is its own <Term tip="A very small virtual machine that boots in milliseconds, with its own kernel.">microVM</Term> on [Firecracker](https://firecracker-microvm.github.io), with its own kernel. Sandboxes never run as plain containers.
+On a server with KVM, each sandbox is its own <Term tip="A very small virtual machine that boots in milliseconds, with its own kernel.">microVM</Term> on [Firecracker](https://firecracker-microvm.github.io), with its own kernel. On a server without KVM, like a cloud VPS, each sandbox runs under [gVisor](https://gvisor.dev), which gives it a kernel of its own in user space. Sandboxes never run as plain containers.
 
 Your code asks Pyo to create a sandbox, then talks to the sandbox server directly to run commands and move files, with a short-lived token Pyo signs. Pyo isn't in the way of each command, and sandboxes keep working while Pyo itself restarts.
 
@@ -30,30 +30,67 @@ Each time a sandbox server starts, Pyo checks what it can run:
 - **Firecracker on nested KVM.** The server is itself a VM with KVM passed through. The test boot is slower, so sandboxes start slower too.
 - **gVisor.** The server has no usable KVM, like most cloud VPSs, but can run [gVisor](https://gvisor.dev).
 
-A server with neither is turned away when it joins, with the reason. If a server loses KVM, it becomes a gVisor server at its next start. The **Clusters** page shows each sandbox server's runtime with a one-line summary.
-
-<Callout type="info">
-  gVisor servers can join, but they don't run sandboxes or make templates yet. Use a server with KVM, like a dedicated server or a VPS with nested virtualization.
-</Callout>
+A server with neither is turned away when it joins, with the reason. If a server loses KVM, it becomes a gVisor server at its next start. The **Clusters** page shows each sandbox server's runtime with a one-line summary. So do `pyo sandbox servers ls` and `runtime` in the API.
 
 A sandbox's **Isolation** is **Auto** by default, which picks Firecracker first. **VM only** (`isolation: "vm"`) never runs it on gVisor.
 
+### What gVisor can't do
+
+Sandboxes on gVisor run the same templates and have the same commands, files, terminals, ports, network rules, limits, lifetimes and pause. These differ from Firecracker:
+
+- **Cold starts.** A sandbox starts from its template's disk in about 40 ms. Firecracker restores a running snapshot, so a template can't have a process already warm in it on gVisor.
+- **Slower system calls.** Each command and each process start costs more. A command takes about 5 ms instead of under 1 ms, and starting Python takes 4 to 5 times as long. For a code interpreter, keep one interpreter running and send it code.
+- **Not every Linux feature.** gVisor runs most programs, but some system calls and parts of `/proc` and `/sys` are missing. Docker doesn't fully work inside a sandbox, and nothing can run a VM inside one.
+- **Pause needs the same gVisor release.** A paused sandbox resumes only under the gVisor release it was paused under. An update that changes it ends the pauses on that server.
+- **No VM only.** A sandbox created with `isolation: "vm"` never runs on a gVisor server.
+- **More disk for the server.** gVisor's files take about 180 MB on the server.
+
 ## Add a sandbox server
 
-A sandbox server needs:
+Open **Sandboxes** in the dashboard and choose **Add a sandbox server**. Team owners and admins can add one. There are two ways:
+
+- **Cloud provider.** Pyo buys a server for you and sets it up.
+- **Command line.** You run one command on a server you have.
+
+Either way you need [Tailscale](/docs/tailscale) set up in Pyo, since sandbox servers join over your tailnet.
+
+### Cloud provider
+
+Pyo makes the server in your team's [Hetzner](/docs/hetzner) project, the same way it makes a cluster's servers there:
+
+1. Pick the provider. If your team hasn't connected Hetzner yet, paste a project API token with **Read & Write** right there. See [Make a token](/docs/hetzner#make-a-token).
+2. Name the server, and give it an [edge domain](#edge-domain) if you want sandbox ports on the web.
+3. Pick a location and a server type. Pyo reads the types, their vCPUs, memory, disk and monthly prices from Hetzner as you pick. Prices are before VAT and include the IPv4 address.
+4. Choose **Create**. Pyo shows the monthly price and asks once more.
+
+The page then follows the server: **Creating**, **Booting**, **Joining**, **Ready**. On its first boot the server joins your tailnet with a single-use key, gets a one-time join code from Pyo over the tailnet and runs `sandbox.sh` with it. Nothing else secret is in its setup. If your tailnet has Tailnet Lock on, Pyo shows the command to sign the server. You can leave the page while it sets up. The **Sandboxes** page shows its progress too.
+
+Hetzner Cloud servers have no KVM, so they run sandboxes on [gVisor](#what-gvisor-cant-do). Pyo puts them behind a Hetzner firewall that lets in only the web (80 and 443) and Tailscale, and they run nothing else.
+
+From the CLI:
+
+```bash
+pyo server types --location fsn1
+pyo sandbox servers create sbx-1 --location fsn1 --type cx22
+```
+
+Removing the server in Pyo ends its sandboxes, takes it off your tailnet and deletes it at Hetzner. Pyo shows the monthly cost that stops and asks first.
+
+### Command line
+
+A server of your own needs:
 
 - Linux on x86-64 or arm64, with kernel 5.10 or newer and cgroup v2
-- KVM, for Firecracker
+- KVM for Firecracker, or else root for gVisor
 - a machine of its own. A machine with k3s on it is turned away.
-- [Tailscale](/docs/tailscale) set up in Pyo
 
-Open **Sandboxes** in the dashboard and choose **Add a sandbox server**, or use the CLI:
+Choose **Command line**, or use the CLI:
 
 ```bash
 pyo sandbox servers add sbx-1
 ```
 
-Team owners and admins can add one. Pyo gives you a command to run on the new machine as root. It looks like this:
+Pyo gives you a command to run on the new machine as root. It looks like this:
 
 ```bash
 curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- \
@@ -61,7 +98,7 @@ curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- \
   --code 9f2c... --tailscale-key tskey-auth-... --version 0.4.0
 ```
 
-It joins your tailnet, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
+It joins your tailnet, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. A server without KVM gets gVisor too, and is checked again. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
 
 The server's daemon answers only on your tailnet. Only ports 80 and 443 are public, for the edge proxy that serves sandbox ports.
 
@@ -69,7 +106,7 @@ Sandbox servers show on the **Clusters** page as their own group, with their run
 
 ### How the files are checked
 
-The sandbox server's files come with each Pyo release. Before anything changes on the server, `sandbox.sh` checks the release's `release.json` against its Sigstore signature, as the [installer](/docs/updating-pyo#check-for-updates) does. Then it checks the files against the SHA-256 that `release.json` lists for that architecture in its `sandbox` field. If either doesn't match, nothing is installed.
+The sandbox server's files come with each Pyo release. Before anything changes on the server, `sandbox.sh` checks the release's `release.json` against its Sigstore signature, as the [installer](/docs/updating-pyo#check-for-updates) does. Then it checks the files against the SHA-256 that `release.json` lists for that architecture in its `sandbox` field, and gVisor's files against its `sandboxGvisor` field. gVisor is a pinned release, checked against its own SHA-512 when Pyo's release is made. If anything doesn't match, nothing is installed.
 
 ### sandbox.sh options
 
@@ -80,12 +117,13 @@ The dashboard fills in the options that join the server. These change how it ins
 | `--version X` | The Pyo release whose sandbox files to install, like `0.4.0`. |
 | `--bundle FILE` | Sandbox files from a file or URL instead of the release. Also `PYO_SANDBOX_BUNDLE`. They're checked against `--bundle-sha256`, or else against the signed `release.json` of `--version`. |
 | `--bundle-sha256 SUM` | The SHA-256 to check `--bundle` against. Also `PYO_SANDBOX_BUNDLE_SHA256`. |
+| `--gvisor-bundle X` | gVisor's files from a file or URL instead of the release, for a server without KVM. Also `PYO_SANDBOX_GVISOR_BUNDLE`. They're checked against the signed `release.json` of `--version`. |
 | `--dev` | Skip the check, for files you built yourself. Also `PYO_SANDBOX_DEV=1`. |
 | `--edge-domain D` | Serve sandbox ports at `<port>-<sandbox>.D` on ports 80 and 443. Also `PYO_SANDBOX_EDGE_DOMAIN`. See [Edge domain](#edge-domain). |
 | `--edge-cert FILE` | The certificate for `*.D`, as PEM with the full chain. Default `/etc/pyo-sandbox/edge/cert.pem`. |
 | `--edge-key FILE` | Its private key. Default `/etc/pyo-sandbox/edge/key.pem`. |
 
-To update the daemon, run the command again with a newer `--version`. A server that has joined needs no code then, and running sandboxes keep running.
+To update the daemon, run the command again with a newer `--version`. A server that has joined needs no code then, and running sandboxes keep running. A gVisor server gets the release's gVisor too.
 
 To take Pyo off the server, remove it on the **Clusters** page or with `pyo sandbox servers rm`, then run this on it:
 
@@ -122,7 +160,7 @@ A sandbox starts from a sandbox template, made from a container image. Find them
 pyo sandbox templates create node-22 node:22
 ```
 
-The image can be public on any registry, or in [Pyo's registry](/docs/registries#push-your-own-images). Every sandbox server that may use the template pulls the image, unpacks it, boots it once and saves a snapshot to start sandboxes from. A template is ready once one server has it. Each template shows its state on each server: pending, building (pulling, unpacking or snapshotting), ready or failed, with its size once ready.
+The image can be public on any registry, or in [Pyo's registry](/docs/registries#push-your-own-images). Every sandbox server that may use the template pulls the image and unpacks it. A Firecracker server then boots it once and saves a snapshot to start sandboxes from. A gVisor server starts each sandbox from the unpacked disk. A template is ready once one server has it. Each template shows its state on each server: pending, building (pulling, unpacking or snapshotting), ready or failed, with its size once ready.
 
 An image may take up to 10 GiB, and the server needs the disk space to unpack it. A server builds one template at a time.
 
@@ -261,7 +299,6 @@ The **Sandboxes** page lists your sandboxes. **New sandbox** creates one, and sh
 These aren't in Pyo yet:
 
 - Templates from a Git repository or a Dockerfile.
-- Sandboxes on gVisor servers.
 - Pausing a sandbox on its own when it's idle.
 - Allow and deny lists for a sandbox's outgoing traffic.
 - A Python SDK.

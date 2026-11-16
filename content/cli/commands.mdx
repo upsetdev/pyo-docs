@@ -727,10 +727,11 @@ The servers sandboxes run on
 Usage: pyo sandbox servers [OPTIONS] <COMMAND>
 
 Commands:
-  add   Add a sandbox server: prints the command to run on it. Owners and admins
-  ls    The sandbox servers the team can use
-  rm    Remove a sandbox server (name or id). Its sandboxes end
-  help  Print this message or the help of the given subcommand(s)
+  add     Add a sandbox server: prints the command to run on it. Owners and admins
+  create  Buy a sandbox server at Hetzner. Pyo sets it up over your tailnet, and it runs sandboxes on gVisor. Owners and admins
+  ls      The sandbox servers the team can use
+  rm      Remove a sandbox server (name or id). Its sandboxes end
+  help    Print this message or the help of the given subcommand(s)
 
 Options:
       --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
