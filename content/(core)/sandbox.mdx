@@ -34,6 +34,12 @@ A server with neither is turned away when it joins, with the reason. If a server
 
 A sandbox's **Isolation** is **Auto** by default, which picks Firecracker first. **VM only** (`isolation: "vm"`) never runs it on gVisor.
 
+### Which server a sandbox runs on
+
+Pyo picks a server that's up, can run the sandbox's isolation and network, and has the memory for it. It prefers Firecracker, then a server with a snapshot of the template at that size, then the one with the most room.
+
+To choose one yourself, pick it under **Server** in **New sandbox**, or pass `server`, a server's name or id, to the [SDK](#typescript-sdk), the [API](/docs/api/reference/sandboxes/create-sandbox), `create_sandbox` in [MCP](#mcp) or `--server` in the [CLI](#cli). The sandbox then runs only there. If that server can't take it, Pyo says why, like "sandbox-1 has no room for 2 GB. Pick another server or a smaller size."
+
 ### What gVisor can't do
 
 Sandboxes on gVisor run the same templates and have the same commands, files, terminals, ports, network rules, limits, lifetimes and pause. These differ from Firecracker:
@@ -158,7 +164,7 @@ A sandbox starts from a sandbox template, made from a container image. Find them
 
 ### The base template
 
-Every Pyo has `base`, a template Pyo makes for you. A sandbox starts from it when you don't name a template, and **New sandbox** picks it first.
+Every Pyo has `base`, a template Pyo makes for you. A sandbox starts from it when you don't name a template, and **New sandbox** picks it first. It's listed under **Sandbox templates** from the start, even before you add a sandbox server.
 
 It has:
 
@@ -171,15 +177,21 @@ Commands run as root in `/root`. pip installs into the system Python, since a sa
 
 `base` belongs to the installation, so every team has it. It can't be deleted, and no other template can be named `base`.
 
+### base on first use
+
+A sandbox server doesn't get `base` when it joins. It makes it the first time a sandbox needs it there: it downloads the image, about 274 MB, then unpacks it and boots it once, which takes about 20 seconds more. The create waits for that and then starts the sandbox, so the first sandbox from `base` on a server takes longer. Later ones on that server start at once.
+
+While it waits, the dashboard says **Getting base ready on sandbox-1…**. Two sandboxes created at once on that server wait for the same download. The templates page says `base` is **Ready to use** and lists the servers that have it.
+
+If a server isn't done after 4 minutes, the create stops with "base is still getting ready on sandbox-1. Try again in a minute." The server keeps going, so the next try starts once it's done.
+
 ### How base updates
 
 Its image is `ghcr.io/upsetdev/pyo/sandbox-base`, pinned by digest in each Pyo release and signed like Pyo's other images. When you update Pyo, `base` moves to the new release's image:
 
-- Each sandbox server makes the new `base` in the background.
+- Each sandbox server that has `base` makes the new one in the background. Servers that never used it wait for their first sandbox from it.
 - New sandboxes start from it once it's ready on their server. Until then they start from the one before.
 - Running and paused sandboxes keep the one they started from. The server deletes it once no sandbox uses it.
-
-A sandbox server that joins makes `base` right away, on Firecracker and on gVisor.
 
 ### Your own templates
 
@@ -269,7 +281,7 @@ It reads `PYO_URL`, `PYO_API_KEY` and `PYO_TEAM` from the environment, or takes 
 ```ts
 import { Sandbox } from "@pyodev/sandbox";
 
-// From base. Pass template to start from another one.
+// From base. Pass template to start from another one, and server to pick the server.
 const sbx = await Sandbox.create({ ttl: "1h" });
 
 // Commands
@@ -308,7 +320,7 @@ Once your team can use a sandbox server, [MCP](/docs/mcp) gets sandbox tools, so
 
 | Tool | What it does |
 | --- | --- |
-| `create_sandbox` | Creates a sandbox, from `base` unless the assistant names a template, and returns its id |
+| `create_sandbox` | Creates a sandbox, from `base` unless the assistant names a template, on the server it names or one Pyo picks, and returns its id |
 | `run_code` | Runs Python, Node or Bash code and returns its output |
 | `exec` | Runs a shell command |
 | `read_file` and `write_file` | Read and write a file |
@@ -331,11 +343,11 @@ pyo sandbox ports open sbx_abc123 3000
 pyo sandbox rm sbx_abc123
 ```
 
-`pyo sandbox create` starts from `base`. Name a template to start from another one, like `pyo sandbox create node-22`. It also has `ls`, `get`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
+`pyo sandbox create` starts from `base`. Name a template to start from another one, like `pyo sandbox create node-22`, and pick the server with `--server sandbox-1`. It also has `ls`, `get`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
 
 ### Dashboard
 
-The **Sandboxes** page lists your sandboxes. **New sandbox** creates one, and shows the same choices as SDK code, ready to copy. A sandbox's page has its **Overview** with its ports, a **Terminal**, its **Files**, the **Commands** it ran and its **Metrics**.
+The **Sandboxes** page lists your sandboxes. **New sandbox** creates one, and shows the same choices as SDK code, ready to copy. Its **Server** field is **Any server** by default, and lists each server with its runtime and free memory. **Sandbox templates** has a **Use** button on each template that opens **New sandbox** on it. A sandbox's page has its **Overview** with its ports, a **Terminal**, its **Files**, the **Commands** it ran and its **Metrics**.
 
 ## Planned
 
