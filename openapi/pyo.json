@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.4.0"
+    "version": "0.4.1"
   },
   "servers": [
     {
@@ -6495,9 +6495,6 @@
       "CreateSandbox": {
         "type": "object",
         "description": "What a client asks for. Everything but the team and template has a\ndefault.",
-        "required": [
-          "template"
-        ],
         "properties": {
           "teamId": {
             "type": [
@@ -6507,8 +6504,11 @@
             "description": "The team the sandbox belongs to. May be left out when the API key\n(or user) has exactly one team."
           },
           "template": {
-            "type": "string",
-            "description": "A sandbox template's name (or id): the team's own, else the\ninstallation's."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A sandbox template's name (or id): the team's own, else the\ninstallation's. \"base\" (Pyo's built-in Debian 13 template) when\nomitted."
           },
           "cpus": {
             "type": [
