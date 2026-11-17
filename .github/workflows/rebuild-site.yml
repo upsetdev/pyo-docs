@@ -1,18 +1,37 @@
-# Rebuilds pyo-web, which renders these docs at pyo.dev/docs. It needs a token
-# that can dispatch to that repo, saved as PYO_WEB_DISPATCH_TOKEN.
+# Rebuilds pyo.dev, whose /docs renders this repo. pyo-web is built and
+# deployed by Cloudflare's Workers Builds, and its build clones this repo's
+# main branch. A push here asks Workers Builds for a new build through a
+# deploy hook: its URL is the secret PYO_WEB_DEPLOY_HOOK (Cloudflare
+# dashboard > Workers & Pages > pyo-web > Settings > Builds > Deploy Hooks).
 name: Rebuild the site
 
 on:
   push:
     branches: [main]
-    paths: ["content/**"]
+    paths: ["content/**", "openapi/**"]
+  workflow_dispatch:
+
+permissions: {}
 
 jobs:
-  dispatch:
+  rebuild:
     runs-on: ubuntu-latest
     steps:
-      - run: >-
-          gh api repos/upsetdev/pyo-web/dispatches
-          -f event_type=docs-updated
+      - name: Ask Workers Builds to build pyo-web
         env:
-          GH_TOKEN: ${{ secrets.PYO_WEB_DISPATCH_TOKEN }}
+          HOOK: ${{ secrets.PYO_WEB_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::The secret PYO_WEB_DEPLOY_HOOK isn't set, so pyo.dev wasn't rebuilt. Make a deploy hook for pyo-web in Cloudflare (Workers & Pages > pyo-web > Settings > Builds > Deploy Hooks) and save its URL as this repo's PYO_WEB_DEPLOY_HOOK secret."
+            exit 1
+          fi
+          case "$HOOK" in
+            https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/*) ;;
+            *) echo "::error::PYO_WEB_DEPLOY_HOOK isn't a Workers Builds deploy hook URL."; exit 1 ;;
+          esac
+          out=$(curl -fsS -X POST --retry 3 --max-time 30 "$HOOK") || { echo "::error::The deploy hook didn't answer. Check that it still exists in Cloudflare."; exit 1; }
+          if [ "$(echo "$out" | jq -r '.success // empty' 2>/dev/null)" = false ]; then
+            echo "::error::Cloudflare refused the build: $(echo "$out" | jq -c '.errors')"
+            exit 1
+          fi
+          echo "Build started: $(echo "$out" | jq -r '.result.build_uuid // .build_uuid // "see the Cloudflare dashboard"' 2>/dev/null)"
