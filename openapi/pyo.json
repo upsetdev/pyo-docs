@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.4.1"
+    "version": "0.4.2"
   },
   "servers": [
     {
@@ -3272,6 +3272,80 @@
         "x-pyo-access": "read"
       }
     },
+    "/tailnet/lock": {
+      "get": {
+        "tags": [
+          "Servers"
+        ],
+        "summary": "Machines waiting for a Tailnet Lock signature",
+        "description": "With Tailnet Lock on, a new server stays off the tailnet until a\nsigning device signs its key. These are the ones Pyo's commands added\nthat wait, with the command to run on a signing device. Read from\nTailscale at most every 15 seconds. Empty without Tailscale set up.\n\nAPI key access: **read**.",
+        "operationId": "getTailnetLock",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team adding the server (slug or id).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`waiting`: each with `name` (the machine's hostname) and `signCommand`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins add servers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
     "/platform-imports/preview": {
       "post": {
         "tags": [
@@ -3590,11 +3664,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Only sandboxes whose name or id has this text, ignoring case.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "`sandboxes`, newest first, each with `id`, `teamId`, `projectId`, `serverId`, `server`, `template`, `templateId`, `state` (\"creating\", \"running\", \"pausing\", \"paused\", \"resuming\", \"stopping\", \"stopped\" or \"failed\"), `preparing` (true while it waits for its server to make its template), `runtime` (\"firecracker\" or \"gvisor\"), `cpus`, `memoryMib`, `diskMib`, `network`, `isolation`, `labels`, `env` (names only), `url` (its server's daemon), `edgeUrl` (its server's edge proxy, or null), `ports` (each `port`, `public` and `url`), `error`, `createdBy`, `createdAt`, `startedAt`, `expiresAt`, `pausedAt` and `endedAt`. Also `limits` (the team's) and `inUse` (what its sandboxes take now).",
+            "description": "`sandboxes`, newest first, each with `id`, `name`, `teamId`, `projectId`, `serverId`, `server`, `template`, `templateId`, `state` (\"creating\", \"running\", \"pausing\", \"paused\", \"resuming\", \"stopping\", \"stopped\" or \"failed\"), `preparing` (true while it waits for its server to make its template), `runtime` (\"firecracker\" or \"gvisor\"), `cpus`, `memoryMib`, `diskMib`, `network`, `isolation`, `labels`, `env` (names only), `url` (its server's daemon), `edgeUrl` (its server's edge proxy, or null), `ports` (each `port`, `public` and `url`), `error`, `createdBy`, `createdAt`, `startedAt`, `expiresAt` (null when it runs until it's deleted), `pausedAt` and `endedAt`. Also `limits` (the team's, `maxTtlSecs` null when there's no limit) and `inUse` (what its sandboxes take now).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3641,7 +3724,7 @@
           "Sandboxes"
         ],
         "summary": "Create a sandbox",
-        "description": "Makes an isolated machine from a sandbox template on one of the team's\nsandbox servers (or the installation's), within the team's limits. It\nruns until its lifetime ends or it's deleted. The answer has the\n`connection`: the server's address and a token, valid an hour, for exec,\nterminals, files and ports there. Ask for a new token with\n`createSandboxToken`. `teamId` may be left out when the API key (or\nyou) can use only one team. `server` runs it on that server only.\n\nA server that doesn't have the template `base` yet makes it first:\nthe first sandbox from `base` there takes a minute or so longer, and\nlater ones start at once.\n\nAPI key access: **sandboxes**.",
+        "description": "Makes an isolated machine from a sandbox template on one of the team's\nsandbox servers (or the installation's), within the team's limits. It\nruns until its lifetime ends or it's deleted. The answer has the\n`connection`: the server's address and a token, valid an hour, for exec,\nterminals, files and ports there. Ask for a new token with\n`createSandboxToken`. `teamId` may be left out when the API key (or\nyou) can use only one team. `server` runs it on that server only.\n\nA server that doesn't have Pyo's template `base` (or `desktop`) yet\nmakes it first: the first sandbox from it there takes a minute or so\nlonger, and later ones start at once.\n\nAPI key access: **sandboxes**.",
         "operationId": "createSandbox",
         "requestBody": {
           "content": {
@@ -3725,7 +3808,7 @@
             }
           },
           "502": {
-            "description": "The server couldn't make `base`. The error says why.",
+            "description": "The server couldn't make `base` or `desktop`. The error says why.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3735,7 +3818,7 @@
             }
           },
           "503": {
-            "description": "Every sandbox server is full or down, the server asked for has no room, or `base` is still being made there. Try again soon.",
+            "description": "Every sandbox server is full or down, the server asked for has no room, or `base` or `desktop` is still being made there. Try again soon.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3836,6 +3919,88 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "sandboxes"
+      },
+      "patch": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Rename a sandbox",
+        "description": "Gives the sandbox another name. Its id stays the same, so scripts that\nuse it keep working. Works on ended sandboxes too.\n\nAPI key access: **sandboxes**.",
+        "operationId": "renameSandbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The sandbox, with its new `name`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A name Pyo can't accept. The error says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -4028,7 +4193,7 @@
           "Sandboxes"
         ],
         "summary": "Extend a sandbox",
-        "description": "Sets when the sandbox ends: `ttl` from now.\n\nAPI key access: **sandboxes**.",
+        "description": "Sets when the sandbox ends: `ttl` from now, or never with `\"none\"`.\n\nAPI key access: **sandboxes**.",
         "operationId": "extendSandbox",
         "parameters": [
           {
@@ -4053,7 +4218,7 @@
         },
         "responses": {
           "200": {
-            "description": "The sandbox, with its new `expiresAt`.",
+            "description": "The sandbox, with its new `expiresAt` (null when it runs until it's deleted).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4839,7 +5004,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`templates`, each with `id`, `teamId` (null for the installation's), `name`, `source` (`kind` and `image`), `state` (\"pending\", \"building\", \"ready\" or \"failed\", from its servers, and \"unavailable\" for `base` while Pyo has no image for it), `builtin`, `servers`, `error` and `createdAt`. `base` is always listed and ready to use: servers make it on first use, so its `servers` are those that have it. Each of the other templates' `servers` is a sandbox server that may use it, with `id`, `name`, `state` (\"pending\", \"building\", \"ready\" or \"failed\"), `phase` while building (\"queued\", \"pulling\", \"unpacking\" or \"snapshotting\"), `pulled` and `imageBytes`, `pullMs`, `unpackMs` and `snapshotMs`, `bytes` (disk it takes there), `snapshots` and `error`.",
+            "description": "`templates`, each with `id`, `teamId` (null for the installation's), `name`, `source` (`kind` and `image`), `state` (\"pending\", \"building\", \"ready\" or \"failed\", from its servers, and \"unavailable\" for `base` or `desktop` while Pyo has no image for it), `builtin`, `servers`, `error` and `createdAt`. Pyo's own `base` and `desktop` come first, are always listed and are ready to use: servers make them on first use, so their `servers` are those that have them. Each of the other templates' `servers` is a sandbox server that may use it, with `id`, `name`, `state` (\"pending\", \"building\", \"ready\" or \"failed\"), `phase` while building (\"queued\", \"pulling\", \"unpacking\" or \"snapshotting\"), `pulled` and `unpacked` of `imageBytes` (asked of the server as the list is read, while it builds), `pullMs`, `unpackMs` and `snapshotMs`, `bytes` (disk it takes there), `snapshots` and `error`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6513,12 +6678,19 @@
             ],
             "description": "The team the sandbox belongs to. May be left out when the API key\n(or user) has exactly one team."
           },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A name to tell it apart, like \"checkout tests\": up to 63 letters,\ndigits, spaces, dashes, underscores and dots. It needn't be unique\nand never addresses the sandbox: its id does. A short one like\n\"quiet-river\" when omitted."
+          },
           "template": {
             "type": [
               "string",
               "null"
             ],
-            "description": "A sandbox template's name (or id): the team's own, else the\ninstallation's. \"base\" (Pyo's built-in Debian 13 template) when\nomitted. A server that doesn't have \"base\" yet makes it first, so\nthe first sandbox from it there takes longer."
+            "description": "A sandbox template's name (or id): the team's own, else the\ninstallation's. \"base\" (Pyo's built-in Ubuntu 24.04 template) when\nomitted. \"desktop\" is Pyo's built-in desktop with a browser: CDP on\nport 9222 and the screen (noVNC) on port 6080. A server that doesn't\nhave Pyo's template yet makes it first, so the first sandbox from it\nthere takes longer."
           },
           "server": {
             "type": [
@@ -6533,7 +6705,7 @@
               "null"
             ],
             "format": "int32",
-            "description": "1 when omitted.",
+            "description": "1 when omitted (2 for \"desktop\").",
             "minimum": 0
           },
           "memoryMib": {
@@ -6542,7 +6714,7 @@
               "null"
             ],
             "format": "int32",
-            "description": "512 when omitted.",
+            "description": "512 when omitted (2048 for \"desktop\").",
             "minimum": 0
           },
           "diskMib": {
@@ -6559,7 +6731,7 @@
               "string",
               "null"
             ],
-            "description": "How long it lives, like \"30m\" or \"1h\", or seconds. 5 minutes when\nomitted."
+            "description": "How long it lives, like \"30m\", \"1h\" or \"7d\", or seconds, up to 365\ndays and the team's longest lifetime. \"none\": it runs until it's\ndeleted, when the team has no limit. 5 minutes when omitted."
           },
           "pauseWhenIdleSecs": {
             "type": [
@@ -7322,7 +7494,7 @@
         "properties": {
           "ttl": {
             "type": "string",
-            "description": "The sandbox now ends this long from now, like \"30m\" or \"1h\", or\nseconds. Within the team's longest lifetime."
+            "description": "The sandbox now ends this long from now, like \"30m\", \"1h\" or \"7d\",\nor seconds. \"none\": it runs until it's deleted. Within the team's\nlongest lifetime."
           }
         },
         "additionalProperties": false
@@ -9527,6 +9699,19 @@
         "x-tags": [
           "Firewall"
         ]
+      },
+      "Rename": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The new name: up to 63 letters, digits, spaces, dashes, underscores\nand dots. It needn't be unique."
+          }
+        },
+        "additionalProperties": false
       },
       "ReorderFirewallRulesOp": {
         "type": "object",

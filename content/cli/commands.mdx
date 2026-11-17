@@ -436,6 +436,7 @@ Commands:
   create     Make a sandbox from a sandbox template and print its id
   ls         The team's sandboxes
   get        One sandbox
+  rename     Give a sandbox another name. Its id stays the same
   rm         Delete a sandbox and its files
   pause      Pause a sandbox. It resumes where it was
   resume     Resume a paused sandbox
@@ -467,16 +468,17 @@ Make a sandbox from a sandbox template and print its id
 Usage: pyo sandbox create [OPTIONS] [TEMPLATE]
 
 Arguments:
-  [TEMPLATE]  The sandbox template, like node-22 (see pyo sandbox templates ls). Default base: Debian 13 with git, Python, uv, Node.js and pnpm. A server makes base the first time it's used there
+  [TEMPLATE]  The sandbox template, like node-22 (see pyo sandbox templates ls). Default base: Ubuntu 24.04 with git, Python, uv, Node.js, pnpm, Bun, Deno, the GitHub and Docker CLIs, Claude Code, Codex and opencode. desktop adds a desktop and a browser: CDP on port 9222, the screen on port 6080. A server makes these the first time they're used there
 
 Options:
-      --server <SERVER>         The sandbox server to run it on, by name or id. Pyo picks one when left out
+      --name <NAME>             A name to tell it apart. Pyo makes up a short one when left out
       --url <URL>               Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --cpus <CPUS>             CPUs. Default 1
+      --server <SERVER>         The sandbox server to run it on, by name or id. Pyo picks one when left out
       --token <TOKEN>           An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-      --memory <MEMORY>         Memory in MiB. Default 512
+      --cpus <CPUS>             CPUs. Default 1 (2 for desktop)
+      --memory <MEMORY>         Memory in MiB. Default 512 (2048 for desktop)
       --disk <DISK>             Writable disk in MiB. Default 2048
-      --ttl <TTL>               How long it lives, like 30m or 1h. Default 5m
+      --ttl <TTL>               How long it lives, like 30m, 1h or 7d, up to 365d. "none" keeps it until you delete it. Default 5m
       --pause-when-idle <SECS>  Pause after this many seconds without use
   -e, --env <KEY=VALUE>         An environment variable, KEY=VALUE. Repeat for more
       --label <KEY=VALUE>       A label, key=value. Repeat for more
@@ -522,6 +524,27 @@ Arguments:
 
 Options:
       --json           Print it as JSON
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo sandbox rename`
+
+Give a sandbox another name. Its id stays the same
+
+```text
+Give a sandbox another name. Its id stays the same
+
+Usage: pyo sandbox rename [OPTIONS] <ID> <NAME>
+
+Arguments:
+  <ID>    The sandbox's id, sbx_…
+  <NAME>  The new name
+
+Options:
       --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
       --team <TEAM>    The team (slug or id). Defaults to your first team
@@ -600,7 +623,7 @@ Usage: pyo sandbox extend [OPTIONS] <ID> <TTL>
 
 Arguments:
   <ID>   The sandbox's id, sbx_…
-  <TTL>  Like 30m or 1h
+  <TTL>  Like 30m, 1h or 7d. "none" keeps it until you delete it
 
 Options:
       --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
@@ -1581,6 +1604,21 @@ Options:
   -y, --yes                Don't ask to confirm
   -h, --help               Print help
   -V, --version            Print version
+```
+
+## `pyo version`
+
+The CLI's version, like --version
+
+```text
+The CLI's version, like --version
+
+Usage: pyo version [OPTIONS]
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+  -h, --help           Print help
 ```
 
 ## `pyo upgrade`
