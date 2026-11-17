@@ -51,7 +51,7 @@ Pyo sets these when it's installed, so you'll rarely need to touch them.
 | `CLICKHOUSE_PASSWORD` | Empty | The ClickHouse password. |
 | `PYO_AGENT_API_URL` | `http://pyo.pyo-system.svc:8000` | The address agents connect to. |
 | `PYO_LOCAL_URL` | `http://127.0.0.1:8000` | How the install command for **This machine** reaches Pyo, and where it downloads its script. |
-| `PYO_SCRIPTS_URL` | Pyo's own address | Where the commands for connecting other servers download their scripts. When not set, they download from Pyo itself, at the address the command gives the server, like your tailnet or public URL. Without one, they use `https://pyo.dev`. **This machine** always downloads from Pyo on it. |
+| `PYO_SCRIPTS_URL` | Pyo's own address | Where the commands for connecting other servers download their scripts. When not set, they download from Pyo itself, at the address the command gives the server, like your tailnet or public URL. Without one, they use this release's scripts on pyo.dev, at `https://pyo.dev/v/<version>`. **This machine** always downloads from Pyo on it. |
 | `PYO_AGENT_SELF_UPDATE` | `true` | Lets agents update their own limits when Pyo is updated, on clusters connected while it's on. Set `false` to update them yourself. The cluster's page then shows **Update needed** with the command to run on its server. See [Securing Pyo](/docs/securing-pyo#what-to-keep-in-mind). |
 | `PYO_REGISTRY_PULL` | `127.0.0.1:5005` | The registry address servers pull images from. |
 | `PYO_REGISTRY` | `pyo-registry.pyo-system.svc.cluster.local:5000` | The registry itself, which only Pyo reaches. |
