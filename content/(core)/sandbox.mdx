@@ -183,7 +183,7 @@ Commands run as root in `/root`. pip installs into the system Python, since a sa
 
 `desktop` is `base` with a desktop and a browser, for agents that use a browser and for people who want to watch them. Its sandboxes get 2 CPUs and 2 GiB of memory unless you ask for more.
 
-- **The screen:** a desktop you watch and use in your browser, served by noVNC on port 6080 inside the sandbox. Choose **Desktop** in the sandboxes list or **Open desktop** on the sandbox's page. It opens through the sandbox server on your tailnet, with no edge domain needed.
+- **The screen:** a desktop you watch and use in your browser, served by voxl on port 6080 inside the sandbox. Choose **Desktop** in the sandboxes list or **Open desktop** on the sandbox's page. It opens through the sandbox server on your tailnet, with no edge domain needed.
 - **The browser:** Google Chrome on x86-64 and Chromium on arm64. Drive it over the Chrome DevTools Protocol at `127.0.0.1:9222` inside the sandbox, with Playwright or Puppeteer. **Browser** in the sandboxes list opens the screen with the browser in front.
 
 Nothing starts until it's used: the first look at the screen or the first CDP connection starts the desktop, then the browser.
