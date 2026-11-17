@@ -107,6 +107,31 @@ curl -fsSL https://pyo.dev/install.sh | bash -s -- --version 0.1.0
 
 To update later, run the install command again. See [Updating Pyo](/docs/updating-pyo). To remove Pyo, see [Uninstalling Pyo](/docs/uninstall).
 
+## Verify a script
+
+pyo.dev serves each install script exactly as a Pyo release published it. `pyo.dev/install.sh` is the latest release's, and `pyo.dev/v/0.4.3/install.sh` is release 0.4.3's. The same goes for `connect.sh`, `join.sh`, `sandbox.sh` and `cli.sh`.
+
+To check a script before you run it, compare its SHA-256 with the one in the release notes on [GitHub](https://github.com/upsetdev/pyo/releases):
+
+```bash
+curl -fsSLO https://pyo.dev/v/0.4.3/install.sh
+sha256sum install.sh
+```
+
+The release's `release.json` lists the same sums, signed by Pyo's release workflow. To check that signature too, with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/):
+
+```bash
+V=0.4.3
+curl -fsSLO https://github.com/upsetdev/pyo/releases/download/v$V/release.json
+curl -fsSLO https://github.com/upsetdev/pyo/releases/download/v$V/release.json.sigstore.json
+cosign verify-blob release.json --bundle release.json.sigstore.json \
+  --certificate-identity https://github.com/upsetdev/pyo/.github/workflows/release.yml@refs/tags/v$V \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+grep '"install.sh"' release.json
+```
+
+Every release's signature is recorded in Sigstore's public transparency log, [Rekor](https://search.sigstore.dev), so anyone can see what was signed and when.
+
 ## Install count
 
 When a fresh install is ready, the installer tells `api.pyo.dev` once, so we know how many people get Pyo running. It sends Pyo's version, the OS and the arch. It never sends the server's name, domains, addresses or who you are, and the source IP isn't stored. Running the command again to update sends nothing. The installer doesn't print anything about it.
