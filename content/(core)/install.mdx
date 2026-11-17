@@ -56,21 +56,46 @@ Lost your own password later? Run `sudo pyo-reset-login` on the server for a one
 
 ## Where Pyo is
 
-One server with a public IP needs no Tailscale. Pyo is at:
+When it finishes, the installer prints where Pyo is:
 
-| Address | From |
+```text
+Open Pyo:
+  ➜  Public:   https://pyo.203.0.113.7.nip.io
+  ➜  Tailnet:  http://100.101.67.2:8000
+  ➜  Network:  http://10.0.0.5:8000
+  ➜  Local:    http://localhost:8000
+```
+
+It lists only the addresses this server has:
+
+| Line | Where it opens |
 | --- | --- |
-| `https://pyo.<public-ip>.nip.io` | Anywhere, with a Let's Encrypt certificate. It takes a minute or two after the install, and the installer waits for it. A server behind NAT, with no public IP of its own, doesn't get it. |
-| `http://<private-ip>:8000` | Your own network, like a home or office LAN. |
-| `http://localhost:8000` | The machine itself. |
+| **Public** | Anywhere, over HTTPS with a Let's Encrypt certificate. It's on the server's public IP: one on its network card, or the one its cloud gives it, as on AWS, Google Cloud, Azure, Alibaba Cloud and Tencent Cloud. Pyo never serves plain HTTP there. |
+| **Tailnet** | Your tailnet, when the server is on one already. Once you set up [Tailscale](/docs/tailscale) in Pyo, it's `https://pyo.<tailnet>.ts.net`. |
+| **Network** | Your own network, like a home or office LAN or the cloud's private network. |
+| **Local** | The machine itself. |
 
 Pyo answers port 8000 only from the machine itself, private networks and your tailnet. Anything else is turned away, whatever it sends. Over plain HTTP, sign in with your password or a one-time code. [Passkeys](/docs/passkeys) need HTTPS.
 
+With neither a Public nor a Tailnet line, the installer says to set up Tailscale in Pyo for an HTTPS address.
+
 Once you add a second server or another cluster, set up [Tailscale](/docs/tailscale). Pyo is then also at `https://pyo.<tailnet>.ts.net`, and you can close the public dashboard.
+
+### Opening ports 80 and 443
+
+Let's Encrypt issues the certificate only once it reaches the server on port 80. The installer waits up to 90 seconds for it. If it isn't there by then, the Public line says `(ready in a few minutes)` and it comes up by itself.
+
+Most clouds block ports 80 and 443 until you allow them, in a security group or firewall rules. Then the Public line says so:
+
+```text
+  ➜  Public:   https://pyo.203.0.113.7.nip.io  (allow ports 80 and 443 in your cloud firewall)
+```
+
+Allow TCP ports 80 and 443 from anywhere. Pyo tries again by itself, first an hour later, then every few hours at most. To check right away, run the install command again. It tries again if the last try was at least 15 minutes ago.
 
 ### On a home server
 
-A server behind NAT, like one at home, has no HTTPS address of its own. Pyo is at its address on your network over HTTP, and so are your services. A service with no domain opens at the server's address and a port Pyo picks, like `http://192.168.1.20:31234`. Set up [Tailscale](/docs/tailscale) to get HTTPS for Pyo and your services.
+A server behind a router's NAT, like one at home, has no HTTPS address of its own. Pyo is at its address on your network over HTTP, and so are your services. A service with no domain opens at the server's address and a port Pyo picks, like `http://192.168.1.20:31234`. Set up [Tailscale](/docs/tailscale) to get HTTPS for Pyo and your services.
 
 ## Install a particular release
 
