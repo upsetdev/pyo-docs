@@ -33,11 +33,11 @@ The add-server and connect-cluster pages link to the card until Tailscale is set
 ## What Pyo does with it
 
 - **Pyo's own server joins your tailnet.** A timer on it asks Pyo for a key, installs Tailscale if needed and joins. This takes about a minute. Then it restarts k3s once to run it over your tailnet, so servers you add can reach it. If k3s doesn't come back, it puts the old setup back and tries again the next day. The **Tailscale** card shows how it's going.
-- **Pyo gets names on your tailnet.** `https://pyo.<tailnet>.ts.net` for the dashboard and API, and `registry.<tailnet>.ts.net` for [Pyo's registry](/docs/registries#push-your-own-images). Both use Tailscale's certificate on port 443.
+- **Pyo gets names on your tailnet.** `https://pyo.<tailnet>.ts.net` for the dashboard and API, `registry.<tailnet>.ts.net` for [Pyo's registry](/docs/registries#push-your-own-images), and `sandboxes.<tailnet>.ts.net` for [sandboxes'](/docs/sandbox) web pages, like the desktop. All use Tailscale's certificate on port 443.
 - **Servers join on their own.** Each command to add a [server](/docs/servers) or connect a [cluster](/docs/clusters) carries a fresh key: single use, valid for an hour, tagged `tag:pyo`.
 - **Services get tailnet domains.** Like `blog.<tailnet>.ts.net`, reachable only from your tailnet. See [Free domains](/docs/domains#free-domains).
 
-Pyo's names are [Tailscale Services](https://tailscale.com/kb/1552/tailscale-services), hosted by every server that runs a Pyo Gateway proxy. Pyo only touches Services it made. If a name is taken on your tailnet, Pyo picks `pyo-<cluster>` instead, then adds `-2`. An admin can rename them on the card. A tailnet domain you type that's already taken shows **Taken on your tailnet**. `pyo` and `registry` are kept for Pyo.
+Pyo's names are [Tailscale Services](https://tailscale.com/kb/1552/tailscale-services), hosted by every server that runs a Pyo Gateway proxy. Pyo only touches Services it made. If a name is taken on your tailnet, Pyo picks `pyo-<cluster>` instead, then adds `-2`. An admin can rename them on the card. If someone else takes the sandboxes' name later, Pyo moves to the next free one by itself. A tailnet domain you type that's already taken shows **Taken on your tailnet**. `pyo`, `registry` and `sandboxes` are kept for Pyo.
 
 ## Tailnet Lock
 
