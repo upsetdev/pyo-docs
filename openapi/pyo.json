@@ -5988,6 +5988,13 @@
             "format": "int64",
             "description": "When the token runs out (epoch milliseconds). Ask for a new one with\n`createSandboxToken` before.",
             "minimum": 0
+          },
+          "webUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where its ports' web pages open over HTTPS on your tailnet, like the\ndesktop's screen: `<webUrl>/v1/sandboxes/{id}/web/{port}/`, with the\ntoken once as `?pyo_token=`. Missing until Tailscale is set up and\nthat name is ready."
           }
         }
       },
