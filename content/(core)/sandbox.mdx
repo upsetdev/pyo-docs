@@ -101,7 +101,7 @@ Pyo gives you a command to run on the new machine as root. It looks like this:
 ```bash
 curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- \
   --pyo pyo.tail1234.ts.net:5006 --server sbs_abc123 --name sbx-1 \
-  --code 9f2c... --tailscale-key tskey-auth-... --version 0.4.0
+  --code 9f2c... --tailscale-key tskey-auth-... --version 0.4.2
 ```
 
 It joins your tailnet, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. A server without KVM gets gVisor too, and is checked again. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
@@ -120,7 +120,7 @@ The dashboard fills in the options that join the server. These change how it ins
 
 | Option | What it does |
 | --- | --- |
-| `--version X` | The Pyo release whose sandbox files to install, like `0.4.0`. |
+| `--version X` | The Pyo release whose sandbox files to install, like `0.4.2`. |
 | `--bundle FILE` | Sandbox files from a file or URL instead of the release. Also `PYO_SANDBOX_BUNDLE`. They're checked against `--bundle-sha256`, or else against the signed `release.json` of `--version`. |
 | `--bundle-sha256 SUM` | The SHA-256 to check `--bundle` against. Also `PYO_SANDBOX_BUNDLE_SHA256`. |
 | `--gvisor-bundle X` | gVisor's files from a file or URL instead of the release, for a server without KVM. Also `PYO_SANDBOX_GVISOR_BUNDLE`. They're checked against the signed `release.json` of `--version`. |
@@ -166,32 +166,53 @@ A sandbox starts from a sandbox template, made from a container image. Find them
 
 Every Pyo has `base`, a template Pyo makes for you. A sandbox starts from it when you don't name a template, and **New sandbox** picks it first. It's listed under **Sandbox templates** from the start, even before you add a sandbox server.
 
-It has:
+It's Ubuntu 24.04 LTS with the tools coding agents expect:
 
-- **System:** Debian 13 (trixie), with curl, wget, git, openssh-client, jq, zip, unzip, less, procps, sudo, vim and tzdata.
-- **Build tools:** gcc, g++ and make.
-- **Python:** Python 3.13 with pip, venv and [uv](https://docs.astral.sh/uv/).
-- **Node.js:** Node.js 26 LTS with npm, and pnpm through corepack.
+- **System:** git, curl, wget, jq, ripgrep, zip, unzip, rsync, openssh-client, sudo, vim, nano and the usual network tools.
+- **Build tools:** build-essential, pkg-config, cmake and ninja.
+- **Python:** Python 3.12 with pip, venv and [uv](https://docs.astral.sh/uv/).
+- **JavaScript:** Node.js 24 LTS with npm, pnpm, [Bun](https://bun.sh) and [Deno](https://deno.com).
+- **CLIs:** GitHub's `gh` and the Docker CLI with buildx and compose. There's no Docker daemon in it, so point `DOCKER_HOST` at one.
+- **Coding agents:** Claude Code, Codex and opencode.
 
-Commands run as root in `/root`. pip installs into the system Python, since a sandbox is thrown away.
+Commands run as root in `/root`. pip installs into the system Python, since a sandbox is thrown away. The full list with versions is in [pyo-sandbox-images](https://github.com/upsetdev/pyo-sandbox-images#base).
 
 `base` belongs to the installation, so every team has it. It can't be deleted, and no other template can be named `base`.
 
-### base on first use
+### The desktop template
 
-A sandbox server doesn't get `base` when it joins. It makes it the first time a sandbox needs it there: it downloads the image, about 274 MB, then unpacks it and boots it once, which takes about 20 seconds more. The create waits for that and then starts the sandbox, so the first sandbox from `base` on a server takes longer. Later ones on that server start at once.
+`desktop` is `base` with a desktop and a browser, for agents that use a browser and for people who want to watch them. Its sandboxes get 2 CPUs and 2 GiB of memory unless you ask for more.
 
-While it waits, the dashboard says **Getting base ready on sandbox-1…**. Two sandboxes created at once on that server wait for the same download. The templates page says `base` is **Ready to use** and lists the servers that have it.
+- **The screen:** a desktop you watch and use in your browser, served by noVNC on port 6080 inside the sandbox. Choose **Desktop** in the sandboxes list or **Open desktop** on the sandbox's page. It opens through the sandbox server on your tailnet, with no edge domain needed.
+- **The browser:** Google Chrome on x86-64 and Chromium on arm64. Drive it over the Chrome DevTools Protocol at `127.0.0.1:9222` inside the sandbox, with Playwright or Puppeteer. **Browser** in the sandboxes list opens the screen with the browser in front.
+
+Nothing starts until it's used: the first look at the screen or the first CDP connection starts the desktop, then the browser.
+
+```bash
+pyo sandbox create desktop
+```
+
+Like `base`, it belongs to the installation and can't be deleted.
+
+### On first use
+
+A sandbox server doesn't get `base` or `desktop` when it joins. It makes each the first time a sandbox needs it there: it downloads the image, about 0.9 GB for `base` and 1.25 GB for `desktop`, then unpacks it and boots it once. The create waits for that and then starts the sandbox, so the first sandbox from it on a server takes longer. Later ones on that server start at once.
+
+While it waits, the dashboard says **Getting base ready on sandbox-1…** with how far it got, and the templates list shows each server's progress. Two sandboxes created at once on that server wait for the same download. The templates page says `base` is **Ready to use** and lists the servers that have it.
 
 If a server isn't done after 4 minutes, the create stops with "base is still getting ready on sandbox-1. Try again in a minute." The server keeps going, so the next try starts once it's done.
 
-### How base updates
+### How base and desktop update
 
-Its image is `ghcr.io/upsetdev/pyo/sandbox-base`, pinned by digest in each Pyo release and signed like Pyo's other images. When you update Pyo, `base` moves to the new release's image:
+Their images come from [pyo-sandbox-images](https://github.com/upsetdev/pyo-sandbox-images), `ghcr.io/upsetdev/pyo-sandbox-images/base` and `ghcr.io/upsetdev/pyo-sandbox-images/desktop`. They're rebuilt every week with Ubuntu's security updates. Each build is signed, and so is the list of its images, `images.json`, which names each image by digest.
 
-- Each sandbox server that has `base` makes the new one in the background. Servers that never used it wait for their first sandbox from it.
+Pyo reads the latest `images.json` from GitHub every hour and uses it only when its signature checks out. Each Pyo release also carries the one of when it was made, so a Pyo that can't reach GitHub still has images. `PYO_UPDATE_CHECK=off` stops the hourly check too. When a newer build comes out:
+
+- Each sandbox server that has the template makes the new one in the background. Servers that never used it wait for their first sandbox from it.
 - New sandboxes start from it once it's ready on their server. Until then they start from the one before.
 - Running and paused sandboxes keep the one they started from. The server deletes it once no sandbox uses it.
+
+A template never moves back to an older build.
 
 ### Your own templates
 
@@ -206,8 +227,7 @@ The image can be public on any registry, or in [Pyo's registry](/docs/registries
 To add your own tools to `base`, build on its image and push the result to Pyo's registry:
 
 ```dockerfile
-# Your Pyo's version
-FROM ghcr.io/upsetdev/pyo/sandbox-base:0.4.1
+FROM ghcr.io/upsetdev/pyo-sandbox-images/base:24.04
 RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \
  && rm -rf /var/lib/apt/lists/*
 RUN uv pip install --system pandas
@@ -248,9 +268,9 @@ Each sandbox can have:
 | CPUs | 1 | 1 to 32 |
 | Memory | 512 MiB | 128 MiB to 64 GiB |
 | Disk | 2 GiB | 64 MiB to 256 GiB |
-| Lifetime | 5 minutes | up to 24 hours |
+| Lifetime | 5 minutes | up to 365 days, or no limit |
 
-A sandbox ends when its lifetime runs out. Extend it while it runs.
+A sandbox ends when its lifetime runs out. Extend it while it runs. A sandbox with no limit (`ttl: "none"`) runs until you delete it.
 
 Each team also has limits on all its sandboxes together. Paused ones count.
 
@@ -260,9 +280,15 @@ Each team also has limits on all its sandboxes together. Paused ones count.
 | CPUs | 16 |
 | Memory | 16 GiB |
 | Disk | 100 GiB |
-| Longest lifetime | 24 hours |
+| Longest lifetime | 1 day |
 
-The installation's admin changes them in the team's **Settings**, under **Sandboxes**. Setting **Sandboxes at once** to 0 turns sandboxes off for the team.
+The installation's admin changes them in the team's **Settings**, under **Sandboxes**. Setting **Sandboxes at once** to 0 turns sandboxes off for the team. **Longest lifetime** can be up to 365 days, or **No limit**, which lets the team's sandboxes run until they're deleted.
+
+## Names
+
+Every sandbox has a name, to tell it apart from the others and find it. Give one when you create it, like `checkout tests`, of up to 63 letters, digits, spaces, dashes, underscores and dots. Without one, Pyo makes up a short one like `quiet-river`.
+
+Names don't have to be unique, and they never address a sandbox: its id does. So renaming one breaks nothing. Rename a sandbox from its name on its page, with `pyo sandbox rename`, with `rename_sandbox` in [MCP](#mcp), or with a `PATCH` in the [API](/docs/api). The sandboxes list searches by name or id.
 
 ## Use sandboxes
 
@@ -321,6 +347,7 @@ Once your team can use a sandbox server, [MCP](/docs/mcp) gets sandbox tools, so
 | Tool | What it does |
 | --- | --- |
 | `create_sandbox` | Creates a sandbox, from `base` unless the assistant names a template, on the server it names or one Pyo picks, and returns its id |
+| `rename_sandbox` | Gives a sandbox another name |
 | `run_code` | Runs Python, Node or Bash code and returns its output |
 | `exec` | Runs a shell command |
 | `read_file` and `write_file` | Read and write a file |
@@ -335,7 +362,7 @@ These go through Pyo, so the assistant doesn't need your tailnet. See the [full 
 The [`pyo` CLI](/docs/cli) has `pyo sandbox`:
 
 ```bash
-pyo sandbox create --ttl 30m
+pyo sandbox create --name checkout-tests --ttl 30m
 pyo sandbox exec sbx_abc123 "node -v"
 pyo sandbox shell sbx_abc123
 pyo sandbox cp ./app.js sbx_abc123:/app/app.js
@@ -343,11 +370,11 @@ pyo sandbox ports open sbx_abc123 3000
 pyo sandbox rm sbx_abc123
 ```
 
-`pyo sandbox create` starts from `base`. Name a template to start from another one, like `pyo sandbox create node-22`, and pick the server with `--server sandbox-1`. It also has `ls`, `get`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
+`pyo sandbox create` starts from `base`. Name a template to start from another one, like `pyo sandbox create node-22`, and pick the server with `--server sandbox-1`. `--ttl` takes a lifetime like `30m`, `6h` or `7d`, or `none` to keep it until you delete it. It also has `ls`, `get`, `rename`, `pause`, `resume`, `extend` and `token`, and `servers` and `templates` to manage those. `exec`, `shell` and `cp` reach the sandbox server directly, so they need your tailnet. See the [command reference](/docs/cli/commands#pyo-sandbox).
 
 ### Dashboard
 
-The **Sandboxes** page lists your sandboxes. **New sandbox** creates one, and shows the same choices as SDK code, ready to copy. Its **Server** field is **Any server** by default, and lists each server with its runtime and free memory. **Sandbox templates** has a **Use** button on each template that opens **New sandbox** on it. A sandbox's page has its **Overview** with its ports, a **Terminal**, its **Files**, the **Commands** it ran and its **Metrics**.
+The **Sandboxes** page lists your sandboxes by name, with a search. A running sandbox has **Terminal** right in the list, and a desktop sandbox has **Desktop** and **Browser** too. **New sandbox** creates one, and shows the same choices as SDK code, ready to copy. Its **Server** field is **Any server** by default, and lists each server with its runtime and free memory. Its **Lifetime** goes from 5 minutes up to the team's longest, or **No limit** when the team allows it. **Sandbox templates** has a **Use** button on each template that opens **New sandbox** on it. A sandbox's page has its **Overview** with its ports, a **Terminal**, its **Files**, the **Commands** it ran and its **Metrics**.
 
 ## Planned
 
