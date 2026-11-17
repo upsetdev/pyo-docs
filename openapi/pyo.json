@@ -11022,7 +11022,7 @@
       "SetClusterFreeDomainAddressOp": {
         "type": "object",
         "title": "Set cluster free domain address",
-        "description": "Where the cluster's free domains (`<name>.<ip>.nip.io`) point: \"public\" (its public IP, for everyone) or \"tailscale\" (its Tailscale IP, only from the tailnet). With \"tailscale\", services are reachable from your tailnet on ports 80 and 443 whether or not the cluster takes public traffic. Free domains on it move to the new address in place. By default it's public when the cluster takes public traffic and a server has its public IP itself (on a network card or as its ExternalIP) or a load balancer gives it one. Behind NAT, it's Tailscale.\n\nAPI key access: **full**.",
+        "description": "Where the cluster's free domains (`<name>.<ip>.nip.io`) point: \"public\" (its public IP, for everyone) or \"tailscale\" (its Tailscale IP, only from the tailnet). With \"tailscale\", services are reachable from your tailnet on ports 80 and 443 whether or not the cluster takes public traffic. Free domains on it move to the new address in place. By default it's public when the cluster takes public traffic and a server has its public IP itself (on a network card or as its ExternalIP), a load balancer gives it one, or its cloud maps one to it and Let's Encrypt reached it there. Behind NAT, it's Tailscale.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId",
