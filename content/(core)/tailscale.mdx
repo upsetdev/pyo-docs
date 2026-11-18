@@ -9,14 +9,31 @@ Pyo uses [Tailscale](https://tailscale.com) when you add a second server or conn
 
 ## Setting it up
 
-Tailscale is set up once for the whole Pyo, by an installation admin. You need an <Term tip="A client ID and secret Pyo uses to call Tailscale's API for you.">OAuth client</Term> from Tailscale.
+Tailscale is set up once for the whole Pyo, by an installation admin. You need to be an Owner or Admin of your tailnet.
+
+1. In the Tailscale admin console, open [**Settings › Keys**](https://login.tailscale.com/admin/settings/keys) and generate an <Term tip="A token that acts as you on Tailscale's API.">API access token</Term> that expires in 1 day.
+2. In Pyo, open **Integrations** and paste it on the **Tailscale** card. Click **Check**.
+3. Pyo shows what it will change, with the lines it adds to your tailnet policy. Click **Set up**.
+
+Pyo then does the rest:
+
+- It turns on **MagicDNS** and **HTTPS Certificates**.
+- It adds `tag:pyo` to your tailnet policy. It edits the policy in place, so your comments and formatting stay.
+- It creates an <Term tip="A client ID and secret Pyo uses to call Tailscale's API for you.">OAuth client</Term> of its own, with only the scopes it needs.
+- It deletes the token. If it can't, it tells you to delete it under **Settings › Keys**. It expires within a day anyway.
+
+Pyo never stores the token. Running the setup again on a tailnet that's set up changes nothing.
+
+If your policy is managed in Git, Pyo doesn't edit it. It shows the lines to add there instead. Add them, then click **Check again**.
+
+### With an OAuth client
+
+If you'd rather not paste an admin's token, make the OAuth client yourself:
 
 1. In the Tailscale admin console, add this to your tailnet policy file:
 
    ```json
-   "tagOwners": { "tag:pyo": ["autogroup:admin"] },
-   "autoApprovers": { "services": { "tag:pyo": ["tag:pyo"] } },
-   "grants": [{ "src": ["autogroup:member"], "dst": ["tag:pyo"], "ip": ["tcp:80", "tcp:443"] }]
+   "tagOwners": { "tag:pyo": ["autogroup:admin"] }
    ```
 
 2. Turn on **MagicDNS** and **HTTPS Certificates** under **DNS**.
@@ -24,7 +41,15 @@ Tailscale is set up once for the whole Pyo, by an installation admin. You need a
    - **Devices › Core**, write, with `tag:pyo`
    - **Auth Keys**, write, with `tag:pyo`
    - **Services**, write
-4. In Pyo, open **Integrations** and paste the client ID and secret on the **Tailscale** card.
+4. In Pyo, open **Integrations**. On the **Tailscale** card, click **Set up with an OAuth client instead** and paste the client ID and secret.
+
+If your policy only allows some traffic, also let your tailnet reach `tag:pyo` on ports 80 and 443:
+
+```json
+"grants": [{ "src": ["autogroup:member"], "dst": ["tag:pyo"], "ip": ["tcp:80", "tcp:443"] }]
+```
+
+Pyo approves the servers that host its Services by itself. To have your policy approve them too, add `"autoApprovers": { "services": { "tag:pyo": ["tag:pyo"] } }`. The token setup adds both when they're needed.
 
 Pyo checks the client before saving it and says what's missing. **Test** checks it again. The secret is sealed in Pyo's database and only Pyo uses it. Servers never get it.
 
