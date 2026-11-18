@@ -1,5 +1,5 @@
 ---
-title: pyo.toml
+title: pyo.jsonc
 description: Keep a service's settings next to its code.
 ---
 
@@ -7,43 +7,55 @@ description: Keep a service's settings next to its code.
 
 Pyo looks in the current folder, then in the folders above it.
 
-```toml title="pyo.toml"
-service = "svc_abc123"  # written by pyo link
+The file is JSON with comments and trailing commas:
 
-# Image services only. A tag or an @sha256 digest.
-image = "ghcr.io/acme/api:1.2"
+```jsonc title="pyo.jsonc"
+{
+  "$schema": "https://pyo.dev/schema/pyo.json",
+  "service": "svc_abc123", // written by pyo link
 
-[build]
-branch = "main"
-dockerfile = "Dockerfile"
-context = "."
+  // Image services only. A tag or an @sha256 digest.
+  "image": "ghcr.io/acme/api:1.2",
 
-[build.args]           # used on the next deploy
-RAILPACK_SPA_OUTPUT_DIR = "dist"
+  "build": {
+    "branch": "main",
+    "dockerfilePath": "Dockerfile",
+    "context": ".",
+    "args": {
+      // used on the next deploy
+      "RAILPACK_SPA_OUTPUT_DIR": "dist",
+    },
+  },
 
-[deploy]
-replicas = 2
-port = 8080            # the port it listens on for HTTP
-health = "/healthz"    # checked before traffic moves over, or "tcp" or "none"
-auto_rollback = true
-serve = "static"       # a static site's build served as files, or "service"
+  "deploy": {
+    "replicas": 2,
+    "port": 8080, // the port it listens on for HTTP
+    "health": "/healthz", // checked before traffic moves over, or "tcp" or "none"
+    "autoRollback": true,
+    "serveAs": "static", // a static site's build served as files, or "service"
+  },
 
-[resources]
-cpu = "500m"           # limit: "500m" or "1" (cores)
-memory = "512Mi"       # limit: "512Mi" or "1Gi"
+  "resources": {
+    "cpu": "500m", // limit: "500m" or "1" (cores)
+    "memory": "512Mi", // limit: "512Mi" or "1Gi"
+  },
 
-[env]
-LOG_LEVEL = "info"
+  "env": {
+    "LOG_LEVEL": "info",
+  },
+}
 ```
 
 Unknown settings are rejected, so a typo fails instead of being ignored.
 
+With `$schema` in the file, editors like VS Code complete each setting and explain it as you type.
+
 ## Secrets
 
-`[env]` is for variables, not secrets, because this file is usually <Term tip="Saved to your Git repository, where anyone with access to it can read it.">committed</Term>. Keep secrets in Pyo:
+`env` is for variables, not secrets, because this file is usually <Term tip="Saved to your Git repository, where anyone with access to it can read it.">committed</Term>. Keep secrets in Pyo:
 
 ```bash
 pyo env set --secret STRIPE_KEY=sk_live_...
 ```
 
-Build arguments can end up in the image, so keep secrets out of `[build.args]` too.
+Build arguments can end up in the image, so keep secrets out of `build.args` too.

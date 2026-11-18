@@ -3,5 +3,5 @@
   "description": "Use Pyo from your terminal",
   "icon": "segment-cli",
   "root": true,
-  "pages": ["index", "pyo-toml", "ci", "commands"]
+  "pages": ["index", "pyo-jsonc", "ci", "commands"]
 }

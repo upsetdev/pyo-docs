@@ -77,10 +77,10 @@ Options:
 
 ## `pyo link`
 
-Link this folder to a service (writes pyo.toml)
+Link this folder to a service (writes pyo.jsonc)
 
 ```text
-Link this folder to a service (writes pyo.toml)
+Link this folder to a service (writes pyo.jsonc)
 
 Usage: pyo link [OPTIONS] [SERVICE]
 
@@ -96,22 +96,22 @@ Options:
 
 ## `pyo deploy`
 
-Apply pyo.toml and deploy, then follow it to the end. With -f, import a Docker Compose file instead: see what it makes, then deploy it
+Apply pyo.jsonc and deploy, then follow it to the end. With -f, import a Docker Compose file instead: see what it makes, then deploy it
 
 ```text
-Apply pyo.toml and deploy, then follow it to the end. With -f, import a Docker Compose file instead: see what it makes, then deploy it
+Apply pyo.jsonc and deploy, then follow it to the end. With -f, import a Docker Compose file instead: see what it makes, then deploy it
 
 Usage: pyo deploy [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --detach             Start it and exit, without following it
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
   -f, --file <FILE>        A Docker Compose file to import as a new project (a .env next to it is read too)
       --team <TEAM>        The team to import into (slug or id). Defaults to your first team
       --cluster <CLUSTER>  The cluster to run it on (name or id). Defaults to the team's default cluster
-  -y, --yes                Don't ask: import the Compose file, or go ahead with a very large replica change from pyo.toml
+  -y, --yes                Don't ask: import the Compose file, or go ahead with a very large replica change from pyo.jsonc
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -126,7 +126,7 @@ The service's state, live version and domains
 Usage: pyo status [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --json               The whole service, as JSON
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
@@ -144,7 +144,7 @@ The service's recent logs
 Usage: pyo logs [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
   -f, --follow             Keep printing new lines
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
@@ -172,7 +172,7 @@ Commands:
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -189,7 +189,7 @@ Usage: pyo env list [OPTIONS]
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -211,7 +211,7 @@ Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --deploy             Deploy right away
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -232,7 +232,7 @@ Options:
       --deploy             Deploy right away
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -282,7 +282,7 @@ Options:
           Deploy right away
 
   -s, --service <SERVICE>
-          The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
 
   -h, --help
           Print help (see a summary with '-h')
@@ -307,7 +307,7 @@ Options:
       --force              Overwrite the file
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -325,7 +325,7 @@ Arguments:
   [DEPLOYMENT]  A deployment id. Defaults to the previous version
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
   -h, --help               Print help
@@ -342,7 +342,7 @@ Restart the service, one replica at a time
 Usage: pyo restart [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
   -h, --help               Print help
@@ -359,7 +359,7 @@ A shell in the service
 Usage: pyo exec [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --replica <REPLICA>  A replica name. Defaults to any ready replica
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
@@ -378,7 +378,7 @@ Open the service on the dashboard
 Usage: pyo open [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
   -h, --help               Print help
@@ -1001,7 +1001,7 @@ Commands:
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1018,7 +1018,7 @@ Usage: pyo domain list [OPTIONS]
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1043,7 +1043,7 @@ Options:
       --wait               Wait until it's live
       --no-cloudflare      Don't create the DNS record in Cloudflare, even when a connected zone covers it
       --proxied            Proxied by Cloudflare (once its certificate is issued)
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1065,7 +1065,7 @@ Options:
   -y, --yes                Don't ask to confirm
       --keep-dns-record    Keep the DNS record Pyo made in Cloudflare
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1087,7 +1087,7 @@ Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --replace            Replace the records in the way. Owners and admins
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1205,7 +1205,7 @@ Commands:
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1222,7 +1222,7 @@ Usage: pyo firewall list [OPTIONS]
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1271,7 +1271,7 @@ Options:
           A name for it
 
   -s, --service <SERVICE>
-          The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
 
   -h, --help
           Print help (see a summary with '-h')
@@ -1296,7 +1296,7 @@ Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
   -y, --yes                Don't ask to confirm
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -1328,7 +1328,7 @@ Options:
           [env: PYO_API_KEY]
 
   -s, --service <SERVICE>
-          The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
 
   -h, --help
           Print help (see a summary with '-h')
@@ -1378,7 +1378,7 @@ Commands:
 
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
   -h, --help               Print help
   -V, --version            Print version
@@ -1408,7 +1408,7 @@ Options:
           The database: its name or id
 
   -s, --service <SERVICE>
-          The service: a name ("api", "shop/api") or id. Default: pyo.toml's
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
 
       --token <TOKEN>
           An API key, for CI (default: the one `pyo login` saved)

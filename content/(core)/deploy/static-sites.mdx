@@ -22,7 +22,7 @@ Only Railpack's static builds are served this way. A Dockerfile build always run
 
 To serve the site with its own Caddy service, as Pyo did before, turn off **Serve as static files** in the service's **Settings**, under **Static files**, then redeploy. Turn it on again the same way. The switch works both ways without downtime: the domains move to the new version only once it's ready.
 
-With the CLI, set `serve = "service"` or `serve = "static"` under `[deploy]` in [pyo.toml](/docs/cli/pyo-toml).
+With the CLI, set `"serveAs": "service"` or `"serveAs": "static"` under `deploy` in [pyo.jsonc](/docs/cli/pyo-jsonc).
 
 ### Limits
 
