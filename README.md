@@ -21,6 +21,7 @@ Don't edit these: they come from the code, so they can't drift from it.
 - `content/cli/commands.mdx`, from the CLI's own help
 - `content/mcp/tools.mdx`, from the tool list in `crates/pyo-api/src/mcp.rs`
 - `openapi/pyo.json`, the API reference, from the API's code
+- `schema/pyo.json`, the JSON Schema of `pyo.jsonc`, from the CLI's code. pyo.dev serves it at https://pyo.dev/schema/pyo.json
 
 To update them, with the `pyo` repo next to this one:
 
@@ -28,6 +29,7 @@ To update them, with the `pyo` repo next to this one:
 cargo build -p pyo-cli                # in ../pyo
 bun run generate                      # here
 cargo run -p pyo-api --bin openapi    # in ../pyo, writes openapi/pyo.json here
+PYO_WRITE_SCHEMA=1 cargo test -p pyo-cli schema   # in ../pyo, writes schema/pyo.json here
 ```
 
 ## Icons

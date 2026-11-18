@@ -1,0 +1,130 @@
+{
+  "$id": "https://pyo.dev/schema/pyo.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "description": "Settings for a Pyo service, kept next to its code. pyo link writes this file, and pyo deploy applies it. Every setting is optional. What's set here wins, and the rest stays as it is in the dashboard.",
+  "properties": {
+    "$schema": {
+      "description": "The JSON Schema for this file. Editors use it to complete and check your settings.",
+      "type": "string"
+    },
+    "build": {
+      "additionalProperties": false,
+      "description": "How the service is built. Services built from Git only.",
+      "properties": {
+        "args": {
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "default": {},
+          "description": "Build arguments, used on the next deploy: Dockerfile ARGs, or Railpack settings like RAILPACK_SPA_OUTPUT_DIR. They can end up in the image, so keep secrets out.",
+          "type": "object"
+        },
+        "branch": {
+          "description": "The Git branch to build.",
+          "type": "string"
+        },
+        "context": {
+          "description": "The folder whose files are sent to the build, like . or apps/web.",
+          "type": "string"
+        },
+        "dockerfilePath": {
+          "description": "The Dockerfile to build, like Dockerfile or docker/api.Dockerfile.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "deploy": {
+      "additionalProperties": false,
+      "description": "How the service runs.",
+      "properties": {
+        "autoRollback": {
+          "description": "Put the previous version back when a deploy fails. On by default.",
+          "type": "boolean"
+        },
+        "health": {
+          "description": "Checked before traffic moves over: an HTTP path like /healthz, \"tcp\" for its port accepting connections, or \"none\" to not wait.",
+          "examples": [
+            "/healthz",
+            "tcp",
+            "none"
+          ],
+          "type": "string"
+        },
+        "port": {
+          "description": "The port the service listens on for HTTP.",
+          "format": "int64",
+          "maximum": 65535,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "replicas": {
+          "description": "How many replicas run. A replica is one running copy of the service.",
+          "format": "int64",
+          "maximum": 2147483647,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "serveAs": {
+          "description": "A static site's build: \"static\" serves its files, \"service\" runs it as a service of its own.",
+          "enum": [
+            "static",
+            "service"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "env": {
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      },
+      "default": {},
+      "description": "Variables, as text, numbers or true and false. Not secrets, because this file is usually committed. Keep secrets in Pyo with pyo env set --secret.",
+      "type": "object"
+    },
+    "image": {
+      "description": "Image services only. The image to deploy, with a tag or an @sha256 digest, like ghcr.io/acme/api:1.2.",
+      "type": "string"
+    },
+    "resources": {
+      "additionalProperties": false,
+      "description": "The most CPU and memory each replica can use.",
+      "properties": {
+        "cpu": {
+          "description": "The CPU limit: \"500m\" or \"1\" (cores).",
+          "examples": [
+            "500m",
+            "1"
+          ],
+          "type": "string"
+        },
+        "memory": {
+          "description": "The memory limit: \"512Mi\" or \"1Gi\".",
+          "examples": [
+            "512Mi",
+            "1Gi"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "service": {
+      "description": "The service this folder deploys, by id. Written by pyo link.",
+      "type": "string"
+    }
+  },
+  "title": "pyo.jsonc",
+  "type": "object"
+}
