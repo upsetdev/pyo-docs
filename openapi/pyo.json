@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.4.4"
+    "version": "0.4.5"
   },
   "servers": [
     {
@@ -5195,6 +5195,98 @@
   },
   "components": {
     "schemas": {
+      "AddAlertChannelOp": {
+        "type": "object",
+        "title": "Add alert channel",
+        "description": "Send the team's alerts somewhere: `kind` \"telegram\" (a bot `token` and a `chatId`), \"discord\" or \"slack\" (the channel's `webhookUrl`), or \"webhook\" (your `webhookUrl`, and a `secret` to sign each request with). Pyo keeps it encrypted. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id",
+          "teamId",
+          "kind",
+          "name"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "addAlertChannel"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "A new id you choose: `alc_` then 4 to 40 lowercase letters, digits, dashes or underscores."
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "\"telegram\", \"discord\", \"slack\" or \"webhook\"."
+          },
+          "name": {
+            "type": "string"
+          },
+          "events": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "What it gets: \"deploy_failed\", \"server_offline\" (and back online), \"server_pressure\" (low on disk space or memory, and fine again), \"backup_failed\" and \"certificate\" (expiring, or couldn't renew). All of them when omitted."
+          },
+          "webhookUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Discord's or Slack's webhook URL, or your own (https, or http to a private network address)."
+          },
+          "token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Telegram bot's token, from @BotFather."
+          },
+          "chatId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Telegram chat: its id (negative for groups and channels) or a public channel's @name."
+          },
+          "secret": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A webhook's signing secret: each request then has `X-Pyo-Signature`, HMAC-SHA256 of \"<X-Pyo-Timestamp>.<body>\" as \"sha256=<hex>\"."
+          }
+        },
+        "example": {
+          "id": "alc_8kq2x7ad",
+          "kind": "slack",
+          "name": "Ops chat",
+          "op": "addAlertChannel",
+          "teamId": "team_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "id": "alc_8kq2x7ad",
+            "kind": "slack",
+            "name": "Ops chat",
+            "op": "addAlertChannel",
+            "teamId": "team_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Alerts"
+        ]
+      },
       "AddCloudServer": {
         "type": "object",
         "required": [
@@ -8672,6 +8764,18 @@
             "$ref": "#/components/schemas/RemoveHetznerOp"
           },
           {
+            "$ref": "#/components/schemas/AddAlertChannelOp"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateAlertChannelOp"
+          },
+          {
+            "$ref": "#/components/schemas/TestAlertChannelOp"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveAlertChannelOp"
+          },
+          {
             "$ref": "#/components/schemas/CheckSecretImportOp"
           },
           {
@@ -8709,6 +8813,7 @@
         "discriminator": {
           "propertyName": "op",
           "mapping": {
+            "addAlertChannel": "#/components/schemas/AddAlertChannelOp",
             "addFirewallRule": "#/components/schemas/AddFirewallRuleOp",
             "addVolume": "#/components/schemas/AddVolumeOp",
             "addWafRule": "#/components/schemas/AddWafRuleOp",
@@ -8745,6 +8850,7 @@
             "importCompose": "#/components/schemas/ImportComposeOp",
             "inviteMember": "#/components/schemas/InviteMemberOp",
             "joinServer": "#/components/schemas/JoinServerOp",
+            "removeAlertChannel": "#/components/schemas/RemoveAlertChannelOp",
             "removeBuilder": "#/components/schemas/RemoveBuilderOp",
             "removeCertificate": "#/components/schemas/RemoveCertificateOp",
             "removeCloudflare": "#/components/schemas/RemoveCloudflareOp",
@@ -8803,9 +8909,11 @@
             "setServiceWaf": "#/components/schemas/SetServiceWafOp",
             "setTeamBackupSelection": "#/components/schemas/SetTeamBackupSelectionOp",
             "stopService": "#/components/schemas/StopServiceOp",
+            "testAlertChannel": "#/components/schemas/TestAlertChannelOp",
             "testCloudflare": "#/components/schemas/TestCloudflareOp",
             "testGitConnection": "#/components/schemas/TestGitConnectionOp",
             "testHetzner": "#/components/schemas/TestHetznerOp",
+            "updateAlertChannel": "#/components/schemas/UpdateAlertChannelOp",
             "updateCluster": "#/components/schemas/UpdateClusterOp",
             "updateDatabase": "#/components/schemas/UpdateDatabaseOp",
             "updateDatabaseBackup": "#/components/schemas/UpdateDatabaseBackupOp",
@@ -9174,6 +9282,40 @@
             "description": "Vercel only: the team to read (its id or slug). The token's own scope when omitted."
           }
         }
+      },
+      "RemoveAlertChannelOp": {
+        "type": "object",
+        "title": "Remove alert channel",
+        "description": "Remove an alert channel. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "removeAlertChannel"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "alc_8kq2x7ad",
+          "op": "removeAlertChannel"
+        },
+        "examples": [
+          {
+            "id": "alc_8kq2x7ad",
+            "op": "removeAlertChannel"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Alerts"
+        ]
       },
       "RemoveBuilderOp": {
         "type": "object",
@@ -11788,6 +11930,40 @@
           "Services"
         ]
       },
+      "TestAlertChannelOp": {
+        "type": "object",
+        "title": "Test alert channel",
+        "description": "Send a test alert to a channel now. When it doesn't arrive, the error says why. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "testAlertChannel"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "alc_8kq2x7ad",
+          "op": "testAlertChannel"
+        },
+        "examples": [
+          {
+            "id": "alc_8kq2x7ad",
+            "op": "testAlertChannel"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Alerts"
+        ]
+      },
       "TestCloudflareOp": {
         "type": "object",
         "title": "Test cloudflare",
@@ -11888,6 +12064,97 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Integrations"
+        ]
+      },
+      "UpdateAlertChannelOp": {
+        "type": "object",
+        "title": "Update alert channel",
+        "description": "Change an alert channel. What you leave out stays as it is. An empty `secret` stops signing. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "updateAlertChannel"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "events": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "webhookUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "chatId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "secret": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "example": {
+          "chatId": "-1001234567890",
+          "events": [
+            "deploy_failed",
+            "server_offline"
+          ],
+          "id": "alc_8kq2x7ad",
+          "name": "Ops chat",
+          "op": "updateAlertChannel",
+          "secret": "a-long-random-secret",
+          "token": "123456789:AAExampleBotTokenFromBotFather0000",
+          "webhookUrl": "https://hooks.slack.com/services/T0000/B0000/XXXXXXXX"
+        },
+        "examples": [
+          {
+            "chatId": "-1001234567890",
+            "events": [
+              "deploy_failed",
+              "server_offline"
+            ],
+            "id": "alc_8kq2x7ad",
+            "name": "Ops chat",
+            "op": "updateAlertChannel",
+            "secret": "a-long-random-secret",
+            "token": "123456789:AAExampleBotTokenFromBotFather0000",
+            "webhookUrl": "https://hooks.slack.com/services/T0000/B0000/XXXXXXXX"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Alerts"
         ]
       },
       "UpdateClusterOp": {
@@ -12766,6 +13033,10 @@
     {
       "name": "Integrations",
       "description": "Keys for outside services, and secret stores."
+    },
+    {
+      "name": "Alerts",
+      "description": "Where a team's alerts go: Telegram, Discord, Slack or a webhook."
     },
     {
       "name": "Observability",
