@@ -35,6 +35,8 @@ Builds never get the connection's token. When a builder starts a build, Pyo make
 
 Each deploy shows on its commit in GitLab as a **Pyo** status: pending, running, then passed, failed or canceled. The status links to the deployment.
 
+Each merge request can get its own [preview](/docs/deploy/previews).
+
 ## Deploys on push
 
 Pyo adds a webhook to each project its services deploy from, for push events. The webhook sends a secret that Pyo checks, so nobody else can trigger deploys. Pyo removes the webhook when no service deploys from the project any more.

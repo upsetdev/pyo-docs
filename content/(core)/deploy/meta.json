@@ -1,4 +1,4 @@
 {
   "title": "Deploy",
-  "pages": ["index", "static-sites", "compose", "environment", "rollbacks", "cron-jobs", "hooks", "deploy-button"]
+  "pages": ["index", "static-sites", "compose", "environment", "rollbacks", "previews", "cron-jobs", "hooks", "deploy-button"]
 }
