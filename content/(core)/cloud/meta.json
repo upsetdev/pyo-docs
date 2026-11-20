@@ -1,4 +1,4 @@
 {
   "title": "Pyo Cloud",
-  "pages": ["index", "getting-started", "differences", "server-requirements", "security", "data", "agent-updates", "billing"]
+  "pages": ["index", "getting-started", "differences", "server-requirements", "security", "data", "agent-updates", "billing", "moving-to-self-hosted"]
 }
