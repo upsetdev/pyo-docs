@@ -11,6 +11,7 @@ Each channel gets all of these unless you turn some off:
 
 - **Deploy failed.** A build or rollout of a service failed.
 - **Server offline**, and **back online**. A server in a cluster stopped being ready, or a cluster's agent stopped reporting to Pyo for a minute.
+- **Server low on disk or memory**, and **back to normal**. A server ran low on disk space or memory, so Kubernetes may stop some of its pods.
 - **Backup failed.** A backup of a volume or database failed, or its server never answered.
 - **Certificate expiring or not renewed.** A certificate you uploaded, or one you made for [mTLS](/docs/certificates#mutual-tls-mtls), expires in 30 days, in 7 days, or has expired. Or the HTTPS certificate of a domain stopped working because it couldn't be renewed.
 
@@ -56,7 +57,7 @@ A webhook sends each alert to your own URL as a `POST` with a JSON body:
 }
 ```
 
-`event` is one of `deploy_failed`, `server_offline`, `server_online`, `backup_failed`, `certificate_expiring`, `certificate_failed` or `test`. `details` holds what the message names, like `project`, `cluster` or `service`. `at` is in milliseconds.
+`event` is one of `deploy_failed`, `server_offline`, `server_online`, `server_pressure`, `server_pressure_ended`, `backup_failed`, `certificate_expiring`, `certificate_failed` or `test`. `details` holds what the message names, like `project`, `cluster` or `service`. `at` is in milliseconds.
 
 The URL has to use `https://`. On your own Pyo, plain `http://` works for an address on a private network, like your LAN or tailnet, unless the installation turns private networks off. Pyo Cloud only sends to addresses on the internet. Pyo never calls its own server, link-local addresses (cloud metadata services among them) or its cluster's internal networks.
 
