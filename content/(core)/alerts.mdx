@@ -1,0 +1,93 @@
+---
+title: Alerts
+description: Send important events to Telegram, Discord, Slack or a webhook.
+---
+
+Pyo can tell your team when something needs a look, in the chat you already use. Alerts belong to the team, so everyone sees the same ones. Owners and admins set them up under **Notifications**, in the sidebar's **Team** section.
+
+## What Pyo sends
+
+Each channel gets all of these unless you turn some off:
+
+- **Deploy failed.** A build or rollout of a service failed.
+- **Server offline**, and **back online**. A server in a cluster stopped being ready, or a cluster's agent stopped reporting to Pyo for a minute.
+- **Backup failed.** A backup of a volume or database failed, or its server never answered.
+- **Certificate expiring or not renewed.** A certificate you uploaded, or one you made for [mTLS](/docs/certificates#mutual-tls-mtls), expires in 30 days, in 7 days, or has expired. Or the HTTPS certificate of a domain stopped working because it couldn't be renewed.
+
+A message says what happened, the team, the service or server, and links to the right page in Pyo. Links use Pyo's address: its tailnet name, else its public one. Messages never hold environment variables, tokens or logs.
+
+Pyo sends one alert about the same service, server or certificate in 15 minutes. A server that keeps going offline and coming back sends **offline** and **back online** once. If it's still offline when the 15 minutes are over, Pyo says so then.
+
+Alerts are sent in the background and never slow a deploy down. If a channel doesn't answer, Pyo tries again for about an hour. Each channel shows when it last sent, or why it last failed.
+
+## Telegram
+
+1. In Telegram, talk to [@BotFather](https://t.me/BotFather) and send `/newbot`. Pick a name. BotFather answers with the bot's token, like `123456789:AAE…`.
+2. Add the bot to the group or channel the alerts should go to. In a channel, make it an admin that can post.
+3. Find the chat's ID. Send a message in the chat, then open `https://api.telegram.org/bot<token>/getUpdates` in a browser. The ID is `chat.id`, a number like `-1001234567890`. A public channel can use its `@name` instead.
+4. In Pyo, choose **Set up** on the **Telegram** card, paste the token and the chat ID, and choose **Add**.
+
+## Discord
+
+1. In Discord, open the channel's settings, then **Integrations › Webhooks**, and choose **New Webhook**.
+2. Choose **Copy Webhook URL**. It starts with `https://discord.com/api/webhooks/`.
+3. In Pyo, choose **Set up** on the **Discord** card and paste the URL.
+
+Alerts never mention `@everyone` or anyone else.
+
+## Slack
+
+1. Create a Slack app at [api.slack.com/apps](https://api.slack.com/apps) (**From scratch**), then turn on **Incoming Webhooks** in it.
+2. Choose **Add New Webhook**, pick the channel, and copy the URL. It starts with `https://hooks.slack.com/services/`.
+3. In Pyo, choose **Set up** on the **Slack** card and paste the URL.
+
+## Webhook
+
+A webhook sends each alert to your own URL as a `POST` with a JSON body:
+
+```json
+{
+  "event": "deploy_failed",
+  "title": "Deploy failed: web",
+  "team": { "name": "Acme", "slug": "acme" },
+  "details": { "project": "shop" },
+  "url": "https://pyo.example.ts.net/acme/deployments/dpl_8kq2x7ad",
+  "at": 1795000000000
+}
+```
+
+`event` is one of `deploy_failed`, `server_offline`, `server_online`, `backup_failed`, `certificate_expiring`, `certificate_failed` or `test`. `details` holds what the message names, like `project`, `cluster` or `service`. `at` is in milliseconds.
+
+The URL has to use `https://`. On your own Pyo, plain `http://` works for an address on a private network, like your LAN or tailnet, unless the installation turns private networks off. Pyo Cloud only sends to addresses on the internet. Pyo never calls its own server, link-local addresses (cloud metadata services among them) or its cluster's internal networks.
+
+### Check the signature
+
+Give the webhook a secret to sign each request. Pyo then adds these headers:
+
+- `X-Pyo-Timestamp`: when it was sent, in Unix seconds.
+- `X-Pyo-Signature`: `sha256=` and the HMAC-SHA256 of `<timestamp>.<body>`, with your secret as the key, in hex.
+- `X-Pyo-Event`: the event, as in the body.
+
+Check the signature against the raw body, and refuse requests whose timestamp is more than 5 minutes old. Someone who recorded a request can't send it again later. In Node.js:
+
+```js
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function fromPyo(req, rawBody, secret) {
+  const ts = req.headers["x-pyo-timestamp"];
+  const sig = req.headers["x-pyo-signature"] ?? "";
+  if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
+  const want = "sha256=" + createHmac("sha256", secret).update(`${ts}.${rawBody}`).digest("hex");
+  return sig.length === want.length && timingSafeEqual(Buffer.from(sig), Buffer.from(want));
+}
+```
+
+Answer with any `2xx` status. Pyo tries again after a `5xx`, a `429` or a timeout of 10 seconds. Any other status counts as a refusal and is shown on the channel.
+
+## Test, change or remove a channel
+
+Open a card with **Manage**. **Send test** sends a test alert now and says why if it didn't arrive. **Edit** changes the name, the events and where it sends. Leave the token or URL empty to keep the saved one. The trash button removes the channel.
+
+Pyo keeps tokens, webhook URLs and secrets encrypted with the team's key, and never shows them again. The dashboard shows only the chat ID, the end of a webhook URL, or a webhook's host.
+
+With the API, the operations are `addAlertChannel`, `updateAlertChannel`, `testAlertChannel` and `removeAlertChannel`. See the [API reference](/docs/api).

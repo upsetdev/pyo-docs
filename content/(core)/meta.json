@@ -26,6 +26,7 @@
     "sandbox",
     "observability",
     "activity",
+    "alerts",
     "---Infrastructure---",
     "clusters",
     "servers",
