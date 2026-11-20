@@ -79,7 +79,42 @@ pyo link
 pyo deploy
 ```
 
-This applies `pyo.jsonc`, deploys and follows the <Term tip="The switch from the old version to the new one, which Pyo watches until the new version is running.">rollout</Term> to the end. Use `--detach` to start it and exit.
+This applies `pyo.jsonc`, deploys and follows the <Term tip="The switch from the old version to the new one, which Pyo watches until the new version is running.">rollout</Term> to the end. The build and deploy logs show as it goes, and `pyo deploy` exits with an error when the deploy fails. Use `--detach` to start it and exit.
+
+## Deploy a folder
+
+You don't need a Git repository. In a folder no service is linked to, `pyo deploy` makes a service from it:
+
+```bash
+cd my-app
+pyo deploy
+```
+
+It asks for a name (the folder's by default) and a project, creates the service, links the folder in `pyo.jsonc` and deploys it. In CI, pass `--name` and `--project` instead (a project that doesn't exist yet is created). `--team` and `--cluster` choose where it runs.
+
+The folder is packed and uploaded to Pyo, which hands it to a builder in the service's cluster. It's built like a repository: with its Dockerfile, or without one by detecting the language. Pyo deletes the upload once the builder has it.
+
+```text
+✓ Packed 214 files, 1.8 MB
+✓ Uploaded 1.8 MB
+✓ Created acme/shop/my-app and linked it in pyo.jsonc
+Deploying my-app https://your-pyo/acme/deployments/dpl_8f2k1m3x9q
+```
+
+Run `pyo deploy` again to send the folder as it is now. The dashboard shows each of these deployments as **Uploaded from** your computer's name, and you can roll back to any of them.
+
+What's sent:
+
+- Every file in the folder, except what `.gitignore` leaves out. A `.pyoignore` file, written like a `.gitignore`, leaves out more, or keeps something back in with `!`.
+- Never `.git`. Never `node_modules`, unless `.pyoignore` keeps it with `!node_modules/`.
+- No `.env` files, since they usually hold secrets. `.env.example` and the like are sent. Pass `--include-env` to send `.env` files too, or set the variables with `pyo env push` instead.
+- At most 500 MB, packed. A bigger folder stops before it uploads and says what's biggest.
+
+A service built from Git deploys its branch as usual. To try your working copy on it without a commit, send the folder instead:
+
+```bash
+pyo deploy --local
+```
 
 ## Everyday commands
 
@@ -91,6 +126,43 @@ pyo rollback          # put back the previous version
 pyo exec              # open a shell in the service
 pyo open              # open it on the dashboard
 ```
+
+## Logs
+
+```bash
+pyo logs                      # the last lines of every replica
+pyo logs -f                   # and new ones as they come
+pyo logs --since 10m          # only the last 10 minutes
+pyo logs --replica x2kfp      # one replica
+pyo logs --build              # the latest deployment's build and deploy log
+pyo logs --build -f           # followed until it's done
+```
+
+Each line starts with its time and the replica it came from. Times are in UTC.
+
+## Run a command
+
+```bash
+pyo exec                                  # a shell
+pyo exec -- bin/rails db:migrate          # one command
+pyo exec -- sh -c 'echo $DATABASE_URL'    # through a shell
+pyo exec -- pg_dump app > app.sql         # output to a file
+cat seed.sql | pyo exec -- psql app       # input from a pipe
+```
+
+Everything after `--` runs as it is, in a running replica, and `pyo exec` exits with its exit code, so scripts can check it. It runs without a shell, so use `sh -c` for pipes or variables. A command gets a terminal when you run it from one, else its output and errors stay apart and piped input goes to it. `-t` always gives it a terminal, `-T` never does, and `-i` sends what you type without one. `--replica` picks the replica.
+
+Running a command needs the Developer role, and an API key with deploy or full access. A shell needs full access.
+
+## Variables to a .env file
+
+```bash
+pyo env pull                   # write the variables to .env
+pyo env pull --file .env.prod  # or another file
+pyo env pull --secrets         # with the secrets' values
+```
+
+It won't overwrite a file unless you pass `--force`. Secrets are written with an empty value and a comment, unless you pass `--secrets`. Only team owners and admins can pull secrets' values, and each one is logged like when it's revealed on the dashboard. The file is readable only by you.
 
 ## Volumes
 

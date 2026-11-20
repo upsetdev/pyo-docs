@@ -21,6 +21,14 @@ If the folder has no `pyo.jsonc`, say which service to deploy:
 pyo deploy --service shop/api
 ```
 
+A service built from a folder gets the folder CI checked out, the same as `pyo deploy` on your computer. A new one needs its name and project, since there's no one to ask, and an API key with full access:
+
+```bash
+pyo deploy --name web --project shop
+```
+
+`pyo deploy` exits with an error when the build or deploy fails, so the pipeline fails too.
+
 ## Without the CLI
 
 A [deploy hook](/docs/deploy/hooks) is simpler when all you need is to trigger a deploy.
