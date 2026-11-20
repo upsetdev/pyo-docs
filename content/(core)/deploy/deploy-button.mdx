@@ -1,0 +1,47 @@
+---
+title: Deploy with Pyo button
+description: A button for your README that deploys your repository or image.
+---
+
+Add the button to your README, and anyone who clicks it can deploy your repository or image to their own Pyo. Get the button in each style, with its Markdown and HTML, on [pyo.dev/deploy](/deploy).
+
+```md title="README.md"
+[![Deploy with Pyo](https://pyo.dev/badge/deploy-dark.svg)](https://pyo.dev/deploy?repo=https://github.com/owner/repo)
+```
+
+## The link
+
+The button links to `pyo.dev/deploy` with what to deploy:
+
+| Source | Link |
+| --- | --- |
+| Repository | `https://pyo.dev/deploy?repo=https://github.com/owner/repo` |
+| Image | `https://pyo.dev/deploy?image=ghcr.io/owner/app:latest` |
+
+`repo` is the repository's `https://` URL on github.com or gitlab.com. GitLab subgroups work too, like `https://gitlab.com/group/subgroup/project`. Other Git hosts aren't supported yet. `image` is any image reference, like `nginx:1.27` or an image with a `@sha256:` digest.
+
+Repositories and images should be public, so anyone can deploy them.
+
+### Branch and folder
+
+Link to a branch or a folder the way GitHub and GitLab show it, and Pyo builds from there:
+
+```text
+https://pyo.dev/deploy?repo=https://github.com/owner/repo/tree/main/apps/web
+https://pyo.dev/deploy?repo=https://gitlab.com/group/project/-/tree/main/apps/web
+```
+
+The part after `tree` is the branch and the rest is the folder, which becomes the build context. A branch with a `/` in its name can't be picked this way. Without `tree`, Pyo builds the default branch from the repository's root.
+
+## What people see
+
+The page shows what will be deployed and asks for their Pyo's address, which it saves in their browser. **Deploy** opens their Pyo's deploy page with the source filled in. Nothing deploys until they press **Deploy** there.
+
+You can open that page yourself, without pyo.dev:
+
+```text
+https://your-pyo/new?repo=https://github.com/owner/repo
+https://your-pyo/new?image=nginx:1.27
+```
+
+Here `repo` can also be on your own GitLab, when your team has a [GitLab](/docs/gitlab) connection to it. Signed out, Pyo asks you to log in first, then opens the page. A repository goes through your team's [GitHub](/docs/github) or [GitLab](/docs/gitlab) connection when it can see the repository. Without one, the page offers to connect it. Public repositories deploy without it. Git deploys need a ready [builder](/docs/builders).
