@@ -1,0 +1,22 @@
+---
+title: Agent updates
+description: How the Pyo agent on your servers stays up to date.
+---
+
+We update Pyo Cloud. The agent on your servers follows its version.
+
+## Automatic
+
+By default, Pyo Cloud updates each cluster's agent within a minute of a new version. The update is a signed command, like any other. Your services keep running while the agent restarts.
+
+## When you choose
+
+To choose when instead, open **Settings**, and under **Agents**, turn off **Update agents automatically**.
+
+A cluster whose agent is behind then shows **Update available** in its **Settings** tab. Choose **Update** to update it.
+
+## What an update changes
+
+An update changes only the agent. It doesn't touch k3s, your services or the agent's limits. Those change only when you run the connect command again on the server. See [Refresh a cluster](/docs/clusters#refresh-a-cluster).
+
+Agents update only to versions we've released. The signing service refuses any other. See [Signed commands](/docs/cloud/security#signed-commands).

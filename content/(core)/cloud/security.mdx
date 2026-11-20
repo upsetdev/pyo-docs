@@ -1,0 +1,50 @@
+---
+title: Security on Pyo Cloud
+description: How Pyo Cloud reaches your servers, and what it can and can't do there.
+---
+
+Your servers run your services. Pyo Cloud only tells them what to run, and every instruction it sends is signed. This page explains what that means in practice.
+
+## How your servers talk to Pyo Cloud
+
+- **The agent dials out.** It connects to `agent.pyo.dev` over HTTPS. Nothing on your server listens for Pyo Cloud, and you don't open any port for it.
+- **The agent has its own key.** It makes a key on your server when it connects and swaps it for a new one every 12 hours. The key never leaves your server.
+- **Connect commands work once.** Each one works for an hour, for one cluster. It can't be used again once its agent reports in.
+
+## Signed commands
+
+Every command Pyo Cloud sends to your servers is signed by a separate signing service, on its own server. Its key is kept in AWS KMS, a hardware security module. The key can't be copied out, not even by us.
+
+The agent checks every command before it acts. It refuses a command that's unsigned, changed, sent twice, expired or meant for another cluster. Answers the agent acts on, like a certificate, are signed too.
+
+So Pyo Cloud can't run anything on your servers that isn't signed. Even someone who broke into Pyo Cloud's web servers couldn't make your agent run a command of their own.
+
+The signing service also limits how many commands each cluster gets, and logs every signature. Agent updates are signed only for agent versions we've released. See [Agent updates](/docs/cloud/agent-updates).
+
+## What the agent may do
+
+The agent only changes your projects and Pyo's own parts. It can't read Kubernetes Secrets outside those or run privileged services. See [On your clusters](/docs/encryption#on-your-clusters).
+
+These limits come from the connect command you ran. Pyo Cloud can't widen them. Only running a new connect command on your server changes them.
+
+## Teams are kept apart
+
+- Each team's data is kept apart in Pyo's database, so one team can never read another's.
+- Each team's environment variables are encrypted with the team's own key. See [Protecting secrets](/docs/encryption).
+- Builds run on your own servers, and images stay in your cluster's registry.
+- A team can't take a domain another team has proven it owns. See [Your own domains](/docs/cloud/differences#your-own-domains).
+
+## What Pyo Cloud can and can't see
+
+| Pyo Cloud keeps | Stays on your servers |
+| --- | --- |
+| Your account, team and members | Your services and their data |
+| Project and service settings | Databases and volumes |
+| Environment variables, encrypted | Images and build cache |
+| Build logs, for 90 days | Backups, which go to your own bucket |
+| Analytics totals and metrics | Request logs and visitors' IP addresses (coming soon) |
+| Activity | Your Tailscale credentials (coming soon) |
+
+Pyo Cloud decrypts environment variables only when it deploys, to send them to your agent. Service logs and shells come from your servers live, when someone on your team opens them.
+
+See [Data and analytics](/docs/cloud/data) for what analytics keep.

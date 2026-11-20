@@ -1,0 +1,43 @@
+---
+title: Server requirements
+description: What a server needs to connect to Pyo Cloud.
+---
+
+## Minimum
+
+- **System:** Linux on <Term tip="The 64-bit processor type of most servers and PCs, also called amd64.">x86-64</Term>, with root or `sudo` access. A fresh server is best.
+- **Resources:** 2 CPU cores, 2 GB of memory and 40 GB of disk.
+- **Network:** outgoing HTTPS to `agent.pyo.dev`. Nothing needs to reach the server for Pyo Cloud.
+- **Ports:** 80 and 443 free, plus 6443 if k3s isn't installed yet. Only 80 and 443 need to be reachable from the internet, for your services.
+
+## Sizes
+
+| Size | Good for |
+| --- | --- |
+| 2 cores, 2 GB, 40 GB | The minimum. A few small services. Builds are slower and there's little room for databases. |
+| 2 to 4 cores, 4 GB, 80 GB | Recommended. Services, a database or two, and builds on the same server. |
+| 4 cores or more, 8 GB or more | Many services, several databases and frequent builds. |
+
+## What Pyo uses on your server
+
+On Pyo Cloud your servers run only the agent side of Pyo. Pyo's dashboard, API and database run on Pyo Cloud. On a server, Pyo uses about 1 GB of memory at rest:
+
+| Part | Memory |
+| --- | --- |
+| k3s and its container runtime | 500 to 700 MB |
+| [Pyo Gateway](/docs/gateway) | about 100 MB |
+| Certificates (cert-manager) | about 90 MB |
+| k3s's DNS, metrics and storage | about 80 MB |
+| Request logs and metrics (Vector) | about 30 MB |
+| The agent, builder, registry and small helpers | about 40 MB |
+| Database operators, once you have a database | about 90 MB |
+
+On a 2 GB server, about 900 MB is left for your services and databases. A small database takes 128 MB of that, and a static site around 15 MB.
+
+Builds use more while they run. Their cache keeps up to 20 GB of disk, which is why 40 GB is the minimum.
+
+Pyo's parts use about a tenth of one core at rest. They ask k3s to keep 0.4 cores for them.
+
+## More servers
+
+Connect more servers to spread the load. Each one is a cluster of its own until [several servers in a cluster](/docs/cloud/differences#tailscale) come to Pyo Cloud. Each server counts once on your bill, whatever it runs.

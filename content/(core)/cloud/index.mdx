@@ -1,0 +1,29 @@
+---
+title: Pyo Cloud
+description: Pyo, run for you. Your services run on your own servers.
+---
+
+<Callout>
+Pyo Cloud is coming soon. It isn't open for sign-ups yet.
+</Callout>
+
+Pyo Cloud is Pyo run by us at `cloud.pyo.dev`. You sign up, connect your own servers, and deploy. We run and update the dashboard, the API and Pyo's database. Your services, databases, builds and traffic stay on your servers.
+
+It's the same Pyo as self-hosted, with the same dashboard, [CLI](/docs/cli), [API](/docs/api) and [MCP](/docs/mcp).
+
+It costs $5 per server per month, with everything included and unlimited users. See [Billing](/docs/cloud/billing).
+
+## How it works
+
+Each server runs k3s and the Pyo agent, which the connect command installs. The agent dials out to Pyo Cloud over HTTPS, so nothing on your server listens for us. Every command Pyo Cloud sends to it is signed, and the agent refuses anything that isn't. See [Security](/docs/cloud/security).
+
+Visitors reach your services directly on your servers, through [Pyo Gateway](/docs/gateway). Their traffic never goes through Pyo Cloud.
+
+## Where to start
+
+<Cards>
+  <Card icon="rocket" title="Getting started" href="/docs/cloud/getting-started" description="Sign up, connect a server and deploy." />
+  <Card icon="servers" title="Server requirements" href="/docs/cloud/server-requirements" description="What a server needs to join." />
+  <Card icon="shield" title="Security" href="/docs/cloud/security" description="What Pyo Cloud can and can't do." />
+  <Card icon="cube" title="Cloud and self-hosted" href="/docs/cloud/differences" description="What's different on Pyo Cloud." />
+</Cards>
