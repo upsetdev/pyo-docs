@@ -1,0 +1,75 @@
+---
+title: Audit log
+description: See who did what in your team, how, and from where.
+---
+
+The audit log records who did what in your team, and when. Each entry also says how it was done and where it came from. Team owners and admins find it under **Audit log**, in the sidebar's **Team** section.
+
+## What's in it
+
+Each entry shows:
+
+- **When** it happened
+- **Person:** the account's name and email
+- **Action:** what was done, like a deploy, a changed role or a new domain. Failed ones are marked **Failed**.
+- **How:** **Dashboard**, **API key** or **Assistant**, with the key's or assistant's name
+- **From:** the IP address and browser, as your team keeps them
+
+Choose an entry to see all of it, like its target and the full browser details.
+
+Everything a person does in your team is recorded, like what shows in [Activity](/docs/activity). Security events are recorded too:
+
+- sign-ins, and failed ones with a wrong password or code
+- [two-factor authentication](/docs/two-factor) turned on or off, and recovery codes used or replaced
+- [passkeys](/docs/passkeys) added or removed
+- API keys created or revoked
+- secrets shown
+
+An account's security events go to every team it's a member of.
+
+Entries can't be changed or deleted. They're only removed once they're older than the log keeps them.
+
+## Filter and download
+
+Filter by person, by kind of action and by dates. Choose **CSV** to download everything that matches your filters, up to 50,000 entries. Times in the file are in UTC.
+
+## IP addresses
+
+Each team chooses what its audit log keeps of addresses. Open **Security**, in the sidebar's Infrastructure section, and pick one under **Audit log**:
+
+| Setting | What's kept |
+| --- | --- |
+| Full addresses | The whole address (the default) |
+| Anonymized | The address without its last part, which points to a network, not a person |
+| No addresses | No address |
+
+The setting applies to new entries. Entries already written keep what they have.
+
+## How long it's kept
+
+| Where | How long |
+| --- | --- |
+| Pyo Cloud | 1 year |
+| Self-hosted | 90 days, 180 days, 1 year (the default) or 2 years |
+
+On a self-hosted Pyo, the installation's admin sets this under **Settings › Security**. It applies to every team.
+
+## API and assistants
+
+`GET /audit-log` returns a team's entries, newest first, 100 at a time. A read key is enough, but only owners and admins of the team get an answer.
+
+```bash
+curl "https://your-pyo/api/v1/audit-log?team=..." \
+  -H "Authorization: Bearer $PYO_API_KEY"
+```
+
+| Parameter | Description |
+| --- | --- |
+| `team` | The team (required) |
+| `person` | Only what this account did, by its user id |
+| `action` | One action, like `member.role_changed`, or a kind of action, like `member` |
+| `from`, `to` | A time range, in milliseconds |
+| `cursor` | The `next` value from the page before |
+| `format` | `csv` for a download instead |
+
+[AI assistants](/docs/mcp) read it with the `list_audit_log` tool.

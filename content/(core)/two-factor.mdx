@@ -1,0 +1,65 @@
+---
+title: Two-factor authentication
+description: Ask for a code from an authenticator app after your password.
+---
+
+With two-factor authentication on, signing in takes your password and a 6-digit code from an <Term tip="An app that shows a new 6-digit code every 30 seconds, like 1Password, Google Authenticator or Authy.">authenticator app</Term>. Someone who learns your password still can't get in without your phone.
+
+## Turn it on
+
+1. Go to **Profile** and choose **Set up** under **Two-factor authentication**.
+2. Enter your password.
+3. Scan the QR code with your authenticator app. If you can't scan it, enter the key shown next to it.
+4. Enter the code the app shows and choose **Turn on**.
+
+Pyo then shows 10 recovery codes. Each one signs you in once if you lose your app. They're shown only this once, so copy or download them and keep them somewhere safe, like a password manager.
+
+You manage two-factor from the dashboard only, never with an API key.
+
+## Signing in
+
+After your password, Pyo asks for the code from your app. You have 5 minutes and 5 tries, then you start again. Each code works once.
+
+A sign-in link from [Getting back in](/docs/getting-back-in) asks for a code too, after you choose your new password.
+
+A [passkey](/docs/passkeys) skips the code. It already proves both your device and you.
+
+Lost your phone? Choose **Use a recovery code** on the code step and enter one of yours.
+
+## Recovery codes
+
+**Profile** shows how many recovery codes you have left. Choose **New codes** and enter a code to get 10 new ones. The old ones stop working.
+
+## Turn it off
+
+Choose **Turn off** on **Profile** and enter a code from your app or a recovery code. Each of your teams sees this in its **Activity**, and Pyo emails you when [email](/docs/email) is set up.
+
+You can't turn it off while it's required of you.
+
+## Require it for a team
+
+Team owners and admins can require two-factor for every member. Open **Security**, in the sidebar's Infrastructure section, and turn on **Require for members** under **Two-factor authentication**. Turn it on for your own account first. The page shows how many members use it.
+
+A member without two-factor can't see a team that requires it until they set it up. The team is left out of the dashboard, their [API keys](/docs/api) and their [AI assistants](/docs/mcp). Opening the team in the dashboard shows that it requires two-factor, and their **Profile** still works so they can set it up.
+
+## Require it for everyone
+
+On a self-hosted Pyo, the installation's admin can require two-factor of every account. Go to **Settings › Security** and turn on **Require two-factor for everyone**. Turn it on for your own account first. Accounts without it can only open their profile until they set it up.
+
+Pyo Cloud's staff always use two-factor.
+
+## Lost your app and your recovery codes
+
+On a self-hosted Pyo, run this on the server Pyo runs on:
+
+```bash
+sudo pyo-reset-login you@example.com
+```
+
+The link it prints turns two-factor off for that account and lets you choose a new password. Then set two-factor up again. See [Getting back in](/docs/getting-back-in#on-the-server).
+
+A team owner's **Reset sign-in** link doesn't turn two-factor off.
+
+## Limits
+
+After 5 wrong codes for one account, or 30 from one IP address, within 15 minutes, Pyo stops accepting codes for a while. A correct code resets the account's count.
