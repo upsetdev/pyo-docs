@@ -7,6 +7,8 @@ Lost your password? Pyo gives you a one-time sign-in link to choose a new one. T
 
 Every link works once, for 30 minutes. A new link for the same account replaces the old one. Using a link sets your new password, signs you in and signs the account out of its other sessions.
 
+With [two-factor authentication](/docs/two-factor) on, Pyo asks for a code after you choose your new password. A link from the server is the exception.
+
 ## On the server
 
 Run this on the server Pyo runs on:
@@ -25,6 +27,8 @@ The link is printed at Pyo's HTTPS address, its address on your network and `loc
 
 This is how the only admin gets back in. It needs no email setup, only access to the server.
 
+A link from the server also turns off two-factor authentication for that account. That's how you get back in after losing both your authenticator app and your recovery codes. Set two-factor up again once you're in.
+
 ## Forgot password?
 
 The sign-in page shows **Forgot password?** when [email](/docs/email) is set up. Enter your email, and Pyo sends a link to it. The page says the same thing whether or not an account has that address.
@@ -36,4 +40,4 @@ A team owner can reset a member's sign-in under **Members**, from the member's m
 - With [email](/docs/email) set up, Pyo emails the link to the member.
 - Without email, the owner gets the link to copy and pass on. This only works for a member who belongs to that team only. For anyone else, set up email or use `pyo-reset-login`.
 
-Each reset is recorded in the team's **Activity**.
+Each reset is recorded in the team's **Activity** and [audit log](/docs/audit-log).

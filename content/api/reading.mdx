@@ -46,6 +46,10 @@ If the installation has no ClickHouse set up, it returns `503`.
 
 `GET /access-logs` returns the requests your sites served, newest first. It takes `team`, `project`, `service`, `site` and `range` like observability, plus `status`, `method`, `limit` and `before` for paging back.
 
+## Audit log
+
+`GET /audit-log?team=...` returns who did what in a team, newest first, 100 at a time. Only the team's owners and admins get an answer. See [Audit log](/docs/audit-log#api-and-assistants) for its parameters.
+
 ## Images
 
 `GET /images?team=...` lists the container images a team's services have run, with each version deployed.
