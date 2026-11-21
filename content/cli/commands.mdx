@@ -96,24 +96,61 @@ Options:
 
 ## `pyo deploy`
 
-Apply pyo.jsonc and deploy, then follow it to the end. With -f, import a Docker Compose file instead: see what it makes, then deploy it
+Apply pyo.jsonc and deploy, then follow it to the end.
 
 ```text
-Apply pyo.jsonc and deploy, then follow it to the end. With -f, import a Docker Compose file instead: see what it makes, then deploy it
+Apply pyo.jsonc and deploy, then follow it to the end.
+
+A service built from a folder gets this folder, packed and uploaded (.gitignore and .pyoignore apply). In a folder no service is linked to, it makes one and links it. With -f, import a Docker Compose file instead: see what it makes, then deploy it.
 
 Usage: pyo deploy [OPTIONS]
 
 Options:
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
-      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --detach             Start it and exit, without following it
-      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -f, --file <FILE>        A Docker Compose file to import as a new project (a .env next to it is read too)
-      --team <TEAM>        The team to import into (slug or id). Defaults to your first team
-      --cluster <CLUSTER>  The cluster to run it on (name or id). Defaults to the team's default cluster
-  -y, --yes                Don't ask: import the Compose file, or go ahead with a very large replica change from pyo.jsonc
-  -h, --help               Print help
-  -V, --version            Print version
+  -s, --service <SERVICE>
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --detach
+          Start it and exit, without following it
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_API_KEY]
+
+      --local
+          Send this folder, also for a service built from Git
+
+      --include-env
+          Send .env files too (they're left out by default)
+
+      --name <NAME>
+          A new service's name. Defaults to the folder's
+
+      --project <PROJECT>
+          A new service's project (name or id), made when there's none by that name
+
+  -f, --file <FILE>
+          A Docker Compose file to import as a new project (a .env next to it is read too)
+
+      --team <TEAM>
+          The team of a new service or Compose import (slug or id). Defaults to your first team
+
+      --cluster <CLUSTER>
+          The cluster to run it on (name or id). Defaults to the team's default cluster
+
+  -y, --yes
+          Don't ask: import the Compose file, or go ahead with a very large replica change from pyo.jsonc
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 ```
 
 ## `pyo status`
@@ -136,10 +173,10 @@ Options:
 
 ## `pyo logs`
 
-The service's recent logs
+The service's logs, from every replica
 
 ```text
-The service's recent logs
+The service's logs, from every replica
 
 Usage: pyo logs [OPTIONS]
 
@@ -148,6 +185,9 @@ Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
   -f, --follow             Keep printing new lines
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --since <SINCE>      Only lines since then: 30s, 10m, 2h or 1d
+      --replica <REPLICA>  One replica, by its name as the lines show it
+      --build              The latest deployment's build and deploy log instead
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -293,23 +333,49 @@ Options:
 
 ### `pyo env pull`
 
-Write the variables to a .env file
+Write the variables to a .env file.
 
 ```text
-Write the variables to a .env file
+Write the variables to a .env file.
+
+Secrets are listed with an empty value, unless --secrets: owners and admins get their values.
 
 Usage: pyo env pull [OPTIONS] [FILE]
 
 Arguments:
-  [FILE]  [default: .env]
+  [FILE]
+          The file to write
+          
+          [default: .env]
 
 Options:
-      --force              Overwrite the file
-      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
-  -h, --help               Print help
-  -V, --version            Print version
+  -o, --file <FILE>
+          The file to write, as an option
+
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --force
+          Overwrite the file
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_API_KEY]
+
+      --secrets
+          Write secrets' values too. Owners and admins
+
+  -s, --service <SERVICE>
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 ```
 
 ## `pyo rollback`
@@ -349,23 +415,75 @@ Options:
   -V, --version            Print version
 ```
 
-## `pyo exec`
+## `pyo place`
 
-A shell in the service
+Where the service runs: any server, or only the servers and tags given. It moves over right away, without a redeploy. Without options, shows where it runs now
 
 ```text
-A shell in the service
+Where the service runs: any server, or only the servers and tags given. It moves over right away, without a redeploy. Without options, shows where it runs now
 
-Usage: pyo exec [OPTIONS]
+Usage: pyo place [OPTIONS]
 
 Options:
   -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --replica <REPLICA>  A replica name. Defaults to any ready replica
+      --server <SERVERS>   A server to run on, by name (repeatable)
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-      --shell <SHELL>      bash, sh, zsh or ash. Defaults to whichever the service has
+      --tag <TAGS>         Run on every server with this tag, tagged now or later (repeatable)
+      --any                Run on any server
   -h, --help               Print help
   -V, --version            Print version
+```
+
+## `pyo exec`
+
+A shell in the service, or one command: pyo exec -- `<command>`.
+
+```text
+A shell in the service, or one command: pyo exec -- <command>.
+
+A command runs as it is, without a shell (use sh -c for one). It gets a terminal when stdin and stdout are one, else its output and errors stay apart, piped input goes to it, and pyo exits with its exit code.
+
+Usage: pyo exec [OPTIONS] [-- <COMMAND>...]
+
+Arguments:
+  [COMMAND]...
+          The command and its arguments, after --
+
+Options:
+  -s, --service <SERVICE>
+          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --replica <REPLICA>
+          A replica name. Defaults to any ready replica
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_API_KEY]
+
+      --shell <SHELL>
+          bash, sh, zsh or ash. Defaults to whichever the service has
+
+  -t, --tty
+          Give the command a terminal
+
+  -T, --no-tty
+          Never give the command a terminal
+
+  -i, --interactive
+          Send stdin to the command even from a terminal (end it with Ctrl-D)
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 ```
 
 ## `pyo open`
