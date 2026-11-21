@@ -45,11 +45,13 @@ Each service has its own CPU and memory requests and limits. The request is what
 
 ## Choosing where services run
 
-By default, a service can run anywhere in its cluster. You can narrow that down by:
+By default, a service can run anywhere in its cluster. Pick its servers under **Servers** on its **Resources** tab, or with [`pyo place`](/docs/cli/commands#pyo-place). You can narrow it down by:
 
 - **Region:** servers in one [region](/docs/regions).
-- **Tags:** servers with all of the given tags, like `gpu`.
+- **Tags:** every server with one of the picked tags, like `gpu`, including servers tagged later.
 - **Server:** specific servers by name.
+
+A new pick applies right away, with no redeploy. Pyo refuses one that no server can run, like a server without the service's volume or a GPU it needs.
 
 A service pinned to one server can't move if that server goes down.
 
