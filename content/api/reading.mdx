@@ -16,7 +16,13 @@ curl https://your-pyo/api/v1/state \
 
 ## Service logs
 
-`GET /services/{id}/logs` returns the recent output of a service's running <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term>.
+`GET /services/{id}/logs` returns the recent output of a service's running <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term>. It takes `since`, `replica` and `tail`.
+
+To follow them, open a WebSocket at `/services/{id}/logs/follow` with the same query. It sends the last lines, then new ones as they're printed. Each text frame is `{"type":"lines","lines":[…]}`, or `{"type":"error","message":…}`. It closes after an hour, so open it again with `since` set to the newest line's time. `pyo logs -f` and the dashboard follow logs this way.
+
+## Database logs
+
+`GET /databases/{id}/logs` returns a database's recent output and its events. To follow them, open a WebSocket at `/databases/{id}/logs/follow`. It works like a service's, and also sends all events as `{"type":"events","events":[…]}` whenever they change.
 
 ## Metrics
 

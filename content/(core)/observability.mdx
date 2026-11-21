@@ -19,7 +19,7 @@ A TCP connection is counted when it closes. A UDP exchange is counted once it's 
 
 **Request logs**, in the sidebar's **Observability** menu, shows the web server's log of every request your sites served: the time, method, URL, status, response time and size, with the visitor's browser and country. Search and filter them to find a request. Sensitive values in query strings are hidden. They're kept on each cluster, for 7 days or up to 1 GB by default. Change both under the team's **Settings**. Request logs ask the cluster when you open them, so they need it online.
 
-These are request logs, not your service's own output. Service logs are on each service. Open them from the service, or use the CLI:
+These are request logs, not your service's own output. Service logs are on each service. New lines show as they're printed, over one stream from the cluster. Open them from the service, or use the CLI:
 
 ```bash
 pyo logs --follow

@@ -138,7 +138,7 @@ pyo logs --build              # the latest deployment's build and deploy log
 pyo logs --build -f           # followed until it's done
 ```
 
-Each line starts with its time and the replica it came from. Times are in UTC.
+Each line starts with its time and the replica it came from. Times are in UTC. `pyo logs -f` keeps one stream open to the cluster, and opens it again if it drops.
 
 ## Run a command
 
