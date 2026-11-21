@@ -435,6 +435,27 @@ Options:
   -V, --version            Print version
 ```
 
+## `pyo scale`
+
+How many replicas the service runs. It changes right away, without a redeploy, and in pyo.jsonc too. Without a number, shows how many run now and where
+
+```text
+How many replicas the service runs. It changes right away, without a redeploy, and in pyo.jsonc too. Without a number, shows how many run now and where
+
+Usage: pyo scale [OPTIONS] [REPLICAS]
+
+Arguments:
+  [REPLICAS]  The number of replicas, 1 or more
+
+Options:
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+  -y, --yes                Don't ask: go ahead with a very large change
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
 ## `pyo exec`
 
 A shell in the service, or one command: pyo exec -- `<command>`.

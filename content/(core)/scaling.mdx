@@ -7,6 +7,8 @@ description: Run more replicas, set resources and choose where services run.
 
 Set how many <Term tip="One running copy of a service. More replicas share the traffic and keep it up if one stops.">replicas</Term> of a service run, from the dashboard or through [MCP](/docs/mcp). Scaling takes effect without a redeploy.
 
+From a terminal, run [`pyo scale 3`](/docs/cli/commands#pyo-scale). It also sets `deploy.replicas` in a linked [`pyo.jsonc`](/docs/cli/pyo-jsonc) that has it, so the next deploy keeps the new count.
+
 There's no fixed maximum: run as many replicas as your servers have room for. If you ask for more than fits, Pyo still accepts it and tells you how much CPU and memory they need against what's free. The replicas that don't fit show as **Waiting for room** and start once there's space, for example after you add a server.
 
 A very large change asks you to confirm first: one to 20 or more replicas that's over 10 times what the service had, or over twice what your servers have room for.
