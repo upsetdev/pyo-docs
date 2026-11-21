@@ -921,7 +921,7 @@
           "Observability"
         ],
         "summary": "Website traffic",
-        "description": "Visits, requests, errors, response times, countries, pages and referrers\nfor a team's websites: all of them, one project's, one service's, or one\ndomain.\n\nAPI key access: **read**.",
+        "description": "Visitors, requests, errors, response times, countries, pages and\nreferrers for a team's websites: all of them, one project's, one\nservice's, or one domain. Read from per-minute totals each cluster\nsends (kept 12 months), so it works with a cluster offline. Top lists\ncount page views (referrers, pages, devices, browsers) or requests\n(paths, countries, query parameters).\n\nAPI key access: **read**.",
         "operationId": "getObservability",
         "parameters": [
           {
@@ -972,7 +972,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Totals, series over time and top lists for the range.",
+            "description": "`summary` (totals and top lists for the range), `series` (over time) and `previous` (the period before).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1041,7 +1041,7 @@
           "Observability"
         ],
         "summary": "Request log",
-        "description": "The web server's log of requests to a team's websites, newest first,\nfiltered like the traffic figures.\n\nAPI key access: **read**.",
+        "description": "The web server's log of requests to a team's websites, newest first,\nfiltered like the traffic figures. Requests stay in each website's\ncluster (1 GB or 7 days by default, the team's `requestLogs`\npreference), which answers within seconds, up to 500 at a time.\n\nAPI key access: **read**.",
         "operationId": "getAccessLogs",
         "parameters": [
           {
@@ -1136,11 +1136,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Only requests whose path starts with this, such as \"/api\".",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "`logs` (newest first: time, method, host, path, status, duration, size, country, device and address as the IP setting allows), `next` (the `before` for the next page, or null), `ipMode`, and on the first page a `summary` of the filtered requests.",
+            "description": "`logs` (newest first: time, method, host, path, status, duration, size, country, device and address as the IP setting allows), `next` (the `before` for the next page, or null), `ipMode`, `unavailable` (clusters that didn't answer, with why), and on the first page without filters a `summary` of the range.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1189,8 +1198,8 @@
               }
             }
           },
-          "502": {
-            "description": "The log storage couldn't be read.",
+          "503": {
+            "description": "Observability is off on this installation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1199,8 +1208,8 @@
               }
             }
           },
-          "503": {
-            "description": "This installation doesn't store request logs.",
+          "504": {
+            "description": "No cluster answered in time.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1243,7 +1252,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`ports`, `series`, `countries`, `outcomes`, `recent` (address as the IP setting allows) and `ipMode`.",
+            "description": "`ports`, `series`, `countries`, `outcomes`, and from the cluster `recent` (address as the IP setting allows), `ipMode` and `recentError` when it couldn't answer.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1326,7 +1335,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`total`, `series`, `rules`, `sources` (address as the IP setting allows), `countries`, `paths`, `recent` and `ipMode`.",
+            "description": "`total`, `series`, `rules`, `countries`, `paths`, and from the cluster `sources` (among the latest 500, address as the IP setting allows), `recent`, `ipMode` and `recentError` when it couldn't answer.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1452,7 +1461,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`blocked`, `logged`, `clients`, `series`, `rules`, `hosts`, `sources`, `countries`, `paths`, `recent`, `custom` and `ipMode`.",
+            "description": "`blocked`, `logged`, `clients`, `series`, `rules`, `hosts`, `countries`, `paths`, `custom`, and from the cluster `sources` (among the latest 500), `recent`, `ipMode` and `recentError` when it couldn't answer.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3278,7 +3287,7 @@
           "Servers"
         ],
         "summary": "Machines waiting for a Tailnet Lock signature",
-        "description": "With Tailnet Lock on, a new server stays off the tailnet until a\nsigning device signs its key. These are the ones Pyo's commands added\nthat wait, with the command to run on a signing device. Read from\nTailscale at most every 15 seconds. Empty without Tailscale set up.\n\nAPI key access: **read**.",
+        "description": "With Tailnet Lock on, a new server stays off the tailnet until a\nsigning device signs its key. These are the ones on the team's\nclusters' tailnets that wait, with the command to run on a signing\ndevice, as each cluster last saw them. Empty without Tailscale set up.\n\nAPI key access: **read**.",
         "operationId": "getTailnetLock",
         "parameters": [
           {
@@ -7229,6 +7238,40 @@
           "Domains"
         ]
       },
+      "DeletePreviewOp": {
+        "type": "object",
+        "title": "Delete preview",
+        "description": "Remove a pull request's preview of a service now. The next push to the pull request brings it back.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "deletePreview"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "pvw_8kq2x7ad",
+          "op": "deletePreview"
+        },
+        "examples": [
+          {
+            "id": "pvw_8kq2x7ad",
+            "op": "deletePreview"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Deployments"
+        ]
+      },
       "DeleteProjectOp": {
         "type": "object",
         "title": "Delete project",
@@ -8632,6 +8675,12 @@
             "$ref": "#/components/schemas/DeleteProjectOp"
           },
           {
+            "$ref": "#/components/schemas/DeletePreviewOp"
+          },
+          {
+            "$ref": "#/components/schemas/RedeployPreviewOp"
+          },
+          {
             "$ref": "#/components/schemas/SetProjectIsolationOp"
           },
           {
@@ -8701,6 +8750,9 @@
             "$ref": "#/components/schemas/CreateClusterOp"
           },
           {
+            "$ref": "#/components/schemas/SetClusterPreviewDomainOp"
+          },
+          {
             "$ref": "#/components/schemas/UpdateClusterOp"
           },
           {
@@ -8711,6 +8763,9 @@
           },
           {
             "$ref": "#/components/schemas/RotateAgentTokenOp"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateClusterAgentOp"
           },
           {
             "$ref": "#/components/schemas/DiscardClusterDraftOp"
@@ -8838,6 +8893,7 @@
             "deleteDatabase": "#/components/schemas/DeleteDatabaseOp",
             "deleteDatabaseBackup": "#/components/schemas/DeleteDatabaseBackupOp",
             "deleteDnsRecord": "#/components/schemas/DeleteDnsRecordOp",
+            "deletePreview": "#/components/schemas/DeletePreviewOp",
             "deleteProject": "#/components/schemas/DeleteProjectOp",
             "deleteService": "#/components/schemas/DeleteServiceOp",
             "deleteTeam": "#/components/schemas/DeleteTeamOp",
@@ -8850,6 +8906,7 @@
             "importCompose": "#/components/schemas/ImportComposeOp",
             "inviteMember": "#/components/schemas/InviteMemberOp",
             "joinServer": "#/components/schemas/JoinServerOp",
+            "redeployPreview": "#/components/schemas/RedeployPreviewOp",
             "removeAlertChannel": "#/components/schemas/RemoveAlertChannelOp",
             "removeBuilder": "#/components/schemas/RemoveBuilderOp",
             "removeCertificate": "#/components/schemas/RemoveCertificateOp",
@@ -8894,6 +8951,7 @@
             "scaleService": "#/components/schemas/ScaleServiceOp",
             "setAutoscale": "#/components/schemas/SetAutoscaleOp",
             "setClusterFreeDomainAddress": "#/components/schemas/SetClusterFreeDomainAddressOp",
+            "setClusterPreviewDomain": "#/components/schemas/SetClusterPreviewDomainOp",
             "setClusterPublicTraffic": "#/components/schemas/SetClusterPublicTrafficOp",
             "setClusterWebProxyProtocol": "#/components/schemas/SetClusterWebProxyProtocolOp",
             "setDatabaseBackups": "#/components/schemas/SetDatabaseBackupsOp",
@@ -8915,6 +8973,7 @@
             "testHetzner": "#/components/schemas/TestHetznerOp",
             "updateAlertChannel": "#/components/schemas/UpdateAlertChannelOp",
             "updateCluster": "#/components/schemas/UpdateClusterOp",
+            "updateClusterAgent": "#/components/schemas/UpdateClusterAgentOp",
             "updateDatabase": "#/components/schemas/UpdateDatabaseOp",
             "updateDatabaseBackup": "#/components/schemas/UpdateDatabaseBackupOp",
             "updateFirewallRule": "#/components/schemas/UpdateFirewallRuleOp",
@@ -9282,6 +9341,40 @@
             "description": "Vercel only: the team to read (its id or slug). The token's own scope when omitted."
           }
         }
+      },
+      "RedeployPreviewOp": {
+        "type": "object",
+        "title": "Redeploy preview",
+        "description": "Deploy a pull request's preview again from its head (a failed one tries again, a removed one comes back).\n\nAPI key access: **deploy**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "redeployPreview"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "pvw_8kq2x7ad",
+          "op": "redeployPreview"
+        },
+        "examples": [
+          {
+            "id": "pvw_8kq2x7ad",
+            "op": "redeployPreview"
+          }
+        ],
+        "x-pyo-access": "deploy",
+        "x-tags": [
+          "Deployments"
+        ]
       },
       "RemoveAlertChannelOp": {
         "type": "object",
@@ -11208,6 +11301,48 @@
           "Clusters"
         ]
       },
+      "SetClusterPreviewDomainOp": {
+        "type": "object",
+        "title": "Set cluster preview domain",
+        "description": "Set the domain previews on a cluster use (`<service>-pr-<n>.<domain>`, a wildcard record pointing at the cluster), or null for nip.io. Admins only.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setClusterPreviewDomain"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "domain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "example": {
+          "domain": "example",
+          "id": "cl_8kq2x7ad",
+          "op": "setClusterPreviewDomain"
+        },
+        "examples": [
+          {
+            "domain": "example",
+            "id": "cl_8kq2x7ad",
+            "op": "setClusterPreviewDomain"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
       "SetClusterPublicTrafficOp": {
         "type": "object",
         "title": "Set cluster public traffic",
@@ -12157,6 +12292,40 @@
           "Alerts"
         ]
       },
+      "UpdateClusterAgentOp": {
+        "type": "object",
+        "title": "Update cluster agent",
+        "description": "On a hosted Pyo: update a cluster's agent to Pyo's version now.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "id"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "updateClusterAgent"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "cl_8kq2x7ad",
+          "op": "updateClusterAgent"
+        },
+        "examples": [
+          {
+            "id": "cl_8kq2x7ad",
+            "op": "updateClusterAgent"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
       "UpdateClusterOp": {
         "type": "object",
         "title": "Update cluster",
@@ -12633,9 +12802,17 @@
               "null"
             ],
             "description": "The team's dashboard preferences, saved as given."
+          },
+          "agentUpdates": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "On a hosted Pyo: \"auto\" updates the team's agents when Pyo has a new version, \"manual\" leaves it to you."
           }
         },
         "example": {
+          "agentUpdates": "auto",
           "defaultClusterId": "cl_8kq2x7ad",
           "description": "Storefront and its workers",
           "id": "team_8kq2x7ad",
@@ -12645,6 +12822,7 @@
         },
         "examples": [
           {
+            "agentUpdates": "auto",
             "defaultClusterId": "cl_8kq2x7ad",
             "description": "Storefront and its workers",
             "id": "team_8kq2x7ad",
@@ -12980,7 +13158,7 @@
     },
     {
       "name": "Deployments",
-      "description": "Deploy, roll back and cancel, and manage deploy hooks."
+      "description": "Deploy, roll back and cancel, manage deploy hooks, and remove or redeploy previews."
     },
     {
       "name": "Cron jobs",

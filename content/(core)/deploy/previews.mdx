@@ -1,0 +1,111 @@
+---
+title: Preview environments
+description: A temporary copy of a service for each pull request.
+---
+
+A preview is a temporary copy of a service, built from a pull request. Open a pull request on GitHub or a merge request on GitLab, and Pyo deploys its latest commit to the same cluster and project. Each push deploys it again. Pyo removes it when the pull request is closed or merged.
+
+A preview is named after the service and the pull request, like `web-pr-42`. It has its own deployments and logs. Previews don't show in the project's list of services. Open them from the service's **Previews** tab.
+
+Previews work for services from Git, through the [GitHub App](/docs/github) or a [GitLab connection](/docs/gitlab). A standalone [cron job](/docs/deploy/cron-jobs) can't have previews.
+
+## Turn them on
+
+Open the service's **Previews** tab and turn on previews. The settings:
+
+| Setting | What it does |
+| --- | --- |
+| **Pull requests** | **All** pull requests get a preview, or only those **With a label**. The label is `preview` by default. Removing the label removes the preview. |
+| **At once** | The most previews of this service at once, from 1 to 50. The default is 5. Past it, a new preview waits until another one is removed. |
+| **Remove when idle** | Removes a preview after 1, 3, 7 or 14 days without a push. The next push brings it back. Off by default. |
+| **Access** | **Public** on the web, or **Private** on your [tailnet](/docs/tailscale). Private needs Tailscale on the cluster. |
+| **Pull requests from forks** | Whether pull requests from forks get a preview. See [Pull requests from forks](#pull-requests-from-forks). |
+| **Copy secret variables** | Gives previews the service's secret variables. Off by default. |
+| **Variables** | Variables for previews only. They replace the service's variable with the same name, or add a new one. They can be secret. |
+
+The tab also lists the service's previews with their status: waiting, building, ready, failed or removing. **Redeploy** deploys a pull request's latest commit again. It also starts a waiting or failed preview when there's room. **Delete** removes a preview now. The next push brings it back.
+
+## What a preview gets
+
+A preview gets the service's variables, then the preview variables. The service's secret variables only come along with **Copy secret variables** on. Pyo adds:
+
+| Variable | Value |
+| --- | --- |
+| `PYO_PREVIEW` | `1` |
+| `PYO_PULL_REQUEST` | The pull request's number |
+| `PYO_PREVIEW_URL` | The preview's URL |
+
+A preview runs one replica. These aren't copied:
+
+- [Volumes](/docs/volumes)
+- The service's cron jobs
+- [Autoscaling](/docs/scaling)
+- Public TCP and UDP ports
+- [Firewall](/docs/firewall) and [WAF](/docs/waf) rules
+
+Use preview variables to point a preview at its own database or test keys.
+
+## Preview URLs
+
+Each preview has one URL that stays the same across pushes. Pyo picks it in this order:
+
+1. **Private** previews get a name on your tailnet, like `web-pr-42.<tailnet>.ts.net`.
+2. On a cluster with a preview domain, like `preview.example.com`, they get `web-pr-42.preview.example.com`.
+3. Otherwise they get a [free domain](/docs/domains#free-domains) on the cluster's address, like `web-pr-42.203.0.113.7.nip.io`.
+
+Long names are shortened with a short hash, so each part of the URL stays within 63 characters.
+
+### Preview domain
+
+An admin sets a cluster's preview domain on its **Networking** tab. A preview domain belongs to one cluster, since its wildcard record points at that cluster.
+
+- With [Cloudflare connected](/docs/cloudflare) and covering the domain, Pyo creates the wildcard record, like `*.preview.example.com`, and gets a wildcard certificate. It renews the certificate before it runs out.
+- Without it, add the wildcard record yourself. Pyo shows the record to add. Each preview then gets its own certificate.
+
+## Pull requests from forks
+
+Anyone can open a pull request from a fork, so these don't get a preview by default. The **Forks** setting has three choices:
+
+- **Don't deploy:** no preview. This is the default.
+- **Deploy without secrets:** a preview without any secret variable, the service's or the preview's own, even with **Copy secret variables** on.
+- **Deploy with secrets:** a preview with secret variables. Only choose this if you trust everyone who can open a pull request.
+
+A fork's code runs on your servers. On a public repository, **With a label** lets your team choose which pull requests get a preview, since only people with write access can add labels.
+
+## On the pull request
+
+Pyo reports each preview on its pull request.
+
+On GitHub, through the GitHub App, shown as `<app name>[bot]`:
+
+- One comment with each preview's status, URL and logs. Pyo updates it on each push, and says **Preview removed** when the pull request closes.
+- A deployment, with **View deployment** to open the preview.
+- A check named **Pyo · Preview**. It fails when the build fails.
+
+On GitLab:
+
+- One note on the merge request, updated on each push.
+- A commit status named **Pyo · Preview**.
+- An environment, like `preview/web-pr-42`, with **View app** to open the preview.
+
+Pyo hears about pull requests through its webhooks. Its GitLab webhooks get merge request events too. When GitHub or GitLab can't reach Pyo, it checks for new pull requests every minute instead.
+
+## GitHub App permissions
+
+Previews need more from the [GitHub App](/docs/github):
+
+- **Pull requests:** write
+- **Deployments:** write
+- **Checks:** write
+- The **Pull request** event
+
+If your GitHub App lacks them, the dashboard says what's missing and links to each step:
+
+1. The app's owner adds them in the app's settings on GitHub. **Settings → GitHub** links there.
+2. The owner of each account or organization the app is installed on approves them once on GitHub. The **GitHub** card under **Integrations** links there.
+
+Until then, repositories of that installation get no previews.
+
+## On Pyo Cloud
+
+Previews work the same on Pyo Cloud. They build on a builder in the service's own cluster, and their URLs are on your own servers. Pyo Cloud's GitHub App already has the permissions, so you only approve them on your installation.
