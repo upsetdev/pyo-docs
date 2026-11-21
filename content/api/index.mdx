@@ -53,6 +53,10 @@ Failed requests use a standard <Term tip="The number every web response carries,
   Pyo is before version 1.0, so the API can still change between releases.
 </Callout>
 
+## Limits
+
+Each API key can make 600 requests a minute. Changes are limited to 300 a minute per account and 600 a minute per team. Past a limit, Pyo answers `429` with what there were too many of, and a `Retry-After` header that says when to try again.
+
 ## Next
 
 <Cards>
