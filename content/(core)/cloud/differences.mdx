@@ -47,6 +47,8 @@ Point the domain at your servers as usual. See [Adding a domain](/docs/domains#c
 
 Builds run on your cluster's builder, and images stay in your cluster's own registry. They never go through Pyo Cloud.
 
+To [push your own images](/docs/registries#push-your-own-images), set up [Tailscale](#tailscale) on the cluster first. **Registry** then shows each cluster's push address on your tailnet.
+
 ## Secret stores and other addresses
 
 [External secret stores](/docs/external-secrets), backup buckets and other addresses you enter must use `https://` on a public address. Private network addresses aren't allowed on Pyo Cloud.

@@ -17,6 +17,8 @@ If you remove a login, services with private images from that registry can't red
 
 You can push images you build yourself to Pyo's registry, from a device on your <Term tip="Your private Tailscale network. Only devices you've added to it can reach addresses on it.">tailnet</Term>. It's served over HTTPS at `registry.<tailnet>.ts.net`, so there's no insecure-registry setting to change. This needs [Tailscale](/docs/tailscale) set up in Pyo. The registry is never on a public address.
 
+On [Pyo Cloud](/docs/cloud/differences#images), each cluster has its own registry. **Registry** lists each cluster's push address. A cluster needs Tailscale set up before you can push to it.
+
 Team owners and admins can set this up:
 
 1. Open **Registry**, in the sidebar's **Images** menu, and choose **Connect**.
