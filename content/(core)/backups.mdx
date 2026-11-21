@@ -12,6 +12,8 @@ The bucket's endpoint needs `https://`. On a private network, plain `http://` wo
 - **This server:** Pyo's built-in backup store, on the cluster Pyo runs on. It runs [Garage](/docs/system-reference#what-runs-on-your-server), an S3-compatible store. Each team has its own bucket there, with a key that reaches only that bucket. Only that cluster can reach the store, so services and databases on other clusters need a bucket of your own. The store is on the same disks as your data, so keep a copy somewhere else too. Deleting a team deletes its bucket and the backups in it.
 - **An S3-compatible bucket** of your own.
 
+Pyo Cloud has no **This server**, so its teams back up to a bucket of their own. The same goes for a self-hosted Pyo without a backup store. Until a team adds a bucket, admins get **Add bucket** on the **Backups** page.
+
 ## What's backed up
 
 - **Databases:** PostgreSQL, MySQL, MariaDB, MongoDB and Redis or Valkey are <Term tip="Exported with the database's own backup tool, like pg_dump, instead of copying its files while it runs.">dumped</Term> with their own tools, so each backup is consistent.
