@@ -77,6 +77,13 @@
             "service"
           ],
           "type": "string"
+        },
+        "timeout": {
+          "description": "How many seconds a request may take before the gateway answers 504. 300 by default, 0 for no limit. WebSockets aren't cut by it.",
+          "format": "int64",
+          "maximum": 3600,
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "type": "object"
