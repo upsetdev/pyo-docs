@@ -53,6 +53,8 @@ With `$schema` in the file, editors like VS Code complete each setting and expla
 
 `deploy.timeout` is the service's [request timeout](/docs/domains#request-timeout): how many seconds Pyo Gateway waits for an answer before it returns 504. It's 300 by default, and 0 means no limit. It doesn't close WebSockets.
 
+The file's settings are for the service it's linked to. With `-s`, a command that names another service leaves them out. See [Another service](/docs/cli#another-service).
+
 ## Secrets
 
 `env` is for variables, not secrets, because this file is usually <Term tip="Saved to your Git repository, where anyone with access to it can read it.">committed</Term>. Keep secrets in Pyo:

@@ -81,6 +81,16 @@ pyo deploy
 
 This applies `pyo.jsonc`, deploys and follows the <Term tip="The switch from the old version to the new one, which Pyo watches until the new version is running.">rollout</Term> to the end. The build and deploy logs show as it goes, and `pyo deploy` exits with an error when the deploy fails. Use `--detach` to start it and exit.
 
+### Another service
+
+Commands work on the service `pyo.jsonc` is linked to. Pass `-s` to name another one:
+
+```bash
+pyo deploy -s shop/worker
+```
+
+The folder's `pyo.jsonc` belongs to its own service, so its settings don't apply to the one `-s` names. `pyo deploy` says so and deploys without them. A deploy that would send this folder to the other service stops instead, so its files never go there. Run that deploy from the other service's own folder.
+
 ## Deploy a folder
 
 You don't need a Git repository. In a folder no service is linked to, `pyo deploy` makes a service from it:
