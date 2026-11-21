@@ -12,12 +12,11 @@ Pyo Cloud runs the same Pyo you can install yourself. These are the differences.
 | Updates to Pyo | You [update it](/docs/updating-pyo) | We do |
 | The server Pyo runs on | Your first cluster | Not offered. Every server connects with a command |
 | Buying servers at Hetzner | Yes | Not for now |
-| Several servers in a cluster | Over your tailnet | Over your tailnet, set up through the agent (coming soon) |
+| Several servers in a cluster | Over your tailnet | Over your tailnet |
 | Backups | Built-in store or your own bucket | Your own S3-compatible bucket |
 | Images | Pyo's registry | Each cluster's own registry |
 | Agent updates | With each Pyo update | Automatic, or when your team chooses |
 | Commands to servers | From your Pyo | Signed, with keys in AWS KMS |
-| Request logs | On your Pyo | On your servers (coming soon) |
 | Your own domains | A DNS record | A DNS record and a TXT record |
 
 ## No "This machine"
@@ -26,11 +25,7 @@ Pyo Cloud doesn't run on any of your servers, so **Add cluster** has no **This m
 
 ## Tailscale
 
-<Callout>
-Coming soon. Until then, each server you connect is a cluster of its own.
-</Callout>
-
-A cluster with several servers joins them over your own tailnet, as on [self-hosted](/docs/tailscale). On Pyo Cloud the agent sets it up. You paste a Tailscale token in the dashboard, Pyo passes it to your cluster's agent in a signed command, and the agent keeps the credential on your server. Pyo Cloud never joins your tailnet and never stores your Tailscale credentials.
+A cluster with several servers joins them over your own tailnet, as on [self-hosted](/docs/tailscale). Set it up for each cluster under **Integrations**. You paste a Tailscale token in the dashboard, Pyo passes it to your cluster's agent in a signed command, and the agent keeps the credential on your server. Pyo Cloud never joins your tailnet and never stores your Tailscale credentials.
 
 ## Backups
 
