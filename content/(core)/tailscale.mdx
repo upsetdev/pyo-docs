@@ -9,7 +9,7 @@ Pyo uses [Tailscale](https://tailscale.com) when you add a second server or conn
 
 ## Setting it up
 
-Tailscale is set up once for the whole Pyo, by an installation admin. You need to be an Owner or Admin of your tailnet.
+Tailscale is set up for each cluster. Pick the cluster on the card when there's more than one. A team admin sets it up for the team's clusters, and an installation admin for the cluster Pyo runs on. You need to be an Owner or Admin of your tailnet.
 
 1. In the Tailscale admin console, open [**Settings › Keys**](https://login.tailscale.com/admin/settings/keys) and generate an <Term tip="A token that acts as you on Tailscale's API.">API access token</Term> that expires in 1 day.
 2. In Pyo, open **Integrations** and paste it on the **Tailscale** card. Click **Check**.
@@ -51,7 +51,7 @@ If your policy only allows some traffic, also let your tailnet reach `tag:pyo` o
 
 Pyo approves the servers that host its Services by itself. To have your policy approve them too, add `"autoApprovers": { "services": { "tag:pyo": ["tag:pyo"] } }`. The token setup adds both when they're needed.
 
-Pyo checks the client before saving it and says what's missing. **Test** checks it again. The secret is sealed in Pyo's database and only Pyo uses it. Servers never get it.
+Pyo checks the client before saving it and says what's missing. **Test** checks it again. The cluster's agent keeps the client as a secret on the cluster and does Pyo's Tailscale work there, in signed commands. Pyo keeps only what isn't secret.
 
 The add-server and connect-cluster pages link to the card until Tailscale is set up, and take you back once it's saved.
 
@@ -80,7 +80,7 @@ Once Pyo answers at `https://pyo.<tailnet>.ts.net`, turn off **Public dashboard*
 
 ## Removing Tailscale
 
-**Remove** on the card deletes Pyo's names on your tailnet. Servers stay on your tailnet. Remove them in the Tailscale admin console if you like.
+**Remove** on the card deletes the cluster's names on your tailnet. Servers stay on your tailnet. Remove them in the Tailscale admin console if you like.
 
 ## Websites on your tailnet
 
