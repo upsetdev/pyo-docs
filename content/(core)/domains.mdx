@@ -18,7 +18,7 @@ Without Tailscale, a server behind NAT has no free domain. A new service then op
 
 ### Tailnet domains
 
-With [Tailscale](/docs/tailscale) set up, a service can also get a name on your tailnet, like `blog.<tailnet>.ts.net`. Only devices on your tailnet can open it, over HTTPS with Tailscale's certificate. Choose **Tailnet** when you add a domain. It's there on clusters whose servers are on your tailnet. A name another device or Service on your tailnet already has shows **Taken on your tailnet**, and `pyo` and `registry` are kept for Pyo.
+With [Tailscale](/docs/tailscale) set up, a service can also get a name on your tailnet, like `blog.<tailnet>.ts.net`. Only devices on your tailnet can open it, over HTTPS with Tailscale's certificate. It needs no DNS record, since Pyo sets up the name on your tailnet. Choose **Tailnet** when you add a domain. It's there on clusters whose servers are on your tailnet. A name another device or Service on your tailnet already has shows **Taken on your tailnet**, and `pyo` and `registry` are kept for Pyo.
 
 When you change it, the cluster's free domains move to the new address within seconds. A cluster without the chosen address has no free domain. Add your own domain instead.
 
