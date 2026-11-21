@@ -34,6 +34,14 @@ Adding or removing a domain, or changing its HTTPS settings, takes effect within
 
 Domains belong to the service, not to a deployment, so a [rollback](/docs/deploy/rollbacks) keeps the domains the service has now.
 
+## Request timeout
+
+[Pyo Gateway](/docs/gateway) waits up to 300 seconds for the service to answer a request on its domains. After that, the visitor gets a 504 error. To change it, set **Request timeout** on the service's **Networking** page, from 0 to 3600 seconds. 0 means no limit. Like a domain change, it takes effect within seconds, without a redeploy.
+
+You can also set it with `deploy.timeout` in [`pyo.jsonc`](/docs/cli/pyo-jsonc), or with the `set_request_timeout` tool over [MCP](/docs/mcp).
+
+The request timeout doesn't close WebSockets. On public domains, a WebSocket or another long stream stays open while it's quiet for up to an hour.
+
 ## Certificates
 
 Pyo picks a certificate for you:

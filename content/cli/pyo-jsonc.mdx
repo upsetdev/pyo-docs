@@ -33,6 +33,7 @@ The file is JSON with comments and trailing commas:
     "health": "/healthz", // checked before traffic moves over, or "tcp" or "none"
     "autoRollback": true,
     "serveAs": "static", // a static site's build served as files, or "service"
+    "timeout": 300, // seconds a request may take, up to 3600, 0 for no limit
   },
 
   "resources": {
@@ -49,6 +50,8 @@ The file is JSON with comments and trailing commas:
 Unknown settings are rejected, so a typo fails instead of being ignored.
 
 With `$schema` in the file, editors like VS Code complete each setting and explain it as you type.
+
+`deploy.timeout` is the service's [request timeout](/docs/domains#request-timeout): how many seconds Pyo Gateway waits for an answer before it returns 504. It's 300 by default, and 0 means no limit. It doesn't close WebSockets.
 
 ## Secrets
 
