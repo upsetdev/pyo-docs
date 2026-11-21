@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.4.5"
+    "version": "0.5.0"
   },
   "servers": [
     {
@@ -264,7 +264,7 @@
           "Services"
         ],
         "summary": "Recent logs",
-        "description": "The last lines each of a service's replicas printed, read from its\ncluster on request. Takes up to 15 seconds.\n\nAPI key access: **read**.",
+        "description": "The last lines each of a service's replicas printed, read from its\ncluster on request. Takes up to 15 seconds. To follow them, open the\nWebSocket at `/services/{id}/logs/follow` with the same query: it sends\nthese lines, then new ones as they're printed, each text frame\n`{\"type\":\"lines\",\"lines\":[…]}` (or `{\"type\":\"error\",\"message\":…}`). It\ncloses after an hour, so open it again with `since` set to the newest\nline's time.\n\nAPI key access: **read**.",
         "operationId": "getServiceLogs",
         "parameters": [
           {
@@ -275,6 +275,35 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "description": "Only lines since this time, in milliseconds since 1970 (at most a week back).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "replica",
+            "in": "query",
+            "description": "Only this replica, by name (a log line's `source`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tail",
+            "in": "query",
+            "description": "How many lines of each replica, 1 to 2000. 300 by default.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
           }
         ],
         "responses": {
@@ -284,6 +313,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServiceLogs"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a replica name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -878,11 +917,11 @@
           "Observability"
         ],
         "summary": "Observability settings",
-        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory), and what it keeps of\nvisitors' IP addresses. `small`: the server Pyo runs on has under 3.5 GB\nof memory now. The installation's admin turns it on or off with\n`setObservability`.\n\nAPI key access: **read**.",
+        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory), what it keeps of\nvisitors' IP addresses, and how long it keeps data (`retention`:\n`analyticsMonths`, `metricsDays`, `buildLogDays`). `small`: the server\nPyo runs on has under 3.5 GB of memory now. The installation's admin\nturns it on or off with `setObservability`.\n\nAPI key access: **read**.",
         "operationId": "getObservabilitySettings",
         "responses": {
           "200": {
-            "description": "`enabled`, `ipMode` and `small`.",
+            "description": "`enabled`, `ipMode`, `retention` and `small`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -921,7 +960,7 @@
           "Observability"
         ],
         "summary": "Website traffic",
-        "description": "Visitors, requests, errors, response times, countries, pages and\nreferrers for a team's websites: all of them, one project's, one\nservice's, or one domain. Read from per-minute totals each cluster\nsends (kept 12 months), so it works with a cluster offline. Top lists\ncount page views (referrers, pages, devices, browsers) or requests\n(paths, countries, query parameters).\n\nAPI key access: **read**.",
+        "description": "Visitors, requests, errors, response times, countries, pages and\nreferrers for a team's websites: all of them, one project's, one\nservice's, or one domain. Read from per-minute totals each cluster\nsends (kept 12 months by default), so it works with a cluster offline.\nTop lists count page views (referrers, pages, devices, browsers) or\nrequests (paths, countries, query parameters).\n\nAPI key access: **read**.",
         "operationId": "getObservability",
         "parameters": [
           {
@@ -1609,7 +1648,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`address` (in the cluster only, where servers pull from), `location` (`clusterId` and `server`, or null), `reachable`, `usedBytes`, `repositories`, `retainDeployments`, `lastCleanupAt`, `pushAddress`, `teamPath` and `tokens`. Each of `repositories` has `repository` (as servers pull it), `tailnetRepository`, `kind` (\"built\" or \"pushed\"), `serviceId`, `tags`, `bytes` and `lastPushAt`. `tailnetRepository` is a pushed repository's name on the team's tailnet, `<pushAddress>/<team>/<project>/<service>`. It's null for one Pyo built, or without a tailnet. `pushAddress` is the registry's address on the team's tailnet, where the team pushes and pulls its own images, or null without a tailnet. Each of `tokens` has `id`, `name`, `scope`, `createdBy`, `createdAt`, `expiresAt` and `lastUsedAt`, but never the token itself.",
+            "description": "`address` (in the cluster only, where servers pull from), `location` (`clusterId` and `server`, or null), `reachable`, `usedBytes`, `repositories`, `retainDeployments`, `lastCleanupAt`, `pushAddress`, `teamPath` and `tokens`. Each of `repositories` has `repository` (as servers pull it), `tailnetRepository`, `kind` (\"built\" or \"pushed\"), `serviceId`, `tags`, `bytes` and `lastPushAt`. `tailnetRepository` is a pushed repository's name on the team's tailnet, `<pushAddress>/<team>/<project>/<service>`. It's null for one Pyo built, or without a tailnet. `pushAddress` is the registry's address on the team's tailnet, where the team pushes and pulls its own images, or null without a tailnet. On Pyo Cloud each cluster keeps its own registry: `clusterRegistries` lists the team's clusters, each with `clusterId`, `name` and its registry's `pushAddress` on the cluster's tailnet (null until the cluster has Tailscale), and `pushAddress` is the first of them. Each of `tokens` has `id`, `name`, `scope`, `createdBy`, `createdAt`, `expiresAt` and `lastUsedAt`, but never the token itself.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1903,7 +1942,7 @@
           "Databases"
         ],
         "summary": "A database's logs and events",
-        "description": "The recent output of each of its parts, oldest first: `at`, `level`,\n`source` (the instance), `role` (\"primary\", \"replica\", \"read\",\n\"pooler\", \"read-pooler\", \"sentinel\", \"proxy\" (KV's endpoint) or \"other\"), `message`, and\n`raw` for structured lines. `events`: what happened to it, newest first.\n\nAPI key access: **read**.",
+        "description": "The recent output of each of its parts, oldest first: `at`, `level`,\n`source` (the instance), `role` (\"primary\", \"replica\", \"read\",\n\"pooler\", \"read-pooler\", \"sentinel\", \"proxy\" (KV's endpoint) or \"other\"), `message`, and\n`raw` for structured lines. `events`: what happened to it, newest first.\nTo follow them live, open the WebSocket at `/databases/{id}/logs/follow`:\nit sends the last lines, then new ones as they're printed, each text\nframe `{\"type\":\"lines\",\"lines\":[…]}`, and all events as\n`{\"type\":\"events\",\"events\":[…]}` when they change (or\n`{\"type\":\"error\",\"message\":…}`). It closes after an hour, so open it\nagain with `since` set to the newest line's time.\n\nAPI key access: **read**.",
         "operationId": "getDatabaseLogs",
         "parameters": [
           {
@@ -2616,6 +2655,343 @@
         "x-pyo-access": "none"
       }
     },
+    "/source-uploads": {
+      "post": {
+        "tags": [
+          "Deployments"
+        ],
+        "summary": "Start an upload",
+        "description": "The first step of deploying a folder: say what the archive is (a\ngzipped tar of the folder) and get where its parts go. Send each part\nwith `uploadSourcePart`, then `completeSourceUpload`, then `deploy` (or\n`createService`) with the `uploadId`. At most\n`PYO_SOURCE_UPLOAD_MAX_BYTES` (500 MB by default). Kept for 2 hours.\n\nAPI key access: **deploy**.",
+        "operationId": "createSourceUpload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewSourceUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "`uploadId`, `partSize` (bytes in each part but the last), `parts` (how many) and `expiresAt`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Empty, or not a SHA-256.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You can't deploy in this team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bigger than this installation takes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many uploads waiting in this team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "deploy"
+      }
+    },
+    "/source-uploads/{id}/parts/{n}": {
+      "put": {
+        "tags": [
+          "Deployments"
+        ],
+        "summary": "Send a part",
+        "description": "Part `n` (from 0) of an upload's archive, as the request's body: exactly\n`partSize` bytes, the last part what's left. Sending a part again\nreplaces it.\n\nAPI key access: **deploy**.",
+        "operationId": "uploadSourcePart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The upload's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "n",
+            "in": "path",
+            "description": "The part, from 0.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The part's bytes.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a part of this upload, or not its size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such upload, or it expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The upload is complete already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "deploy"
+      }
+    },
+    "/source-uploads/{id}": {
+      "get": {
+        "tags": [
+          "Deployments"
+        ],
+        "summary": "An upload",
+        "description": "Which parts of an upload Pyo has (`received`), to send the rest after a\nbreak, and its `state`: \"uploading\", \"ready\" (complete) or \"used\" (a\ndeployment builds it).\n\nAPI key access: **deploy**.",
+        "operationId": "getSourceUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The upload's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`uploadId`, `state`, `parts` and `received`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such upload, or it expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "deploy"
+      }
+    },
+    "/source-uploads/{id}/complete": {
+      "post": {
+        "tags": [
+          "Deployments"
+        ],
+        "summary": "Finish an upload",
+        "description": "Once every part is sent: Pyo checks the archive against its SHA-256.\nThen deploy it with `deploy` (or `createService`) and its `uploadId`.\n\nAPI key access: **deploy**.",
+        "operationId": "completeSourceUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The upload's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parts are missing (`getSourceUpload` says which), or the archive isn't what was declared (the upload is gone then: start again).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such upload, or it expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "deploy"
+      }
+    },
     "/github/repos": {
       "get": {
         "tags": [
@@ -3269,6 +3645,136 @@
           },
           "502": {
             "description": "The provider failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/audit-log": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Audit log",
+        "description": "Who did what in a team, newest first: when, the account, the action,\nhow (dashboard, API key or assistant) and the address and browser it\ncame from, as the team keeps them. Sign-ins, failed sign-ins and\ntwo-factor changes are here too. For the team's owners and admins.\n\nAPI key access: **read**.",
+        "operationId": "listAuditLog",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id (`team_…`).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "person",
+            "in": "query",
+            "description": "Only what this account did (its user id), or `pyo` for Pyo's own.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Only this action (`member.role_changed`) or kind of action (`member`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "From this time on (milliseconds).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Up to this time (milliseconds).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "The `next` of the page before.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "description": "`csv` for a download of everything that matches (up to 50,000 rows).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`events` (each with `id`, `at`, `action`, `title`, `actor` {id, name, email}, `via`, `key`, `ip`, `userAgent`, `target` and `outcome`), `next` (the `cursor` for the next page, or null), `people` (who appears in the log), `ips` (what the team keeps of addresses) and `days` (how long entries are kept). With `format=csv`, a CSV file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an owner or admin of the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or it isn't yours to see.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6911,7 +7417,7 @@
           },
           "service": {
             "type": "object",
-            "description": "The service, as in the snapshot's services: id (`svc_…`), projectId, clusterId, name, source, ports, env and the rest.\nA template's service records where it came from in `source`: `templateVersion`, `appVersion`, `images` (each Compose service's image, `repository:tag@digest`, by name) and `fields` (the deploy form's values, with a secret one only as `{\"secret\": true, \"set\": …, \"env\": …}`). Saves keep them. Responses add `customized` when its image is no longer the template's.\nIts ports: `name`, `containerPort`, `protocol` (\"HTTP\", \"TCP\" or \"UDP\"), `exposure` (\"internal\", \"http\" for a website, \"nodeport\", or \"loadbalancer\" for a public TCP or UDP port) and `publicPort`.\nA public TCP or UDP port goes through the gateway unless `proxy` is false. Then, for TCP only, it can have `ipFilter` (`{\"mode\": \"allow\" or \"deny\", \"cidrs\": [...]}`), `connectionLimit` (open connections on the port, from everyone together), `sendProxyProtocol` (\"V1\" or \"V2\", to the service) and `acceptProxyProtocol` (read the visitor's address from a header sent by a load balancer in front, while connections without one still work). Ports 22, 53, 80, 443 and a few others can't be public. Each public port belongs to one service on its cluster.\nIts `healthCheck`, which says when a replica is ready: `type` (\"http\" for a request to `path` on `port` answered with 2xx or 3xx, \"tcp\" for `port` accepting connections, \"exec\" to run `command`, or \"none\" so deploys don't wait for it), `initialDelaySeconds` and `periodSeconds`. With `auto` (\"default\" or \"static\") Pyo picks it from what each build finds: a static site or single-page app gets an HTTP check of `/`. A check without `auto` is kept as it is.\nA Git `source` has `buildArgs` (`[{\"key\": …, \"value\": …}]`), used by its next build: Dockerfile build arguments, or Railpack settings such as `RAILPACK_BUILD_CMD`. They can end up in the image, so no secrets.\nIts `serveAs`, for a build Pyo detects as a static site: \"static\" (the default) serves the build's output as static files from the cluster's shared static server, \"service\" runs it as a service of its own. Takes effect with the next deploy."
+            "description": "The service, as in the snapshot's services: id (`svc_…`), projectId, clusterId, name, source, ports, env and the rest.\nA template's service records where it came from in `source`: `templateVersion`, `appVersion`, `images` (each Compose service's image, `repository:tag@digest`, by name) and `fields` (the deploy form's values, with a secret one only as `{\"secret\": true, \"set\": …, \"env\": …}`). Saves keep them. Responses add `customized` when its image is no longer the template's.\nIts ports: `name`, `containerPort`, `protocol` (\"HTTP\", \"TCP\" or \"UDP\"), `exposure` (\"internal\", \"http\" for a website, \"nodeport\", or \"loadbalancer\" for a public TCP or UDP port) and `publicPort`.\nA public TCP or UDP port goes through the gateway unless `proxy` is false. Then, for TCP only, it can have `ipFilter` (`{\"mode\": \"allow\" or \"deny\", \"cidrs\": [...]}`), `connectionLimit` (open connections on the port, from everyone together), `sendProxyProtocol` (\"V1\" or \"V2\", to the service) and `acceptProxyProtocol` (read the visitor's address from a header sent by a load balancer in front, while connections without one still work). Ports 22, 53, 80, 443 and a few others can't be public. Each public port belongs to one service on its cluster.\nIts `healthCheck`, which says when a replica is ready: `type` (\"http\" for a request to `path` on `port` answered with 2xx or 3xx, \"tcp\" for `port` accepting connections, \"exec\" to run `command`, or \"none\" so deploys don't wait for it), `initialDelaySeconds` and `periodSeconds`. With `auto` (\"default\" or \"static\") Pyo picks it from what each build finds: a static site or single-page app gets an HTTP check of `/`. A check without `auto` is kept as it is.\nA Git `source` has `buildArgs` (`[{\"key\": …, \"value\": …}]`), used by its next build: Dockerfile build arguments, or Railpack settings such as `RAILPACK_BUILD_CMD`. They can end up in the image, so no secrets.\nIts `serveAs`, for a build Pyo detects as a static site: \"static\" (the default) serves the build's output as static files from the cluster's shared static server, \"service\" runs it as a service of its own. Takes effect with the next deploy.\nIts `placement`, where it runs: `{\"servers\": [...], \"tags\": [...]}` runs it only on the servers named and on every server with one of the tags, tagged now or later. Absent or null: any server of its cluster. A service with a volume keeps its volume's server, and one with a GPU needs a GPU server. A change goes live without a deploy. The older `serverTags` is read as its tags."
           },
           "deploymentId": {
             "type": "string",
@@ -6934,6 +7440,13 @@
           "confirm": {
             "type": "boolean",
             "description": "Go ahead with a very large replica change: without it, one that goes to 20 or more replicas and to more than 10 times what the service had, or more than twice what its servers have room for, is refused with 409 and `needsConfirm: true`. Ask the user before sending it."
+          },
+          "uploadId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A folder uploaded with `createSourceUpload`, for a service whose `source` is `{\"type\": \"upload\"}` (built from a folder with `pyo deploy`): its first deployment builds it."
           }
         },
         "example": {
@@ -7470,6 +7983,13 @@
               "null"
             ],
             "description": "The failed deployment to try again."
+          },
+          "uploadId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A folder uploaded with `createSourceUpload` to build and deploy, instead of the service's source. For services built from Git or from a folder."
           }
         },
         "example": {
@@ -8474,6 +8994,45 @@
               "type": "string"
             },
             "description": "Postgres: more extensions Pyo turns on with it (the source's are turned on anyway)."
+          }
+        }
+      },
+      "NewSourceUpload": {
+        "type": "object",
+        "description": "A folder about to be uploaded.",
+        "required": [
+          "teamId",
+          "size",
+          "sha256"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "description": "The team's id."
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The archive's size in bytes (a gzipped tar).",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Its SHA-256, in lowercase hex."
+          },
+          "files": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many files it holds.",
+            "minimum": 0
+          },
+          "folder": {
+            "type": "string",
+            "description": "The folder's name, shown with the deployment."
+          },
+          "machine": {
+            "type": "string",
+            "description": "The computer's name, shown as \"Uploaded from …\"."
           }
         }
       },
@@ -10922,7 +11481,7 @@
           },
           "service": {
             "type": "object",
-            "description": "The whole service, as in the snapshot.\nIts ports: `name`, `containerPort`, `protocol` (\"HTTP\", \"TCP\" or \"UDP\"), `exposure` (\"internal\", \"http\" for a website, \"nodeport\", or \"loadbalancer\" for a public TCP or UDP port) and `publicPort`.\nA public TCP or UDP port goes through the gateway unless `proxy` is false. Then, for TCP only, it can have `ipFilter` (`{\"mode\": \"allow\" or \"deny\", \"cidrs\": [...]}`), `connectionLimit` (open connections on the port, from everyone together), `sendProxyProtocol` (\"V1\" or \"V2\", to the service) and `acceptProxyProtocol` (read the visitor's address from a header sent by a load balancer in front, while connections without one still work). Ports 22, 53, 80, 443 and a few others can't be public. Each public port belongs to one service on its cluster.\nIts `healthCheck`, which says when a replica is ready: `type` (\"http\" for a request to `path` on `port` answered with 2xx or 3xx, \"tcp\" for `port` accepting connections, \"exec\" to run `command`, or \"none\" so deploys don't wait for it), `initialDelaySeconds` and `periodSeconds`. With `auto` (\"default\" or \"static\") Pyo picks it from what each build finds: a static site or single-page app gets an HTTP check of `/`. A check without `auto` is kept as it is.\nA Git `source` has `buildArgs` (`[{\"key\": …, \"value\": …}]`), used by its next build: Dockerfile build arguments, or Railpack settings such as `RAILPACK_BUILD_CMD`. They can end up in the image, so no secrets.\nIts `serveAs`, for a build Pyo detects as a static site: \"static\" (the default) serves the build's output as static files from the cluster's shared static server, \"service\" runs it as a service of its own. Takes effect with the next deploy."
+            "description": "The whole service, as in the snapshot.\nIts ports: `name`, `containerPort`, `protocol` (\"HTTP\", \"TCP\" or \"UDP\"), `exposure` (\"internal\", \"http\" for a website, \"nodeport\", or \"loadbalancer\" for a public TCP or UDP port) and `publicPort`.\nA public TCP or UDP port goes through the gateway unless `proxy` is false. Then, for TCP only, it can have `ipFilter` (`{\"mode\": \"allow\" or \"deny\", \"cidrs\": [...]}`), `connectionLimit` (open connections on the port, from everyone together), `sendProxyProtocol` (\"V1\" or \"V2\", to the service) and `acceptProxyProtocol` (read the visitor's address from a header sent by a load balancer in front, while connections without one still work). Ports 22, 53, 80, 443 and a few others can't be public. Each public port belongs to one service on its cluster.\nIts `healthCheck`, which says when a replica is ready: `type` (\"http\" for a request to `path` on `port` answered with 2xx or 3xx, \"tcp\" for `port` accepting connections, \"exec\" to run `command`, or \"none\" so deploys don't wait for it), `initialDelaySeconds` and `periodSeconds`. With `auto` (\"default\" or \"static\") Pyo picks it from what each build finds: a static site or single-page app gets an HTTP check of `/`. A check without `auto` is kept as it is.\nA Git `source` has `buildArgs` (`[{\"key\": …, \"value\": …}]`), used by its next build: Dockerfile build arguments, or Railpack settings such as `RAILPACK_BUILD_CMD`. They can end up in the image, so no secrets.\nIts `serveAs`, for a build Pyo detects as a static site: \"static\" (the default) serves the build's output as static files from the cluster's shared static server, \"service\" runs it as a service of its own. Takes effect with the next deploy.\nIts `placement`, where it runs: `{\"servers\": [...], \"tags\": [...]}` runs it only on the servers named and on every server with one of the tags, tagged now or later. Absent or null: any server of its cluster. A service with a volume keeps its volume's server, and one with a GPU needs a GPU server. A change goes live without a deploy. The older `serverTags` is read as its tags."
           },
           "deploymentId": {
             "type": [
@@ -11190,7 +11749,7 @@
             "items": {
               "$ref": "#/components/schemas/LogLine"
             },
-            "description": "The last 300 lines of each replica, oldest first."
+            "description": "The last lines of each replica (300, or `tail`), oldest first. `source` is the replica."
           },
           "fetchedAt": {
             "type": "integer",
@@ -11264,7 +11823,7 @@
       "SetClusterFreeDomainAddressOp": {
         "type": "object",
         "title": "Set cluster free domain address",
-        "description": "Where the cluster's free domains (`<name>.<ip>.nip.io`) point: \"public\" (its public IP, for everyone) or \"tailscale\" (its Tailscale IP, only from the tailnet). With \"tailscale\", services are reachable from your tailnet on ports 80 and 443 whether or not the cluster takes public traffic. Free domains on it move to the new address in place. By default it's public when the cluster takes public traffic and a server has its public IP itself (on a network card or as its ExternalIP), a load balancer gives it one, or its cloud maps one to it and Let's Encrypt reached it there. Behind NAT, it's Tailscale.\n\nAPI key access: **full**.",
+        "description": "Where the cluster's free domains (`<name>.<ip>.nip.io`) point: \"public\" (its public IP, for everyone) or \"tailscale\" (its Tailscale IP, only from the tailnet). With \"tailscale\", services are reachable from your tailnet on ports 80 and 443 whether or not the cluster takes public traffic. Free domains on it move to the new address in place, except ones on the public IP, which stay there while the cluster has one. By default it's public when the cluster takes public traffic and a server has its public IP itself (on a network card or as its ExternalIP), a load balancer gives it one, or its cloud maps one to it and Let's Encrypt reached it there. Behind NAT, it's Tailscale.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId",
@@ -12809,10 +13368,20 @@
               "null"
             ],
             "description": "On a hosted Pyo: \"auto\" updates the team's agents when Pyo has a new version, \"manual\" leaves it to you."
+          },
+          "analyticsMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Keep the team's analytics 3, 6 or 12 months, at most as long as the installation. 0 keeps them as long as the installation does.",
+            "minimum": 0
           }
         },
         "example": {
           "agentUpdates": "auto",
+          "analyticsMonths": 1,
           "defaultClusterId": "cl_8kq2x7ad",
           "description": "Storefront and its workers",
           "id": "team_8kq2x7ad",
@@ -12823,6 +13392,7 @@
         "examples": [
           {
             "agentUpdates": "auto",
+            "analyticsMonths": 1,
             "defaultClusterId": "cl_8kq2x7ad",
             "description": "Storefront and its workers",
             "id": "team_8kq2x7ad",
@@ -13158,7 +13728,7 @@
     },
     {
       "name": "Deployments",
-      "description": "Deploy, roll back and cancel, manage deploy hooks, and remove or redeploy previews."
+      "description": "Deploy, roll back and cancel, deploy an uploaded folder, manage deploy hooks, and remove or redeploy previews."
     },
     {
       "name": "Cron jobs",
