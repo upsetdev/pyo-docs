@@ -26,3 +26,21 @@ Choose **Remove builder** from its menu. A builder in a cluster takes its build 
 A builder runs <Term tip="The build engine behind Docker. It turns your code or Dockerfile into an image.">BuildKit</Term> and connects out to Pyo with its own token. It picks up build jobs, streams the logs and hands back the finished image.
 
 BuildKit only runs while there are builds, so an idle builder uses almost no memory. A build starts it, and its log shows **Starting the builder…** for the few seconds that takes. After 10 minutes without builds, it stops again. The build cache stays on the server's disk, so the next build is as fast as before.
+
+## How long a build may take
+
+A build runs as long as its builder keeps reporting on it. It fails when the builder goes quiet for 5 minutes, or when the build takes longer than 60 minutes. A build that no builder starts within 60 minutes fails too. To change the 60 minutes, set `PYO_BUILD_TIMEOUT_MINUTES` on Pyo. See the [System reference](/docs/system-reference#builds).
+
+## Memory
+
+BuildKit gets a memory limit, so a large build can't take its whole server. The limit is a share of the server's memory, by its [memory tier](/docs/system-reference#memory-tiers):
+
+| Server memory | BuildKit's limit |
+| --- | --- |
+| Under 3.5 GiB | Half |
+| 3.5 to 8 GiB | 60% |
+| 8 GiB or more | Three quarters |
+
+BuildKit asks for only 8 MiB up front, since it sleeps between builds.
+
+To give every builder the same amounts instead, set `PYO_BUILDKIT_MEMORY_REQUEST` and `PYO_BUILDKIT_MEMORY_LIMIT` on Pyo, like `4Gi`. See the [System reference](/docs/system-reference#builds).

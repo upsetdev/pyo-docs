@@ -72,6 +72,16 @@ Pyo sets these when it's installed, so you'll rarely need to touch them.
 | `PYO_BUILDER_IMAGE` | `127.0.0.1:5005/pyo/builder:dev` | The image for new builders. |
 | `RUST_LOG` | `pyo_api=info,tower_http=info` | How much Pyo writes to its logs. |
 
+## Builds
+
+Set these on both `pyo` and `pyo-worker`. See [Setting up builders](/docs/builders).
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PYO_BUILD_TIMEOUT_MINUTES` | `60` | The longest a build may take, and wait for a builder. At least 5. |
+| `PYO_BUILDKIT_MEMORY_REQUEST` | `8Mi` | The memory BuildKit asks for on every builder, like `1Gi`. |
+| `PYO_BUILDKIT_MEMORY_LIMIT` | By memory | BuildKit's memory limit on every builder, like `4Gi`. By default it's a share of the builder's server memory, by its [tier](#memory-tiers). It's never below the request. |
+
 ## Encryption
 
 These decide how your [secrets](/docs/encryption) are protected.
