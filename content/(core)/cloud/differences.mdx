@@ -41,6 +41,8 @@ Before a service takes a domain, Pyo Cloud asks for a TXT record that proves you
 | --- | --- | --- |
 | TXT | `_pyo-verify.<your-domain>` | Your team's token, shown in the dashboard |
 
+Pyo reads the record from your domain's own name servers, so it counts as soon as they have it. No DNS cache stands in the way.
+
 Point the domain at your servers as usual. See [Adding a domain](/docs/domains#custom-domains). Free domains need no TXT record, but they must point at your own servers.
 
 ## Images
