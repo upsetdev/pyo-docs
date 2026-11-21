@@ -1,0 +1,44 @@
+---
+title: Getting started with Pyo Cloud
+description: Sign up, pay, connect a server and deploy.
+---
+
+<Callout>
+Pyo Cloud is coming soon. It isn't open for sign-ups yet.
+</Callout>
+
+## 1. Sign up
+
+Create an account at [cloud.pyo.dev](https://cloud.pyo.dev). You get a team of your own. Invite others from **Members**. Users are unlimited.
+
+## 2. Add a payment method
+
+Open **Settings → Billing** and pay by card. In Indonesia you can also pay with QRIS, bank transfer or an e-wallet. A team needs a payment method before its first server connects. There's no trial. See [Billing](/docs/cloud/billing).
+
+## 3. Connect a server
+
+Pick a server that meets the [requirements](/docs/cloud/server-requirements): Linux on x86-64, 2 CPU cores, 2 GB of memory and 40 GB of disk at least. A fresh server is best.
+
+In **Clusters**, choose **Add cluster**, name it, and copy the command. Run it on the server:
+
+```bash
+curl -fsSL https://cloud.pyo.dev/install/connect.sh | bash -s -- --token <token> ...
+```
+
+The dashboard fills in the values. The command works once, for an hour. If it expires, get a new one from the cluster's page. It asks for `sudo` if it needs root.
+
+The command installs k3s, the Pyo agent, [Pyo Gateway](/docs/gateway) and a [builder](/docs/builders) with its own registry. The cluster shows as connected once the agent reports in.
+
+## 4. Deploy
+
+Deploy from Git, a container image, a template or a Docker Compose file, as on self-hosted Pyo. See [Making your first deploy](/docs/first-deploy).
+
+Builds run on your server, and images stay in your cluster's registry. On a server with a public IP, your service opens on a [free domain](/docs/domains#free-domains) with HTTPS.
+
+To use your own domain, Pyo Cloud also asks for a TXT record that proves it's yours. See [Your own domains](/docs/cloud/differences#your-own-domains).
+
+## Next
+
+- Set up [backups](/docs/backups) to an S3-compatible bucket of your own.
+- [Connect GitHub](/docs/github) to deploy on every push.
+- Read what's [different from self-hosted](/docs/cloud/differences).

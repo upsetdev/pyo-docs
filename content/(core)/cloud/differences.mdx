@@ -1,0 +1,57 @@
+---
+title: Pyo Cloud and self-hosted
+description: What's different when we run Pyo for you.
+---
+
+Pyo Cloud runs the same Pyo you can install yourself. These are the differences.
+
+| | Self-hosted | Pyo Cloud |
+| --- | --- | --- |
+| Who runs Pyo | You, on your server | Us, at `cloud.pyo.dev` |
+| Price | Free | $5 per server per month |
+| Updates to Pyo | You [update it](/docs/updating-pyo) | We do |
+| The server Pyo runs on | Your first cluster | Not offered. Every server connects with a command |
+| Buying servers at Hetzner | Yes | Not for now |
+| Several servers in a cluster | Over your tailnet | Over your tailnet, set up through the agent (coming soon) |
+| Backups | Built-in store or your own bucket | Your own S3-compatible bucket |
+| Images | Pyo's registry | Each cluster's own registry |
+| Agent updates | With each Pyo update | Automatic, or when your team chooses |
+| Commands to servers | From your Pyo | Signed, with keys in AWS KMS |
+| Request logs | On your Pyo | On your servers (coming soon) |
+| Your own domains | A DNS record | A DNS record and a TXT record |
+
+## No "This machine"
+
+Pyo Cloud doesn't run on any of your servers, so **Add cluster** has no **This machine** choice. Every server connects with the [connect command](/docs/cloud/getting-started#3-connect-a-server). Hetzner servers aren't sold through Pyo Cloud for now. Buy one at any provider and connect it.
+
+## Tailscale
+
+<Callout>
+Coming soon. Until then, each server you connect is a cluster of its own.
+</Callout>
+
+A cluster with several servers joins them over your own tailnet, as on [self-hosted](/docs/tailscale). On Pyo Cloud the agent sets it up. You paste a Tailscale token in the dashboard, Pyo passes it to your cluster's agent in a signed command, and the agent keeps the credential on your server. Pyo Cloud never joins your tailnet and never stores your Tailscale credentials.
+
+## Backups
+
+There's no built-in backup store on Pyo Cloud. Add an S3-compatible bucket of your own under **Backups**, like Backblaze B2, Cloudflare R2 or AWS S3. Backups go from your servers straight to your bucket. See [Backing up data](/docs/backups).
+
+Its address needs `https://`. Private network addresses aren't allowed on Pyo Cloud.
+
+## Your own domains
+
+Before a service takes a domain, Pyo Cloud asks for a TXT record that proves you own it:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| TXT | `_pyo-verify.<your-domain>` | Your team's token, shown in the dashboard |
+
+Point the domain at your servers as usual. See [Adding a domain](/docs/domains#custom-domains). Free domains need no TXT record, but they must point at your own servers.
+
+## Images
+
+Builds run on your cluster's builder, and images stay in your cluster's own registry. They never go through Pyo Cloud.
+
+## Secret stores and other addresses
+
+[External secret stores](/docs/external-secrets), backup buckets and other addresses you enter must use `https://` on a public address. Private network addresses aren't allowed on Pyo Cloud.

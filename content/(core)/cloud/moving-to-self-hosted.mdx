@@ -1,0 +1,177 @@
+---
+title: Moving to self-hosted
+description: Move a team from Pyo Cloud to a Pyo you run yourself.
+---
+
+<Callout>
+Pyo Cloud is coming soon. It isn't open for sign-ups yet.
+</Callout>
+
+Your services, databases and volumes already run on your servers. Moving to self-hosted Pyo means setting up your own Pyo, recreating your team in it, and moving your servers over.
+
+Pyo can't export a team from Pyo Cloud and import it elsewhere yet. You recreate your setup by hand, with Pyo Cloud open next to it. See [What Pyo can't do yet](#what-pyo-cant-do-yet).
+
+## Before you start
+
+<Callout type="warn">
+  Removing k3s from a server deletes everything on it, including volumes and databases. Don't remove anything until your data is in your new Pyo.
+</Callout>
+
+- **A spare server keeps downtime short.** Your services keep running on Pyo Cloud while you set up the new Pyo next to it. Without one, see [Without a spare server](#without-a-spare-server).
+- **Services with a database go down for a short time.** Writes made after you copy a database aren't copied, so its services stop while it moves.
+- **Lower the TTL** of your DNS records, to 5 minutes for example, a day ahead. Domains then move faster.
+
+## 1. Save your setup
+
+1. **Save a copy of your team.** It lists your projects, services, clusters and their settings, without secret values:
+
+   ```bash
+   curl https://cloud.pyo.dev/api/v1/state \
+     -H "Authorization: Bearer $PYO_API_KEY" > pyo-cloud.json
+   ```
+
+2. **Save each service's variables** with the [CLI](/docs/cli), signed in to Pyo Cloud:
+
+   ```bash
+   pyo env pull -s shop/api shop-api.env
+   ```
+
+   Secrets are left out. Team owners and admins can show each one under the service's **Settings → Environment**. Each time is recorded in **Activity**. Keep them somewhere safe.
+
+3. **Save your backups' password.** On **Backups**, choose **Restore** and reveal the repository password. Without it, the backups Pyo Cloud made can't be read once your team is gone.
+
+## 2. Install Pyo
+
+Pick a server that meets the [requirements](/docs/install#requirements). A new one is best. Run:
+
+```bash
+curl -fsSL https://pyo.dev/install.sh | bash
+```
+
+It becomes your first cluster. See [Installing Pyo](/docs/install). Then:
+
+1. Set up [email](/docs/email), so you can invite your team.
+2. Set up the [GitHub App](/docs/github#set-up-the-github-app), if you deploy from GitHub.
+3. Set up [Tailscale](/docs/tailscale). You need it to connect more servers later.
+
+## 3. Recreate your team
+
+Logins and tokens can't be read back from Pyo Cloud. Enter them again, or make new ones.
+
+| What | Where in your Pyo |
+| --- | --- |
+| Members | Invite them under **Members**. Each one sets up passkeys and two-factor again. |
+| API keys | Make new ones. Update `PYO_URL` and `PYO_API_KEY` in your CI. |
+| GitHub, GitLab, Cloudflare, secret stores | **Integrations** |
+| Registry logins | **Integrations → Container registries** |
+| Alert channels | **Notifications** |
+| Backups | Add your bucket under **Backups**. The same bucket works. |
+| Firewall and WAF rules | **Security** |
+| Deploy hooks | Make new ones and update the URLs where you call them. |
+
+## 4. Recreate your services
+
+1. **Create each project and service** in your Pyo, with the same names. Copy their settings from Pyo Cloud, or from `pyo-cloud.json`. Add volumes, cron jobs and scaling the same way. Leave domains for [step 6](#6-move-your-domains).
+2. **Services with `pyo.jsonc`:** sign in to your Pyo with `pyo login`, then run `pyo link` in the repository. It points the file at the new service and keeps your settings. `pyo deploy` applies them. Commit the file. See [pyo.jsonc](/docs/cli/pyo-jsonc).
+3. **Set the variables** from the files you saved:
+
+   ```bash
+   pyo env push -s shop/api shop-api.env
+   pyo env set -s shop/api --secret STRIPE_KEY=sk_live_...
+   ```
+
+4. **Deploy.** Your Pyo builds each service again. Images built on Pyo Cloud stay in your old cluster's registry. Push images you pushed there yourself again, to your Pyo's [registry](/docs/registries).
+5. **Check each service** on its free domain. Leave services that use a database for the next step.
+
+Docker Compose projects can be imported again with `pyo deploy -f`. See [Docker Compose](/docs/deploy/compose).
+
+## 5. Move your data
+
+### Postgres and MySQL
+
+Do this for one database at a time. Its services are down from step 1 until step 6.
+
+1. **Stop** each service that writes to the database on Pyo Cloud, from its **⋯** menu.
+2. **Dump it on its server.** On the database's **Connect** tab in Pyo Cloud, find its address, like `main-rw.pyo-db-abc.svc.cluster.local`. For Postgres with a connection pooler, use `DATABASE_URL_DIRECT`. The name before the first dot is the service, and the part after it is the namespace. Open a tunnel to it:
+
+   ```bash
+   sudo k3s kubectl -n pyo-db-abc port-forward svc/main-rw 15432:5432
+   ```
+
+3. In a second terminal on the server, dump it with the URL from **Connect**, using `127.0.0.1:15432` as the host. The tool must be the database's version or newer:
+
+   ```bash
+   pg_dump --no-owner --no-acl -Fc "postgres://app:<password>@127.0.0.1:15432/app" -f main.dump
+   ```
+
+   For MySQL, use port `3306` in the tunnel and `mysqldump` as in [Migrating a database](/docs/migrating#with-a-dump-file).
+
+4. **Import it** in your Pyo: **New → Import database**, then **Dump file**. Or copy the file to your computer and run `pyo db import main --file main.dump`. See [Import data](/docs/databases#import-data).
+5. **Connect** the new database to its services, and deploy them.
+6. **Move their domains** right away, as in [step 6](#6-move-your-domains).
+
+Pyo can't import KV data yet. KV databases start empty in your Pyo.
+
+### Volumes
+
+Pyo can't copy a volume to another Pyo yet. Get its files from a backup with restic: **Restore** on **Backups** in Pyo Cloud shows the repository and the commands, and you saved the password in step 1. Then put the files back in the new service's volume with your own tools.
+
+A database you run as a service, from a template, keeps its data in a volume. Dump it with its own tool instead, and load it into the new one.
+
+## 6. Move your domains
+
+For each domain:
+
+1. Add it to the service in your Pyo. See [Adding a domain](/docs/domains#custom-domains).
+2. Point its DNS record at your new server.
+3. Wait for HTTPS. The domain shows **Issuing certificate** until Let's Encrypt reaches the new server, usually a minute or two.
+4. Check the site. Visitors whose DNS isn't updated yet still reach Pyo Cloud's copy, so keep it running for a day.
+
+Once every domain has moved, delete the `_pyo-verify` TXT records. Your Pyo doesn't need them. Free domains change, so update any links to them.
+
+## 7. Move your servers
+
+Do this for each old server once nothing on it is needed.
+
+1. **Check** that its domains point elsewhere and its data is in your new Pyo.
+2. **Remove k3s** on the server. This stops its services and deletes everything on it:
+
+   ```bash
+   sudo /usr/local/bin/k3s-uninstall.sh
+   ```
+
+   If k3s was there before you connected the server, don't remove it. See [Disconnect a cluster](/docs/uninstall#disconnect-a-cluster) instead.
+
+3. **Remove it from Pyo Cloud.** Once the cluster has been unreachable for 10 minutes, choose **Remove anyway** on its **Settings** tab and type its name. Your next invoice credits the server.
+4. **Connect it to your Pyo,** as a [cluster](/docs/clusters) of its own or as a [server](/docs/servers) in one you have.
+
+Until you remove k3s, the server's services keep running. Removing the cluster from Pyo Cloud alone changes nothing on the server.
+
+## Without a spare server
+
+Install your Pyo on one of your servers. Its services are down from when you remove k3s until they're deployed again.
+
+1. [Save your setup](#1-save-your-setup).
+2. Stop the services that write to its databases, and dump each one, as in [step 5](#5-move-your-data). Copy the dumps and your volumes' files off the server.
+3. [Remove k3s](#7-move-your-servers) and remove the cluster from Pyo Cloud.
+4. [Install Pyo](#2-install-pyo) on the server, then do steps 3 to 5.
+5. Add your domains. They already point at this server, so HTTPS starts right away.
+
+## 8. Cancel Pyo Cloud
+
+Do this last, once everything runs on your Pyo.
+
+1. Cancel under **Settings → Billing**. See [Billing](/docs/cloud/billing#canceling).
+2. On GitHub and GitLab, remove Pyo Cloud's app and tokens.
+3. Revoke your Pyo Cloud API keys.
+
+## What Pyo can't do yet
+
+- Export a team from Pyo Cloud and import it into another Pyo.
+- Take over services, databases or volumes already running on a server.
+- Copy a database or a volume from one Pyo to another.
+- Restore Pyo Cloud's backups in another Pyo. Restic can read them with the password.
+- Import KV data.
+- Read back logins and tokens for Git, registries, alert channels and other integrations.
+
+Questions? Email [support@pyo.dev](mailto:support@pyo.dev).

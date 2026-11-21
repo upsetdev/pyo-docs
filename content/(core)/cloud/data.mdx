@@ -1,0 +1,36 @@
+---
+title: Data and analytics
+description: What stays on your servers, and what Pyo Cloud keeps.
+---
+
+<Callout>
+Coming soon. This is how analytics will work when Pyo Cloud opens.
+</Callout>
+
+Your visitors' requests stay on your servers. Pyo Cloud keeps only totals.
+
+## On your servers
+
+- **Every request,** in compressed files on a small volume in your cluster. The last 7 days or 1 GB by default, whichever comes first. A team setting changes both.
+- **Visitors' IP addresses.** Countries and the daily [visitor hash](/docs/observability#analytics) are worked out on your servers, so IP addresses never leave them.
+
+**Request logs** and their live view ask your cluster through the agent, so they need the cluster online.
+
+## On Pyo Cloud
+
+Totals for each service and domain, per minute:
+
+- requests by status and method, and bytes sent
+- response times
+- visitors
+- countries, top pages and referrers
+- requests the [firewall](/docs/firewall) and [WAF](/docs/waf) blocked
+
+Totals are kept for 12 months. Your team can choose 3 or 6 months instead in its settings. **Analytics** reads only totals, so it works while a cluster is offline.
+
+## Everything else
+
+- **Build logs** are kept for 90 days.
+- **Service logs** come from your servers live, when you open them.
+- **Backups** go from your servers straight to your own bucket. See [Backups](/docs/cloud/differences#backups).
+- **Your services' data,** databases and volumes stay on your servers.
