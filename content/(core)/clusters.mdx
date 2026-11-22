@@ -19,6 +19,12 @@ curl -fsSL https://your-pyo/install/connect.sh | bash -s -- --api <pyo-address-f
 
 Copy the command from the dashboard, which fills in your Pyo's address and these values. The `--api` address is where the new machine reaches Pyo. It can differ from the address you use in your browser. It's Pyo's name on your tailnet, like `https://pyo.tail1234.ts.net`. Connecting a cluster needs [Tailscale](/docs/tailscale) set up in Pyo. The command carries a single-use key that joins the machine to your tailnet. A public address must use `https://`. Plain `http://` works only for a private network or tailnet address. The command works once, for an hour. If it expires, the cluster offers a new one. The script asks for `sudo` when it needs root. The agent connects out to Pyo, so you don't have to open anything on the machine.
 
+If something on the machine already serves sites on ports 80 and 443, like nginx, ingress-nginx or k3s's Traefik, the command connects the cluster with [public traffic](#public-traffic) off, so those sites keep working. It leaves the machine's firewall as it is and says so in one line:
+
+```text
+● Ports 80 and 443 are in use by Traefik. Public traffic stays off, so your sites keep working.
+```
+
 Pyo can also make the cluster's first server at [Hetzner](/docs/hetzner).
 
 ## Inside a cluster
@@ -58,6 +64,8 @@ The **Workloads** tab opens on your team's **Services**, with their project, kin
 With [free domains](/docs/domains#free-domains) on **Tailscale**, services' websites are reachable from your tailnet on ports 80 and 443, whether public traffic is on or off. Each server's Tailscale address answers, except on build-only servers. Nothing else opens. A service's [firewall](/docs/firewall) and [WAF](/docs/waf) apply there too, and they see each device's own tailnet address.
 
 Turning it back on opens the same ports again. A **Port on every server** keeps the number it had.
+
+If another program in the cluster still holds ports 80 and 443 on a server, like k3s's Traefik, the gateway can't get them there. The cluster's **Networking** tab and its setup checklist then say `Ports 80 and 443 are in use on <server>`, and so does `pyo status`. Your services' sites don't answer on that server until you stop that program. The gateway takes the ports once they're free.
 
 Pyo doesn't check whether a server can be reached from the internet. A server with only a private or tailnet address runs the gateway too. It answers anyone who can reach that address.
 

@@ -8,7 +8,7 @@ description: Run Pyo on a laptop, VPS, dedicated server or homelab.
 
 - **System:** Linux on <Term tip="The 64-bit processor type of most servers and PCs, also called amd64.">x86-64</Term>, with root or `sudo` access.
 - **Resources:** at least 2 CPU cores, 2 GB of memory and 40 GB of disk. See [Memory](#memory) for how much to choose.
-- **Ports:** 8000 and 5005 free, plus 80, 443 and 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services and Pyo's dashboard.
+- **Ports:** 8000, 5005 and 5006 free, plus 6443 if k3s isn't installed yet. The installer stops if one of these is taken. Only 80 and 443 need to be reachable from the internet, for your services and Pyo's dashboard. If something already uses 80 and 443, see [When ports 80 and 443 are in use](#when-ports-80-and-443-are-in-use).
 
 <Term tip="A free service that issues the certificates browsers need for HTTPS. Pyo requests and renews them for you.">Let's Encrypt</Term> certificates need a machine that's reachable from the internet on ports 80 and 443. On a home network or a laptop, without [Tailscale](/docs/tailscale), Pyo and your services open over plain HTTP on your own network. See [On a home server](#on-a-home-server).
 
@@ -92,6 +92,16 @@ Most clouds block ports 80 and 443 until you allow them, in a security group or 
 ```
 
 Allow TCP ports 80 and 443 from anywhere. Pyo tries again by itself, first an hour later, then every few hours at most. To check right away, run the install command again. It tries again if the last try was at least 15 minutes ago.
+
+### When ports 80 and 443 are in use
+
+On a server that already serves sites on ports 80 and 443, like with nginx, Caddy or k3s's Traefik, the installer doesn't take those ports. It installs Pyo with [public traffic](/docs/clusters#public-traffic) off, so your sites keep working, and says so in one line:
+
+```text
+● Ports 80 and 443 are in use by nginx. Public traffic stays off, so your sites keep working.
+```
+
+While public traffic is off, open Pyo at its Network or Local address, or set up [Tailscale](/docs/tailscale) for HTTPS. To move your sites to Pyo later, stop the program that holds the ports, then turn on **Accept public traffic** on the cluster's **Settings** tab.
 
 ### On a home server
 

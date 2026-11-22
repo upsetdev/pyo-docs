@@ -7,7 +7,7 @@ Every web request to your sites, and every connection to a public TCP or UDP por
 
 ## How a request travels
 
-1. A visitor's request reaches a server in your cluster. Every server runs the gateway on ports 80 and 443, including GPU servers. Build-only servers don't. A cluster with [public traffic](/docs/clusters#public-traffic) turned off answers on none of them. With [free domains](/docs/domains#free-domains) on Tailscale, each server also answers on its Tailscale address, whether public traffic is on or off.
+1. A visitor's request reaches a server in your cluster. Every server runs the gateway on ports 80 and 443, including GPU servers. Build-only servers don't. A cluster with [public traffic](/docs/clusters#public-traffic) turned off answers on none of them. If another program in the cluster holds those ports on a server, the gateway can't answer there. See [Public traffic](/docs/clusters#public-traffic). With [free domains](/docs/domains#free-domains) on Tailscale, each server also answers on its Tailscale address, whether public traffic is on or off.
 2. The gateway answers on HTTPS with the domain's own certificate. That's a Let's Encrypt certificate, a self-signed one for a private domain, or one you [uploaded](/docs/certificates). Plain HTTP redirects to HTTPS if the domain is set to redirect. Otherwise, plain HTTP gets an answer too.
 3. The gateway sends the request to the service, and the cluster picks a replica. It picks one on the same server, in the same region or anywhere, based on the cluster's [traffic routing](/docs/regions#how-traffic-is-routed).
 
