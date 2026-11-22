@@ -109,6 +109,8 @@ Headers like `CF-Connecting-IP` name the visitor, but any client can send them. 
 
 `X-Forwarded-For` always stays. The gateway adds the address it saw at the end, so the last entry is the one to trust.
 
+A cluster that doesn't refresh its install on its own, like one on Pyo Cloud, starts removing these headers once you run the command under **Refresh this cluster** in its settings. Until then, the cluster shows **Update needed**.
+
 Pyo itself never takes the visitor from `CF-Connecting-IP` on a request that came through the gateway. It reads `X-Forwarded-For` from right to left and skips the addresses in `PYO_TRUSTED_PROXIES`. By default that's the cluster's pod network, where the gateway runs. The first address not in the list is the visitor. Sign-in limits, rate limits and the [audit log](/docs/audit-log) all use it.
 
 With the dashboard behind a CDN and mTLS, that first address is the CDN's. To see the real visitor, add your CDN's IP ranges after the default. This example shows two of Cloudflare's, so list them all:
