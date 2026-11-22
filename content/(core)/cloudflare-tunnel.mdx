@@ -1,0 +1,117 @@
+---
+title: Cloudflare Tunnel
+description: Take websites in through Cloudflare with no open ports on your servers.
+---
+
+With Cloudflare Tunnel, your servers open no ports for websites. A small connector in your cluster dials out to Cloudflare, and Cloudflare sends your visitors through it to [Pyo Gateway](/docs/gateway). Pyo sets up the tunnel, its routes, the DNS records and the certificate for you.
+
+It also lets Pyo run on a server where another program already uses ports 80 and 443, like Traefik or nginx.
+
+## What you need
+
+- Your domains in a Cloudflare account.
+- A [Cloudflare token](/docs/cloudflare#create-the-token) with these permissions:
+
+| Type | Resource | Permission |
+| --- | --- | --- |
+| Zone | Zone | Read |
+| Zone | DNS | Edit |
+| Zone | SSL and Certificates | Edit |
+| Account | Cloudflare Tunnel | Edit |
+
+- Your servers can reach Cloudflare on TCP port 7844.
+
+After you add the permissions in Cloudflare, choose **Test** on the **Cloudflare** card under **Integrations**. Zones that can use the tunnel show in green. A zone that lacks one of the two tunnel permissions says which one. A zone with neither is **DNS only**.
+
+## Turn it on
+
+1. Open your cluster's **Settings** and find **Traffic**.
+2. Pick **Cloudflare Tunnel**.
+3. Pick a **default domain** if you want one. Services then get free names under it, like `web-shop.example.com`.
+4. Select **Switch**.
+
+Pyo creates the tunnel and starts two connectors, on different servers when it can. Domains in your Cloudflare account move to the tunnel. If a name has a record Pyo didn't make, Pyo asks first. Domains in other accounts, and free nip.io domains, stop answering from the internet.
+
+If the choice is greyed out, the cluster's agent can't run a tunnel yet, or its install is older than Pyo's. Run the command under **Refresh this cluster** in the cluster's settings, then try again.
+
+Team owners and admins change a cluster's traffic.
+
+## Move one domain
+
+On a service's **Domains** tab, select **Switch to Tunnel**. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME record. While the record moves, the domain answers both ways, through the tunnel and directly. Once it points at the tunnel, Pyo Gateway only lets the tunnel in.
+
+If Cloudflare already has a record for the name, Pyo shows it and asks before it replaces it. Pyo keeps a copy, so **Switch back** puts it back. Developers can switch a domain when nothing is in the way. Replacing a record, or putting one back, is for team owners and admins.
+
+When you add a domain on a cluster in tunnel mode, **Through Cloudflare Tunnel** is on in the dialog and in the new service wizard.
+
+## Free domains
+
+With a default domain, a cluster in tunnel mode gives each service a free name under it, like `web-shop.example.com`. Pyo makes one wildcard record, `*.example.com`, that points at the tunnel. Free names need no record of their own. A record you made for a name still comes first, so your existing sites aren't touched.
+
+The default domain must be one of your zones itself, like `example.com`. Cloudflare's free certificate covers one level below a zone, so a name like `web.apps.example.com` wouldn't work.
+
+Without a default domain, a cluster in tunnel mode has no free domains. Only domains you switch go through the tunnel.
+
+## Move sites from Traefik with no downtime
+
+1. Connect the server to Pyo. Pick **Cloudflare Tunnel** for the cluster.
+2. Deploy each site as a service in Pyo and add its domain.
+3. Select **Switch to Tunnel** on the domain. Traefik keeps serving until Cloudflare points at the tunnel.
+4. Check the site. If something's wrong, select **Switch back**.
+5. When every site has moved, stop Traefik.
+
+## Visitors
+
+Pyo Gateway takes the visitor's address only from the connectors. Firewall rules, rate limits, the WAF, country rules, analytics and the audit log all see the real visitor. A service doesn't need [Behind Cloudflare](/docs/firewall#behind-cloudflare) for its tunnel domains.
+
+Visitors who type `http://` are sent to HTTPS, whatever your zone's **Always Use HTTPS** says.
+
+## TCP and UDP ports
+
+Cloudflare Tunnel carries websites only. Public TCP and UDP ports stay on your servers' public addresses, or on [Tailscale](/docs/tailscale). They don't go through the tunnel. To close them too, turn off **Public TCP and UDP ports** under **Traffic**.
+
+## Status
+
+The **Traffic** panel shows how the tunnel is doing:
+
+- **Tunnel connected**, with its connectors and Cloudflare's locations.
+- **Tunnel degraded**, when a connector is down.
+- **Tunnel down**, when no connector reaches Cloudflare. Its websites don't answer. Pyo sends an [alert](/docs/alerts) after 5 minutes.
+
+A connector that can't start says why, like `ImagePullBackOff`.
+
+From the CLI:
+
+```bash
+pyo cloudflare tunnel status --cluster eu
+```
+
+## Certificate and token
+
+Pyo issues a Cloudflare Origin CA certificate for the tunnel's names. Only cloudflared sees it. Your visitors see Cloudflare's own certificate. It's valid for 15 years, and Pyo issues a new one when a name it doesn't cover goes through the tunnel. It's listed under **Certificates** as **Cloudflare Tunnel**.
+
+The connector runs with the tunnel's own token, kept in your cluster. Pyo never sends your Cloudflare token to the cluster. **Rotate** gives the tunnel a new token and a new certificate.
+
+## Cloudflare's limits
+
+- Uploads over 100 MB fail on the Free and Pro plans.
+- Cloudflare waits 100 seconds for a response to start.
+- WebSockets work. gRPC needs the zone's gRPC setting in Cloudflare.
+
+Don't change Pyo's tunnel in Cloudflare. Pyo puts its routes back.
+
+## Turn it off
+
+Pick **Public ports** or **Tailscale only** under **Traffic**. Domains keep using the tunnel until you move them back, so both work at once. Then select **Switch back** on each domain, and **Remove tunnel**. Pyo deletes the tunnel, its certificate and only the records it made, and puts back the records it replaced. Deleting a service or a cluster cleans up its tunnel records the same way.
+
+From the CLI:
+
+```bash
+pyo cloudflare tunnel on --cluster eu --default-domain example.com
+pyo domain tunnel blog.example.com
+pyo domain tunnel blog.example.com --replace
+pyo domain tunnel blog.example.com --back
+pyo cloudflare tunnel off --cluster eu
+pyo cloudflare tunnel remove --cluster eu
+pyo cloudflare tunnel rotate --cluster eu
+```

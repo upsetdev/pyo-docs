@@ -54,6 +54,7 @@
     "registries",
     "tailscale",
     "cloudflare",
+    "cloudflare-tunnel",
     "hetzner",
     "email",
     "external-secrets",
