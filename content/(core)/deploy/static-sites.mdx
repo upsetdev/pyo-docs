@@ -26,7 +26,7 @@ With the CLI, set `"serveAs": "service"` or `"serveAs": "static"` under `deploy`
 
 ### Limits
 
-A static site can have up to 20,000 files and 1 GiB in all, and each file up to 100 MiB. A bigger one runs as a service, and the build log says why. Pyo keeps the files of each site's 10 newest deploys for rollbacks. Rolling back to an older deploy runs it as a service from its image.
+A static site can have up to 20,000 files and 1 GiB in all, and each file up to 90 MiB. That keeps each file under Cloudflare's 100 MB limit for one request. A bigger one runs as a service, and the build log says why. Pyo keeps the files of each site's 10 newest deploys for rollbacks. Rolling back to an older deploy runs it as a service from its image.
 
 ## Headers and redirects
 
