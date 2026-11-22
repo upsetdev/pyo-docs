@@ -93,8 +93,32 @@ Pyo warns you 30 days before the certificate expires. Replace it before then, be
 
 - [Observability](/docs/observability) records the CDN's address instead of the visitor's, so visitor locations and IP-based counts won't be accurate. Use your CDN's own analytics for real visitor data.
 - The [firewall](/docs/firewall) and its rate limits see the CDN's addresses too. Pyo doesn't read `X-Forwarded-For`, so put rules for visitors in your CDN.
-- Services see the CDN as their client. To get the visitor's address, read the header your CDN sets, like `CF-Connecting-IP`. Only trust it once the firewall and mTLS are in place.
+- Services see the CDN as their client. To get the visitor's address, read the header your CDN sets, like `CF-Connecting-IP`. Pyo Gateway passes it on only while mTLS is on, or to a service [behind Cloudflare](/docs/firewall#behind-cloudflare). See [Client IP headers](#client-ip-headers).
+- Pyo's own sign-in limits and audit log see the CDN's address too, until you list the CDN's ranges in `PYO_TRUSTED_PROXIES`. See [Client IP headers](#client-ip-headers).
 - The CDN decrypts your traffic to do its job, so choose one you trust with it.
+
+### Client IP headers
+
+Headers like `CF-Connecting-IP` name the visitor, but any client can send them. So Pyo Gateway removes these from every request: `CF-Connecting-IP`, `CF-Connecting-IPv6`, `True-Client-IP`, `Fastly-Client-IP`, `X-Real-IP`, `X-Client-IP` and `Forwarded`. They only get through where your CDN is the only one who can connect:
+
+| Where | What gets through |
+| --- | --- |
+| HTTPS with [mTLS](#require-the-cdns-certificate-with-mtls) on | `CF-Connecting-IP`, `CF-Connecting-IPv6`, `True-Client-IP` and `Fastly-Client-IP` |
+| HTTPS of a service [behind Cloudflare](/docs/firewall#behind-cloudflare) | `CF-Connecting-IP` and `CF-Connecting-IPv6` |
+| Everything else, plain HTTP included | None of them |
+
+`X-Forwarded-For` always stays. The gateway adds the address it saw at the end, so the last entry is the one to trust.
+
+Pyo itself never takes the visitor from `CF-Connecting-IP` on a request that came through the gateway. It reads `X-Forwarded-For` from right to left and skips the addresses in `PYO_TRUSTED_PROXIES`. By default that's the cluster's pod network, where the gateway runs. The first address not in the list is the visitor. Sign-in limits, rate limits and the [audit log](/docs/audit-log) all use it.
+
+With the dashboard behind a CDN and mTLS, that first address is the CDN's. To see the real visitor, add your CDN's IP ranges after the default. This example shows two of Cloudflare's, so list them all:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo \
+  PYO_TRUSTED_PROXIES=10.42.0.0/16,2001:cafe:42::/56,173.245.48.0/20,2400:cb00::/32
+```
+
+Cloudflare lists its ranges at [cloudflare.com/ips](https://www.cloudflare.com/ips/). Keep mTLS on, because anyone with an account on the same CDN can send requests from its ranges. If cloudflared on the server itself sends requests straight to Pyo on port 8000, add `127.0.0.1/32`. Pyo then takes the visitor from its `CF-Connecting-IP`.
 
 ## 4. Save your master key
 
@@ -131,7 +155,7 @@ These protect you out of the box, so leave them on unless you have a reason:
 - Visitor IP addresses not being kept, in [installation settings](/docs/installation-settings)
 - [Encrypted secrets](/docs/encryption): mark passwords and tokens as secret, so they aren't stored as variables
 - Limits on sign-in attempts. After 10 wrong passwords for one email, or 30 failed sign-ins from one IP address, within 15 minutes, Pyo answers "Too many attempts" until the 15 minutes are up. Signing in resets the email's count. Other attempts are limited too: 30 failed passkey sign-ins per IP address, 10 wrong passwords per account when adding a passkey, and 20 sign-ups per IP address an hour.
-- For these limits, the IP address is the connection's own, or the one Pyo Gateway reports for it. A forwarded address from anywhere else, your tailnet included, is ignored. If you put another proxy in front of Pyo, list its addresses in `PYO_TRUSTED_PROXIES` as comma-separated ranges. This replaces the default, `10.42.0.0/16,2001:cafe:42::/56`.
+- For these limits, the IP address is the connection's own, or the one Pyo Gateway reports for it. A forwarded address from anywhere else, your tailnet included, is ignored. If you put another proxy in front of Pyo, list its addresses in `PYO_TRUSTED_PROXIES` as comma-separated ranges. This replaces the default, `10.42.0.0/16,2001:cafe:42::/56`, so keep those in the list. See [Client IP headers](#client-ip-headers).
 - Sessions: you're signed out after 7 days without using Pyo, and 30 days after signing in.
 - Invite links: people join a team with the link from their invite, not by signing up with the invited address. See [Inviting your team](/docs/teams#invite-people).
 
