@@ -53,6 +53,8 @@ Each preview has one URL that stays the same across pushes. Pyo picks it in this
 2. On a cluster with a preview domain, like `preview.example.com`, they get `web-pr-42.preview.example.com`.
 3. Otherwise they get a [free domain](/docs/domains#free-domains) on the cluster's address, like `web-pr-42.203.0.113.7.nip.io`.
 
+On a cluster in [Cloudflare Tunnel](/docs/cloudflare-tunnel) mode, public previews go under the tunnel's default domain instead, like `web-pr-42.example.com`, and the preview domain isn't used. Without a default domain, they get no URL until you pick one.
+
 Long names are shortened with a short hash, so each part of the URL stays within 63 characters.
 
 ### Preview domain
