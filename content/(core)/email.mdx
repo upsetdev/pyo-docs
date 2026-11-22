@@ -1,8 +1,58 @@
 ---
 title: Setting up email
-description: Send invites through your own SMTP server.
+description: Send invites, sign-in links and security emails through your own SMTP server.
 ---
 
-Pyo sends email through an <Term tip="The server that sends email for you. Your email provider gives you its host, port and login.">SMTP server</Term> you choose. An installation admin sets it up under **Settings → Email**. Enter the host, port, encryption, username, password and sender address. You can send a test email from the same page.
+Pyo sends email through an <Term tip="The server that sends email for you. Your email provider gives you its host, port and login.">SMTP server</Term> you choose. An installation admin sets it up under **Settings → Email**. Without it, Pyo sends no email, and you share invite and sign-in links yourself.
 
-For now, email is only used for team invites. Notifications aren't sent by email yet.
+On Pyo Cloud, email is set up for you.
+
+## What Pyo sends
+
+- **Team invites:** when someone [invites a person](/docs/teams) to a team.
+- **Sign-in links:** from **Forgot password?** on the sign-in page, and when a team owner resets a member's sign-in. See [Getting back in](/docs/getting-back-in).
+- **Two-factor turned off:** when [two-factor authentication](/docs/two-factor) is turned off on an account.
+- **New API keys:** when an [API key](/docs/api) is made on an account, in the dashboard or by the CLI.
+- **Test email:** when you send one from the settings page.
+
+Each email has a plain text part and an HTML part. Its links open the dashboard URL you set.
+
+## Set it up
+
+Open **Settings → Email** and pick your provider. A provider fills in the host, port, encryption and, where it has one, the username. For anything else, pick **Other SMTP server**.
+
+| Field | What to enter |
+| --- | --- |
+| Host | The SMTP server's host name, like `smtp.resend.com` |
+| Port | `587` for STARTTLS or `465` for TLS. A local relay often uses `25`. |
+| Encryption | **STARTTLS** on port 587, **TLS** on port 465, or **None** for a relay on your own network |
+| Username | The SMTP login. Leave it empty if the server needs none. |
+| Password | The SMTP password. Pyo stores it [encrypted](/docs/encryption). Leave it empty to keep the saved one. |
+| From name | The sender's name. It starts as `Pyo`. |
+| From address | An address on a domain your provider lets you send from |
+| Dashboard URL | The address your team opens Pyo at. Links in emails use it. |
+
+In the API and CLI, the encryption values are `starttls`, `tls` and `none`.
+
+Click **Save**. The settings apply to every team.
+
+## Send a test email
+
+After saving, click **Send test email**. Pyo sends it to your own address. If it fails, the page shows the SMTP server's answer, like a wrong password or a timeout.
+
+## Blocked ports
+
+Some hosts block outgoing mail ports to stop spam. Hetzner, for example, blocks ports 25 and 465 by default. A test email then times out. Use port 587 with STARTTLS, or another port your provider offers, like Resend's 2587.
+
+## Example: Resend
+
+1. In Resend, add your domain and verify it.
+2. Create an API key with sending access.
+3. In Pyo, pick **Resend** as the provider. It fills in host `smtp.resend.com`, port `587`, **STARTTLS** and username `resend`.
+4. Paste the API key as the password.
+5. Use an address on the verified domain as the from address, like `pyo@example.com`.
+6. Save, then send a test email.
+
+## Turn it off
+
+**Turn off email** at the bottom of the page removes the settings. Email stops for every team.
