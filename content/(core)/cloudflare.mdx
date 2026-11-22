@@ -14,7 +14,14 @@ In the Cloudflare dashboard, open **My Profile → API Tokens** and choose **Cre
 | Zone | Zone | Read |
 | Zone | DNS | Edit |
 
-Under **Zone Resources**, include only the zones Pyo may use, like `example.com`. Leave the rest as it is, then create the token and copy it. Cloudflare shows it once.
+For [Cloudflare Tunnel](/docs/cloudflare-tunnel), add these too:
+
+| Type | Resource | Permission |
+| --- | --- | --- |
+| Zone | SSL and Certificates | Edit |
+| Account | Cloudflare Tunnel | Edit |
+
+Under **Zone Resources**, include only the zones Pyo may use, like `example.com`. Under **Account Resources**, include only the account they're in. Leave the rest as it is, then create the token and copy it. Cloudflare shows it once.
 
 ## Connect it
 
@@ -22,8 +29,9 @@ Team owners and admins save the token on the **Cloudflare** card under **Integra
 
 - It lists the zones the token can read.
 - In each zone, it makes and deletes a TXT record named `_pyo-check`, to check it can edit DNS there.
+- Once in each account, it makes and deletes a tunnel named `pyo-check-…`, and in each zone it reads the Origin CA certificates. That checks the tunnel permissions.
 
-The card shows the zones Pyo can use, and the permission it lacks in the others. Choose **Test** to check again after you change the token in Cloudflare. **Replace** saves a new token, and **Remove** forgets it. Records Pyo made stay in Cloudflare when you remove it.
+The card shows the zones Pyo can use, and the permission it lacks in the others. Zones that can use Cloudflare Tunnel show in green, and zones without its permissions say **DNS only**. Choose **Test** to check again after you change the token in Cloudflare. **Replace** saves a new token, and **Remove** forgets it. Records Pyo made stay in Cloudflare when you remove it. A team with a Cloudflare Tunnel must remove the tunnel first.
 
 The token is stored encrypted, like your other keys, and never shown again. Members without the owner or admin role can't see or change it. Pyo only sends it to `https://api.cloudflare.com`.
 
@@ -67,6 +75,10 @@ Certificates renew through Cloudflare, so set these in Cloudflare under **SSL/TL
 - **Always Use HTTPS:** off. Pyo already sends visitors from HTTP to HTTPS, and Let's Encrypt checks your domain over plain HTTP.
 
 To see your visitors' own addresses and let only Cloudflare reach the service, turn on [Behind Cloudflare](/docs/firewall#behind-cloudflare) on the service's **Firewall** tab.
+
+## Cloudflare Tunnel
+
+With the tunnel permissions, a cluster can take its websites in through [Cloudflare Tunnel](/docs/cloudflare-tunnel), with no open ports on its servers. Pyo makes the tunnel, its records and its certificate.
 
 ## Wildcard certificates
 

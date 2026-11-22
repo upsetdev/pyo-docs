@@ -22,11 +22,17 @@ With [Tailscale](/docs/tailscale) set up, a service can also get a name on your 
 
 When you change it, the cluster's free domains move to the new address within seconds. A cluster without the chosen address has no free domain. Add your own domain instead.
 
+### In tunnel mode
+
+A cluster that takes its websites through [Cloudflare Tunnel](/docs/cloudflare-tunnel) gives free names under its tunnel's default domain, like `shop-web.example.com`, instead of nip.io. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no free domain, and the dialog says to pick one.
+
+Its nip.io domains stop answering from the internet in tunnel mode. They answer again when the cluster goes back to public ports, with nothing to move.
+
 ## Custom domains
 
 Add your domain to a service, then point its DNS at your cluster. Pyo checks the DNS and tells you when the domain is active.
 
-Is your DNS on Cloudflare? [Connect Cloudflare](/docs/cloudflare) and Pyo creates the record for you.
+Is your DNS on Cloudflare? [Connect Cloudflare](/docs/cloudflare) and Pyo creates the record for you. On a cluster in [tunnel mode](/docs/cloudflare-tunnel), Pyo points the domain at the tunnel instead, and **Switch to Tunnel** and **Switch back** move a domain there and back.
 
 ## Changing domains
 
@@ -91,3 +97,5 @@ Some ports can't be public, because the servers or Pyo use them:
 | --- | --- |
 | TCP | 22, 53, 80 and 443 (for websites), 2379, 2380, 6443, 10080, 10443, 10250, 19000 to 19003 |
 | UDP | 53, 8472, 51820, 51821 |
+
+In [tunnel mode](/docs/cloudflare-tunnel#tcp-and-udp-ports), public TCP and UDP ports stay on the servers by default. They don't go through the tunnel. Turn off **Public TCP and UDP ports** under the cluster's **Traffic** to close them too.

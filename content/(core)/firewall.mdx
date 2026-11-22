@@ -64,6 +64,8 @@ Turn on **Behind Cloudflare** on the service's **Firewall** tab when your servic
 
 Pyo Gateway only reads the visitor's address from a connection that comes from Cloudflare's current ranges. It takes the address Cloudflare adds to `X-Forwarded-For`, which is the same one it sends in `CF-Connecting-IP`. A client that connects directly is turned away, whatever headers it sends.
 
+Domains through [Cloudflare Tunnel](/docs/cloudflare-tunnel) don't need this switch. Pyo Gateway takes their visitor only from the tunnel's connectors, and once a domain is switched, only the tunnel gets in.
+
 Set Cloudflare's SSL/TLS mode to **Full (strict)**. Over plain HTTP, Pyo Gateway only checks that the request came from Cloudflare. Your other rules and rate limits apply over HTTPS. Behind Cloudflare applies to websites. It doesn't change TCP and UDP ports.
 
 <Callout type="info">

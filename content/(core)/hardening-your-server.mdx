@@ -65,6 +65,10 @@ Pyo encrypts your [secrets](/docs/encryption), but not what your services write 
 - Protect your provider account with two-factor sign-in. Whoever controls it controls your servers and firewall, whatever else you've done.
 - Don't give the server cloud credentials or an <Term tip="Permissions your cloud provider gives the server itself, so programs on it can use your cloud account.">instance role</Term> it doesn't need. Pyo doesn't block your provider's <Term tip="An address inside each cloud server that hands out details about it, sometimes including cloud credentials.">metadata service</Term>, so a compromised service could read from it. If your provider's settings allow it, block containers from reaching it.
 
+## Close ports 80 and 443
+
+With [Cloudflare Tunnel](/docs/cloudflare-tunnel), your websites need no open ports. Close 80 and 443 in your cloud provider's firewall. The tunnel's connector only needs to reach Cloudflare on TCP port 7844, outbound.
+
 ## Check it from outside
 
 From a different network, scan your server's public address:

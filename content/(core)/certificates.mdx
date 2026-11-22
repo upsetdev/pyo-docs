@@ -19,6 +19,10 @@ Set a domain's HTTPS to your own certificate, then pick one that covers that hos
 
 Replace a certificate before it expires, using the same page. Domains using it switch to the new one without a redeploy. Removing one deletes its private key from Pyo.
 
+## Cloudflare Tunnel's certificate
+
+A cluster with a [Cloudflare Tunnel](/docs/cloudflare-tunnel) gets a Cloudflare Origin CA certificate, listed here as **Cloudflare Tunnel** with the cluster's name. Pyo makes its key and issues it for every name that goes through the tunnel, for 15 years. Only the tunnel's connector sees it, and visitors see Cloudflare's own certificate. Pyo issues a new one when a new name needs it, and when you rotate the tunnel.
+
 ## Mutual TLS (mTLS)
 
 If a <Term tip="A network of servers, like Cloudflare, that sits between visitors and your servers to speed up and protect your sites.">CDN</Term> sits in front of your services, it can present a certificate to prove that a request came through it. This is called mTLS. [Securing Pyo](/docs/securing-pyo#require-the-cdns-certificate-with-mtls) shows how to require it on your servers.

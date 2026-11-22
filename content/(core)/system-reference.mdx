@@ -180,6 +180,9 @@ Pyo also relies on these, outside that namespace:
 | k3s | The host | The Kubernetes distribution everything runs on. |
 | Gateway controller (Envoy Gateway) | `pyo-gateway` | Sets up the gateway's proxies, and keeps your sites' certificates. See [Pyo Gateway](/docs/gateway). |
 | Gateway proxy (Envoy) | `pyo-gateway` | One on each server, except build-only servers. Takes traffic on ports 80 and 443, and public TCP and UDP ports, and routes it to your services. Published on the servers only while the cluster [accepts public traffic](/docs/clusters#public-traffic). |
+| `pyo-tunnel` | `pyo-system` | Two cloudflared connectors, on different servers when it can, while the cluster has a [Cloudflare Tunnel](/docs/cloudflare-tunnel). They dial out to Cloudflare and hand requests to the gateway through `pyo-tunnel-origin`. The tunnel's token is the `pyo-tunnel` Secret. |
+| `pyo-tunnel-origin` | `pyo-gateway` | The gateway's HTTPS inside the cluster, for the tunnel's connectors. |
+| `pyo-public-ports` | `pyo-gateway` | Public TCP and UDP ports on the servers while the cluster takes its websites through the tunnel. |
 | `pyo-tailnet` | `pyo-system` | One on each server that runs a gateway proxy, once [Tailscale](/docs/tailscale) is set up. Hosts Pyo's names on the tailnet and keeps their certificates. |
 | `pyo-forward` | `pyo-system` | On the machine Pyo runs on. Answers port 8000 from the machine itself, private networks and the tailnet, and the registry's port 5006 from the tailnet only. |
 | Gateway API | The cluster | The standard routing objects Pyo Gateway reads. k3s 1.37 and later include it. On older k3s, Pyo installs it, and k3s takes it over when you upgrade to 1.37. It stays if you remove Pyo. |

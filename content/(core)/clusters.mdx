@@ -54,18 +54,20 @@ The **Workloads** tab opens on your team's **Services**, with their project, kin
 | Pyo | Pyo itself, on the server it runs on |
 | Cluster | Everything else the cluster runs, like k3s's DNS |
 
-## Public traffic
+## Traffic [#public-traffic]
 
-**Accept public traffic**, on a cluster's **Settings** tab, decides whether the cluster answers visitors. It's on by default.
+**Traffic**, on a cluster's **Settings** tab, decides how the cluster answers visitors. It's **Public ports** by default.
 
-- **On:** every server runs [Pyo Gateway](/docs/gateway) on ports 80 and 443 and your public TCP and UDP ports, except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Ports a service opens directly on the servers are open too. These are a **Port on every server**, or a [public port](/docs/domains#public-tcp-and-udp-ports) with the gateway turned off.
-- **Off:** nothing in the cluster is public. No server answers on the gateway's ports or on the ports services open directly. Services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until it's back on.
+- **Public ports:** every server runs [Pyo Gateway](/docs/gateway) on ports 80 and 443 and your public TCP and UDP ports, except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Ports a service opens directly on the servers are open too. These are a **Port on every server**, or a [public port](/docs/domains#public-tcp-and-udp-ports) with the gateway turned off.
+- **Tailscale only:** nothing in the cluster is public. No server answers on the gateway's ports or on the ports services open directly. Services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until it's back on.
 
 With [free domains](/docs/domains#free-domains) on **Tailscale**, services' websites are reachable from your tailnet on ports 80 and 443, whether public traffic is on or off. Each server's Tailscale address answers, except on build-only servers. Nothing else opens. A service's [firewall](/docs/firewall) and [WAF](/docs/waf) apply there too, and they see each device's own tailnet address.
 
-Turning it back on opens the same ports again. A **Port on every server** keeps the number it had.
+- **Cloudflare Tunnel:** websites come in through [Cloudflare Tunnel](/docs/cloudflare-tunnel), with no ports 80 and 443 open. Public TCP and UDP ports stay on the servers unless you turn them off. They don't go through the tunnel.
 
-If another program in the cluster still holds ports 80 and 443 on a server, like k3s's Traefik, the gateway can't get them there. The cluster's **Networking** tab and its setup checklist then say `Ports 80 and 443 are in use on <server>`, and so does `pyo status`. Your services' sites don't answer on that server until you stop that program. The gateway takes the ports once they're free.
+Going back to **Public ports** opens the same ports again. A **Port on every server** keeps the number it had.
+
+If another program in the cluster still holds ports 80 and 443 on a server, like k3s's Traefik, the gateway can't get them there. The cluster's **Networking** tab and its setup checklist then say `Ports 80 and 443 are in use on <server>`, and so does `pyo status`. Your services' sites don't answer on that server until you stop that program. The gateway takes the ports once they're free. Or pick **Cloudflare Tunnel**, which needs neither port.
 
 Pyo doesn't check whether a server can be reached from the internet. A server with only a private or tailnet address runs the gateway too. It answers anyone who can reach that address.
 
