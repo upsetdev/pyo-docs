@@ -2471,7 +2471,7 @@
           "Databases"
         ],
         "summary": "Start an upload",
-        "description": "The first step of uploading a dump to import: say what it is and get\nwhere to send it. Then `PUT` the file to `uploadUrl` as it is, before\n`expiresAt`, with exactly the `headers` given and nothing else. Send no\ncookies or API key, since the URL may be on another host. Then call\n`startDatabaseImport` with `uploadId`. Postgres takes `.sql`, `.sql.gz`\nor a custom-format `.dump` (pg_dump -Fc). MySQL takes `.sql` or\n`.sql.gz` (mysqldump). The dump stays in the team's storage in Pyo until\nits import succeeds, or for `PYO_DATABASE_IMPORT_RETENTION_HOURS` (24 by\ndefault) when unused. At most `PYO_DATABASE_IMPORT_MAX_BYTES` (10 GiB by\ndefault). Owners and admins.\n\nAPI key access: **full**.",
+        "description": "The first step of uploading a dump to import: say what it is and get\nwhere to send it. Then `PUT` the file to `uploadUrl` as it is, before\n`expiresAt`, with exactly the `headers` given and nothing else. Send no\ncookies or API key, since the URL may be on another host. Or send it in\nparts of `partSize` bytes with `uploadDatabaseDumpPart`, then\n`completeDatabaseDumpUpload`, so no request is bigger than a proxy in\nfront takes. Then call `startDatabaseImport` with `uploadId`. Postgres takes `.sql`, `.sql.gz`\nor a custom-format `.dump` (pg_dump -Fc). MySQL takes `.sql` or\n`.sql.gz` (mysqldump). The dump stays in the team's storage in Pyo until\nits import succeeds, or for `PYO_DATABASE_IMPORT_RETENTION_HOURS` (24 by\ndefault) when unused. At most `PYO_DATABASE_IMPORT_MAX_BYTES` (10 GiB by\ndefault). Owners and admins.\n\nAPI key access: **full**.",
         "operationId": "createDatabaseDumpUpload",
         "requestBody": {
           "content": {
@@ -2485,7 +2485,7 @@
         },
         "responses": {
           "200": {
-            "description": "`uploadId` (for `startDatabaseImport`), and where to send the file: `uploadUrl` (relative to your Pyo's address when it starts with `/`), `method` (\"PUT\"), `headers` (send exactly these) and `expiresAt` (start sending before it).",
+            "description": "`uploadId` (for `startDatabaseImport`), and where to send the file: `uploadUrl` (relative to your Pyo's address when it starts with `/`), `method` (\"PUT\"), `headers` (send exactly these) and `expiresAt` (start sending before it). For parts: `partSize` (bytes in each part but the last) and `parts` (how many).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2653,6 +2653,300 @@
           {}
         ],
         "x-pyo-access": "none"
+      }
+    },
+    "/database-imports/uploads/{id}/parts/{n}": {
+      "put": {
+        "tags": [
+          "Databases"
+        ],
+        "summary": "Send a part of an upload's file",
+        "description": "Part `n` (from 0) of the file, as the request's body: exactly\n`partSize` bytes, the last part what's left. Parts go in order. Send a\npart again when its request failed: one that arrived already is taken\nonce. `x-pyo-sha256` may carry the part's SHA-256 (hex), to check it on\narrival. Owners and admins.\n\nAPI key access: **full**.",
+        "operationId": "uploadDatabaseDumpPart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The upload's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "n",
+            "in": "path",
+            "description": "The part, from 0.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The part's bytes.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Stored: `received` (parts so far) and `parts`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not the next part, not its size or SHA-256, or not what the file's name says.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You aren't an owner or admin of the team, or the API key can't make changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such upload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The upload is complete already, or sent in one request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The upload expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/database-imports/uploads/{id}": {
+      "get": {
+        "tags": [
+          "Databases"
+        ],
+        "summary": "An upload in parts",
+        "description": "How far an upload's file got: `state` (\"pending\" before any part,\n\"uploading\", \"uploaded\"), `parts` and `received` (the next part to send\nis this). Owners and admins.\n\nAPI key access: **full**.",
+        "operationId": "getDatabaseDumpUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The upload's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`uploadId`, `state`, `partSize`, `parts` and `received`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You aren't an owner or admin of the team, or the API key can't make changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such upload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/database-imports/uploads/{id}/complete": {
+      "post": {
+        "tags": [
+          "Databases"
+        ],
+        "summary": "Finish an upload in parts",
+        "description": "Once every part is sent: Pyo puts the file together in the team's\nstorage and checks it against `sha256`, when given. Then call\n`startDatabaseImport` with `uploadId`. Owners and admins.\n\nAPI key access: **full**.",
+        "operationId": "completeDatabaseDumpUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The upload's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Stored: `uploadId`, `size`, `sha256`, `format`, `extensions` (Postgres: the ones it makes) and `sourceVersion` (what it was dumped from, when it says).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parts are missing (`getDatabaseDumpUpload` says how many arrived), or the file isn't the one sent (the upload is gone then: start again).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You aren't an owner or admin of the team, or the API key can't make changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such upload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
       }
     },
     "/source-uploads": {
@@ -6409,6 +6703,19 @@
         "x-tags": [
           "Integrations"
         ]
+      },
+      "CompleteUpload": {
+        "type": "object",
+        "description": "The end of an upload in parts.",
+        "properties": {
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The whole file's SHA-256 (hex), when known: it's checked."
+          }
+        }
       },
       "ComposePlan": {
         "type": "object",
