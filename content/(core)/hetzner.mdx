@@ -21,8 +21,6 @@ Pyo can make servers for you in [Hetzner Cloud](https://www.hetzner.com/cloud). 
 
 In Pyo, open **Integrations** and paste the token on the **Hetzner** card. Pyo checks it by listing Hetzner's locations before saving it. **Test** lists them again, **Replace** takes a new token and **Remove** forgets it.
 
-With the CLI, `pyo hetzner connect` reads the token from `PYO_HETZNER_TOKEN` or asks for it without showing it.
-
 ## Add a server
 
 Open a cluster, choose **Add server**, then **Hetzner**:
@@ -38,17 +36,9 @@ To make a new cluster on Hetzner, choose **Add cluster**, then **Hetzner**. Pyo 
 
 To make a [sandbox server](/docs/sandbox#cloud-provider), open **Sandboxes**, choose **Add a sandbox server**, then **Cloud provider**. It runs sandboxes on gVisor, since Hetzner Cloud servers have no KVM.
 
-From the CLI:
-
-```bash
-pyo server types --location fsn1
-pyo server create --cluster prod --location fsn1 --type cx22
-pyo server create --new-cluster edge --location ash --type cpx21
-```
-
 ## Remove a server
 
-Remove it from the server's page, from the **Hetzner** card, or with `pyo server delete <name>`. Pyo shows the monthly cost that stops and asks first. Then it:
+Remove it from the server's page or from the **Hetzner** card. Pyo shows the monthly cost that stops and asks first. Then it:
 
 1. Moves the server's services to the other servers and takes it out of the cluster, like [removing any server](/docs/servers#maintenance).
 2. Takes it off your tailnet.

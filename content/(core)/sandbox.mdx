@@ -73,13 +73,6 @@ The page then follows the server: **Creating**, **Booting**, **Joining**, **Read
 
 Hetzner Cloud servers have no KVM, so they run sandboxes on [gVisor](#what-gvisor-cant-do). Pyo puts them behind a Hetzner firewall that lets in only the web (80 and 443) and Tailscale, and they run nothing else.
 
-From the CLI:
-
-```bash
-pyo server types --location fsn1
-pyo sandbox servers create sbx-1 --location fsn1 --type cx22
-```
-
 Removing the server in Pyo ends its sandboxes, takes it off your tailnet and deletes it at Hetzner. Pyo shows the monthly cost that stops and asks first.
 
 ### Command line
