@@ -57,6 +57,8 @@ The source:
 - **Connection URL:** the database to copy, like `postgres://user:password@host:5432/database` or `mysql://user:password@host:3306/database`. It must accept connections from your cluster's servers. For TLS, add `?sslmode=require`, or `verify-ca` or `verify-full`. MySQL URLs also take `ssl-mode=REQUIRED`. Pyo copies only the database the URL names.
 - **Dump file:** for Postgres, a `.sql`, `.sql.gz` or custom-format `.dump` (`pg_dump -Fc`). For MySQL, a `.sql` or `.sql.gz` (`mysqldump`). The file is uploaded to Pyo and kept until the import succeeds, or for 24 hours, then deleted. Files can be up to 10 GiB. The installation sets both limits with `PYO_DATABASE_IMPORT_MAX_BYTES` and `PYO_DATABASE_IMPORT_RETENTION_HOURS`. Uploads need Pyo's built-in store, but the database itself can be on any cluster.
 
+  The dashboard and `pyo db import --file` send the file in parts of 16 MiB, so no request is bigger than a proxy in front of Pyo takes, like Cloudflare's 100 MB. A part that fails is sent again, and the upload goes on from there. Through the API, send the parts with [`uploadDatabaseDumpPart`](/docs/api/reference/databases/upload-database-dump-part), then finish with [`completeDatabaseDumpUpload`](/docs/api/reference/databases/complete-database-dump-upload).
+
 ### What's checked first
 
 Before anything is created or copied, your cluster connects to the source and to the database you import into. You get a clear error when the source:
