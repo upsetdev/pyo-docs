@@ -25,6 +25,14 @@ Some of our updates change more than the agent. Your cluster then shows **Update
 
 Your databases don't restart when we update Pyo Cloud, or when the agent updates. They move to their new images when you run that command. The panel says **Restarts your databases once** when it will restart them, so you choose the moment. Each restart is recorded in your team's **Activity**, like "Restarting the database main for an update". See [When databases restart](/docs/updating-pyo#when-databases-restart).
 
+## Automatic updates on your server
+
+The connect command and the command under **Refresh this cluster** come with **Keep this cluster up to date automatically**, ticked. It sets up automatic updates on the cluster's first server. Pyo Cloud only names its version. Your server checks that version's signed release itself, and never moves to an earlier one. Pyo Cloud can't push anything to your cluster this way.
+
+For now, automatic updates only set themselves up. After an update, your cluster still shows **Update needed**, and you still run the command under **Refresh this cluster**. The panel there says "Automatic updates are set up on this cluster".
+
+To leave them off, untick the box before you copy the command. To pause them on a server, set `hold=true` in `/etc/pyo/verify.conf`.
+
 ## Which versions
 
 Agents update only to versions we've released. The signing service refuses any other. See [Signed commands](/docs/cloud/security#signed-commands).
