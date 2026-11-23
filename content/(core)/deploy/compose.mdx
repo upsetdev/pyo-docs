@@ -44,7 +44,7 @@ Choose **Deploy** to create the project and deploy its services. Nothing is crea
 | --- | --- |
 | `image` | The service runs that image. |
 | `build` | Pyo builds it from the repository. This needs an import from a repository. |
-| `ports` | A published port becomes public. A web port gets a suggested free domain. Other ports become public TCP or UDP ports through the gateway. A [reserved port](/docs/domains#public-tcp-and-udp-ports) stays inside the project, with a warning. Ports that only other services use stay inside the project. |
+| `ports` | A published port becomes public. A web port gets a suggested domain. Other ports become public TCP or UDP ports through the gateway. A [reserved port](/docs/domains#public-tcp-and-udp-ports) stays inside the project, with a warning. Ports that only other services use stay inside the project. |
 | Database images | Well-known images like PostgreSQL, MySQL, Redis and MongoDB get their usual port, even if the file doesn't list it. |
 | `environment`, `env_file` | [Environment variables](/docs/deploy/environment). `${VARIABLE}` and `${VARIABLE:-default}` are filled in from the `.env` file. |
 | Secret-looking variables | Names like `PASSWORD`, `TOKEN` or `API_KEY` become secrets, encrypted like any other secret. |

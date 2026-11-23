@@ -24,7 +24,7 @@ When you change it, the cluster's free domains move to the new address within se
 
 ### In tunnel mode
 
-A cluster that takes its websites through [Cloudflare Tunnel](/docs/cloudflare-tunnel) gives free names under its tunnel's default domain, like `shop-web.example.com`, instead of nip.io. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no free domain, and the dialog says to pick one.
+A cluster that takes its websites through [Cloudflare Tunnel](/docs/cloudflare-tunnel) gives each service a tunnel domain instead of a free one. It's a name under the tunnel's default domain, like `shop-web.example.com`. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no tunnel domain, and the dialog says to pick one.
 
 Its nip.io domains stop answering from the internet in tunnel mode. They answer again when the cluster goes back to public ports, with nothing to move.
 
