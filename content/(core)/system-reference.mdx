@@ -36,6 +36,7 @@ These are the ones you're most likely to change.
 | `PYO_PASSKEY_ORIGINS` | Not set | More HTTPS addresses of the dashboard where [passkeys](/docs/passkeys#where-passkeys-work) work, comma-separated, like `https://pyo.example.com`. |
 | `PYO_ADMIN_PASSWORD` | Generated | The first admin's password. It's only read when an installation has no accounts yet, and it has to be replaced on first sign-in. |
 | `PYO_TRUSTED_PROXIES` | `10.42.0.0/16,2001:cafe:42::/56` | The proxies whose `X-Forwarded-For` Pyo believes, as comma-separated ranges. The default is the cluster's pod network, where Pyo Gateway runs. Behind a CDN, add its ranges after the default. See [Client IP headers](/docs/securing-pyo#client-ip-headers). |
+| `PYO_ADMIN_SIGNIN_ANYWHERE` | Not set | Set `1` to ignore the [admin sign-in](/docs/admin-sign-in) rule while it's set, so admins can sign in from anywhere. For an admin who's locked out. |
 | `PYO_ALLOW_PRIVATE_NETWORKS` | `true` | Lets teams use addresses on private networks, like your LAN or tailnet, for [registry logins](/docs/registries), [backup buckets](/docs/backups), [secret stores](/docs/external-secrets) and [GitLab](/docs/gitlab). Pyo's own server and cluster network are never allowed. Set `false` when people you don't fully trust run teams, as Pyo Cloud does. |
 | `MAXMIND_LICENSE_KEY` | Not set | Your <Term tip="A free database from MaxMind that maps IP addresses to countries and cities.">GeoLite2</Term> license key, to keep visitor location data up to date. Without one, Pyo uses the copy it ships with. |
 

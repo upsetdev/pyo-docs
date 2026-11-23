@@ -1,0 +1,61 @@
+---
+title: Admin sign-in
+description: Limit where the installation's admins can sign in from.
+---
+
+An installation admin can change everything in Pyo, for every team. **Admin sign-in** limits where admin accounts can sign in from: your tailnet, a list of IP addresses, or both. By default, admins can sign in from anywhere.
+
+It only applies to installation admins. Team owners, admins, developers and viewers sign in from anywhere, as before.
+
+## Set it up
+
+1. Open **Settings → Security** and find **Admin sign-in**.
+2. Turn on **Tailnet** to allow devices on your tailnet. The switch shows when Pyo has a [tailnet address](/docs/tailscale).
+3. Under **IP addresses**, add addresses or ranges, one per line. IPv4 and IPv6 both work, like `203.0.113.7` or `2001:db8::/48`. The field shows your own address.
+4. Choose **Save changes**.
+
+With both set, either one is enough. With neither, admins can sign in from anywhere. You can add up to 100 addresses.
+
+Pyo won't save a rule that shuts out the address you save it from. It asks you to add your address first.
+
+Only an installation admin can change this, and only from the dashboard. Each change is recorded in the **Activity** of the admin's teams.
+
+## What it restricts
+
+From anywhere else, an admin account:
+
+- **Can't sign in.** This covers a password, a two-factor code, a [passkey](/docs/passkeys), a sign-in link and `pyo login`. Pyo answers as it does for a wrong password, so the page tells nothing about the account or the rule.
+- **Has no dashboard session.** A browser that's already signed in is treated as signed out. The session works again once it's back at an allowed address.
+- **Keeps its API keys, without admin powers.** [API keys](/docs/api) and [MCP](/docs/mcp) connections keep working from anywhere, with the account's role in each team. They can't change the installation.
+
+Each refused sign-in is recorded in the account's [audit log](/docs/audit-log). With [email](/docs/email) set up, Pyo also emails the account.
+
+Pyo uses the visitor's address as described in [Client IP headers](/docs/securing-pyo#client-ip-headers). Behind a CDN, list the CDN's ranges in `PYO_TRUSTED_PROXIES` first. Otherwise Pyo sees the CDN's address and not yours.
+
+## If you're locked out
+
+Run this on the server Pyo runs on:
+
+```bash
+sudo pyo-reset-login
+```
+
+Open the link it prints. A link made on the server turns the rule off, so you can sign in from anywhere. It also turns off two-factor authentication for that account. See [Getting back in](/docs/getting-back-in#on-the-server). Set the rule again once you're in.
+
+A link from **Forgot password?** or from a team owner doesn't turn the rule off. From an address that isn't allowed, it answers like a used link. It still works from an allowed address.
+
+You can also make Pyo ignore the rule for a while:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_ADMIN_SIGNIN_ANYWHERE=1
+```
+
+While it's set, admins can sign in from anywhere, and the **Admin sign-in** panel says so. The saved rule isn't changed. To apply the rule again, remove the variable:
+
+```bash
+sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_ADMIN_SIGNIN_ANYWHERE-
+```
+
+## On Pyo Cloud
+
+On Pyo Cloud, the installation admins are our own staff, and we set this rule for them. It never applies to your account. Your team signs in from anywhere, and you can't change the rule.
