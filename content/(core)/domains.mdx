@@ -18,13 +18,13 @@ Without Tailscale, a server behind NAT has no free domain. A new service then op
 
 ### Tailnet domains
 
-With [Tailscale](/docs/tailscale) set up, a service can also get a name on your tailnet, like `blog.<tailnet>.ts.net`. Only devices on your tailnet can open it, over HTTPS with Tailscale's certificate. It needs no DNS record, since Pyo sets up the name on your tailnet. Choose **Tailnet** when you add a domain. It's there on clusters whose servers are on your tailnet. A name another device or Service on your tailnet already has shows **Taken on your tailnet**, and `pyo` and `registry` are kept for Pyo.
+With [Tailscale](/docs/tailscale) set up, a service can also get a name on your tailnet, like `blog.<tailnet>.ts.net`. Only devices on your tailnet can open it, over HTTPS with Tailscale's certificate. It needs no DNS record, since Pyo sets up the name on your tailnet. Choose **Tailscale** when you add a domain. It's there on clusters whose servers are on your tailnet. In the domain list, a tailnet domain shows the Tailscale logo. A name another device or Service on your tailnet already has shows **Taken on your tailnet**, and `pyo` and `registry` are kept for Pyo.
 
 When you change it, the cluster's free domains move to the new address within seconds. A cluster without the chosen address has no free domain. Add your own domain instead.
 
 ### In tunnel mode
 
-A cluster that takes its websites through [Cloudflare Tunnel](/docs/cloudflare-tunnel) gives each service a tunnel domain instead of a free one. It's a name under the tunnel's default domain, like `shop-web.example.com`. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no tunnel domain, and the dialog says to pick one.
+A cluster that takes its websites through [Cloudflare Tunnel](/docs/cloudflare-tunnel) gives each service a tunnel domain instead of a free one. Choose **Tunnel domain** when you add a domain. It's a name under the tunnel's default domain, like `shop-web.example.com`. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no tunnel domain, and the dialog says to pick one.
 
 Its nip.io domains stop answering from the internet in tunnel mode. They answer again when the cluster goes back to public ports, with nothing to move.
 
@@ -32,7 +32,7 @@ Its nip.io domains stop answering from the internet in tunnel mode. They answer 
 
 Add your domain to a service, then point its DNS at your cluster. Pyo checks the DNS and tells you when the domain is active.
 
-Is your DNS on Cloudflare? [Connect Cloudflare](/docs/cloudflare) and Pyo creates the record for you. On a cluster in [tunnel mode](/docs/cloudflare-tunnel), Pyo points the domain at the tunnel instead, and **Switch to Tunnel** and **Switch back** move a domain there and back.
+Is your DNS on Cloudflare? [Connect Cloudflare](/docs/cloudflare) and Pyo creates the record for you. On a cluster in [tunnel mode](/docs/cloudflare-tunnel), Pyo points the domain at the tunnel instead, and **Switch to Tunnel** and **Switch back** move a domain there and back. In the domain list, a domain that goes through the tunnel, or through a record Cloudflare proxies, shows the Cloudflare logo.
 
 ## Changing domains
 
