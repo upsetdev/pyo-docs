@@ -36,6 +36,8 @@ If the choice is greyed out, the cluster's agent can't run a tunnel yet, or its 
 
 Team owners and admins change a cluster's traffic.
 
+It works the same on Pyo Cloud. Your Cloudflare token stays with Pyo, and your cluster only gets the tunnel's own token. On Pyo Cloud, run the command under **Refresh this cluster** once before you turn it on.
+
 ## Move one domain
 
 On a service's **Domains** tab, select **Switch to Tunnel**. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME record. While the record moves, the domain answers both ways, through the tunnel and directly. Once it points at the tunnel, Pyo Gateway only lets the tunnel in. A client that connects to your server directly gets a 403.
