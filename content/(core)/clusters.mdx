@@ -91,7 +91,7 @@ Rotating a cluster's token from its **Settings** tab stops the current token fro
 
 ## Disconnecting
 
-**Remove cluster**, on its **Settings** tab, deletes nothing on the cluster. To also remove what Pyo put into it, see [Disconnect a cluster](/docs/uninstall#disconnect-a-cluster).
+**Remove cluster**, on its **Settings** tab, deletes nothing on the cluster. Its servers leave your tailnet, as in [Removing a cluster](/docs/tailscale#removing-a-cluster). To also remove what Pyo put into it, see [Disconnect a cluster](/docs/uninstall#disconnect-a-cluster).
 
 Pyo removes a cluster once its services are deleted or moved. If a cluster has been unreachable for 10 minutes, you can remove it with its services. Choose **Remove anyway** and type its name. Pyo forgets the cluster and its services, databases and volumes. Anything still running there is left alone.
 

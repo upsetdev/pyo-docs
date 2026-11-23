@@ -9,7 +9,7 @@ Pyo uses [Tailscale](https://tailscale.com) when you add a second server or conn
 
 ## Setting it up
 
-Tailscale is set up for each cluster. Pick the cluster on the card when there's more than one. A team admin sets it up for the team's clusters, and an installation admin for the cluster Pyo runs on. You need to be an Owner or Admin of your tailnet.
+Tailscale is set up once for each team, on **Integrations**. Every cluster of the team joins that tailnet, the ones you connect later too. A team admin sets it up. For the team that has the cluster Pyo runs on, an installation admin does. You need to be an Owner or Admin of your tailnet.
 
 1. In the Tailscale admin console, open [**Settings › Keys**](https://login.tailscale.com/admin/settings/keys) and generate an <Term tip="A token that acts as you on Tailscale's API.">API access token</Term> that expires in 1 day.
 2. In Pyo, open **Integrations** and paste it on the **Tailscale** card. Click **Check**.
@@ -23,6 +23,10 @@ Pyo then does the rest:
 - It deletes the token. If it can't, it tells you to delete it under **Settings › Keys**. It expires within a day anyway.
 
 Pyo never stores the token. Running the setup again on a tailnet that's set up changes nothing.
+
+### Before a cluster connects
+
+A team with no cluster yet can paste the token anyway. It stays in your browser tab, never in Pyo. [Connect a cluster](/docs/clusters), and the review opens as soon as it connects. Closing the tab drops the token.
 
 If your policy is managed in Git, Pyo doesn't edit it. It shows the lines to add there instead. Add them, then click **Check again**.
 
@@ -51,7 +55,24 @@ If your policy only allows some traffic, also let your tailnet reach `tag:pyo` o
 
 Pyo approves the servers that host its Services by itself. To have your policy approve them too, add `"autoApprovers": { "services": { "tag:pyo": ["tag:pyo"] } }`. The token setup adds both when they're needed.
 
-Pyo checks the client before saving it and says what's missing. **Test** checks it again. The cluster's agent keeps the client as a secret on the cluster and does Pyo's Tailscale work there, in signed commands. Pyo keeps only what isn't secret.
+Pyo checks the client before saving it and says what's missing. **Test** checks it again.
+
+## One cluster keeps it
+
+The OAuth client lives in one cluster of the team, as a secret in its `pyo-system` namespace. The card shows it under **Kept on**. Pyo picks the cluster it runs on, else the team's oldest connected cluster. That cluster's agent does Pyo's Tailscale work for every cluster of the team, in signed commands: their names on your tailnet and the keys their new servers join with. The other clusters keep no Tailscale credential at all. Pyo keeps only what isn't secret.
+
+While that cluster is offline, new servers can't join and names don't change. Servers already on your tailnet, names and certificates keep working. If the cluster is removed or gone for good, set Tailscale up again with a new token. Pyo then picks another cluster and lists the old OAuth client to delete.
+
+The card lists the team's clusters:
+
+- **On your tailnet**: a server of it is on your tailnet.
+- **Not on it yet**: none of its servers has joined.
+- **On another tailnet**: it keeps a client of its own for another tailnet. See [Clusters on another tailnet](#clusters-on-another-tailnet).
+- **Waiting for** the cluster that keeps it, while that one is offline.
+
+**Servers** counts Pyo's tagged devices on your tailnet. Tailscale plans include 50 tagged devices, and the card says so from 40 on.
+
+Clusters set up before 0.51.0 kept a client each. Pyo moves them to one by itself: the one on the most clusters' tailnet keeps it, and the others forget theirs. The card lists their OAuth clients to delete in the Tailscale console under [**Settings › Trust credentials**](https://login.tailscale.com/admin/settings/trust-credentials).
 
 The add-server and connect-cluster pages link to the card until Tailscale is set up, and take you back once it's saved.
 
@@ -59,7 +80,7 @@ The add-server and connect-cluster pages link to the card until Tailscale is set
 
 - **Pyo's own server joins your tailnet.** A timer on it asks Pyo for a key, installs Tailscale if needed and joins. This takes about a minute. Then it restarts k3s once to run it over your tailnet, so servers you add can reach it. If k3s doesn't come back, it puts the old setup back and tries again the next day. The **Tailscale** card shows how it's going.
 - **Pyo gets names on your tailnet.** `https://pyo.<tailnet>.ts.net` for the dashboard and API, `registry.<tailnet>.ts.net` for [Pyo's registry](/docs/registries#push-your-own-images), and `sandboxes.<tailnet>.ts.net` for [sandboxes'](/docs/sandbox) web pages, like the desktop. All use Tailscale's certificate on port 443.
-- **Servers join on their own.** Each command to add a [server](/docs/servers) or connect a [cluster](/docs/clusters) carries a fresh key: single use, valid for an hour, tagged `tag:pyo`.
+- **Servers join on their own.** Each command to add a [server](/docs/servers) or connect a [cluster](/docs/clusters) carries a fresh key: single use, valid for an hour, tagged `tag:pyo`. You never paste anything for a new cluster.
 - **Services get tailnet domains.** Like `blog.<tailnet>.ts.net`, reachable only from your tailnet. They need no DNS record, since Pyo sets up the name on your tailnet. See [Tailnet domains](/docs/domains#tailnet-domains).
 
 Pyo's names are [Tailscale Services](https://tailscale.com/kb/1552/tailscale-services), hosted by every server that runs a Pyo Gateway proxy. Pyo only touches Services it made. If a name is taken on your tailnet, Pyo picks `pyo-<cluster>` instead, then adds `-2`. An admin can rename them on the card. If someone else takes the sandboxes' name later, Pyo moves to the next free one by itself. A tailnet domain you type that's already taken shows **Taken on your tailnet**. `pyo`, `registry` and `sandboxes` are kept for Pyo.
@@ -78,9 +99,39 @@ The dashboard shows it too, while a new cluster, server or sandbox server waits:
 
 Once Pyo answers at `https://pyo.<tailnet>.ts.net`, turn off **Public dashboard** on the **Tailscale** card to close `https://pyo.<public-ip>.nip.io`. Pyo is then only on your tailnet and your own network. Turn it on again any time. Removing Tailscale opens it again too.
 
-## Removing Tailscale
+## Clusters on another tailnet
 
-**Remove** on the card deletes the cluster's names on your tailnet. Servers stay on your tailnet. Remove them in the Tailscale admin console if you like.
+A cluster that kept a client of its own for another tailnet stays there, and its own agent keeps doing its Tailscale work. Nothing about it changes by itself.
+
+A cluster with one server moves with **Move** on the card. Pyo deletes its names on the old tailnet, forgets its client, and moves its tailnet domains to your team's tailnet. Then run the command it shows on the server. The server leaves the old tailnet, joins yours, and k3s follows with one restart. Delete the old client in the old tailnet's console.
+
+### Move a cluster by hand
+
+A cluster with more servers runs k3s over its tailnet, so its servers' addresses can't all change at once. Move it like this:
+
+1. [Connect a new cluster](/docs/clusters). It joins your team's tailnet.
+2. Move its services to the new cluster.
+3. [Remove the old cluster](/docs/clusters#disconnecting) from Pyo.
+4. In the old tailnet's console, remove its servers and delete its OAuth client.
+
+## Removing a cluster
+
+When a cluster is removed, its servers leave the tailnet and Pyo's names for it are deleted. The cluster that keeps the client does it. For a cluster on another tailnet, another cluster of the team on that tailnet does it. When there's none, the card lists the servers to remove in that tailnet's console.
+
+Removing the cluster that keeps the client asks you to set Tailscale up again afterwards.
+
+## Disconnecting
+
+**Disconnect** on the card is for the whole team:
+
+- Every cluster of the team leaves your tailnet in Pyo.
+- New servers can't join.
+- Tailnet domains stop working.
+- For the team with Pyo's own cluster, Pyo's tailnet address stops working and the public dashboard opens again.
+
+Servers stay on your tailnet, since clusters with more servers run k3s over it. Remove them in the Tailscale console if you like, and delete the OAuth client the card names.
+
+On a self-hosted Pyo, a team without its own Tailscale still adds servers over the tailnet of the team that has Pyo's cluster.
 
 ## Websites on your tailnet
 

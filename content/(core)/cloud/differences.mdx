@@ -26,7 +26,7 @@ Pyo Cloud doesn't run on any of your servers, so **Add cluster** has no **This m
 
 ## Tailscale
 
-A cluster with several servers joins them over your own tailnet, as on [self-hosted](/docs/tailscale). Set it up for each cluster under **Integrations**. You paste a Tailscale token in the dashboard, Pyo passes it to your cluster's agent in a signed command, and the agent keeps the credential on your server. Pyo Cloud never joins your tailnet and never stores your Tailscale credentials.
+A cluster with several servers joins them over your own tailnet, as on [self-hosted](/docs/tailscale). Set it up once for the team under **Integrations**, and every cluster of the team joins it. You paste a Tailscale token in the dashboard, Pyo passes it to one of your clusters' agents in a signed command, and that agent keeps the credential on your server and does the Tailscale work for the team's other clusters. Pyo Cloud never joins your tailnet and never stores your Tailscale credentials.
 
 ## Backups
 
