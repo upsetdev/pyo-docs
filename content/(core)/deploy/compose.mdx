@@ -1,9 +1,11 @@
 ---
 title: Importing Docker Compose
-description: Turn a Compose file into a Pyo project, with a service for each Compose service.
+description: Turn a Compose file into a Pyo project, and keep the project in line with the file.
 ---
 
 If your project already runs with Docker Compose, Pyo can import the file. Each Compose service becomes a Pyo service in a new project. You review the result before anything is created.
+
+After the import, the same file can change the project. See [Sync a file again](#sync-a-file-again).
 
 ## Import a file
 
@@ -73,6 +75,128 @@ Pyo imports the rest of the file and tells you what it left out on each service.
 <Callout type="warn">
   Variables that aren't set in the `.env` are left empty. Fill them in on the services before you deploy.
 </Callout>
+
+## Pyo settings in the file
+
+Some settings have no field in Compose. Set them under `x-pyo` on a service. Docker Compose ignores keys that start with `x-`, so the file still works with Docker.
+
+| Key | What it sets |
+| --- | --- |
+| `domains` | The service's [domains](/docs/domains), as a list. They're served on its first web port, which becomes public. |
+| `behindCdn` | `cloudflare` or `none`. See [Behind Cloudflare](/docs/firewall#behind-cloudflare). |
+| `health` | The health check. A path like `/healthz`, or `tcp`, or `none`. |
+| `replicas` | How many replicas run. A whole number, 0 or more. |
+| `placement` | [Where the service runs](/docs/scaling#choosing-where-services-run), with `servers`, `tags` or both. |
+| `secrets` | Names of [secrets](/docs/deploy/environment#secrets) the service needs. Their values are set in Pyo, never in the file. |
+
+```yaml
+services:
+  web:
+    image: ghcr.io/acme/web:1.4.2
+    ports:
+      - "8080:8080"
+    environment:
+      LOG_LEVEL: info
+    x-pyo:
+      domains:
+        - app.example.com
+      behindCdn: cloudflare
+      health: /healthz
+      replicas: 2
+      placement:
+        tags: [eu]
+      secrets:
+        - STRIPE_API_KEY
+
+  worker:
+    image: ghcr.io/acme/worker:1.4.2
+    x-pyo:
+      replicas: 1
+      placement:
+        servers: [worker-1]
+```
+
+A secret named under `secrets` starts empty. Set its value on the service, then deploy. If the file also gives that variable a value, Pyo doesn't use it.
+
+A key Pyo doesn't know, or a value it can't read, is left out and listed with the service. The rest of the file still imports.
+
+## Sync a file again
+
+Run the same command again after you change the file:
+
+```bash
+pyo deploy -f compose.yaml
+```
+
+The first run makes the project. Every later run syncs it. Pyo shows what would change, asks, then changes only that.
+
+Each service in the plan has a mark:
+
+| Mark | Meaning |
+| --- | --- |
+| `+` | Added. It's in the file and not in the project yet. |
+| `~` | Changed, with each setting that changes. |
+| `=` | Unchanged. |
+| `-` | Not in the file any more. |
+
+### Options
+
+| Option | What it does |
+| --- | --- |
+| `--dry-run` | Shows the plan and changes nothing. |
+| `--prune` | Also deletes the services made from this file that are no longer in it. |
+| `--project` | The project to sync, by name or ID. |
+| `--cluster` | Where new services run. Without it, they run where the project's services run. |
+| `--team` | The team, by slug or ID. Without it, your first team. |
+| `--yes` | Applies without asking, for example in [CI](/docs/cli/ci). |
+
+Without `--project`, Pyo syncs the team's project that was made from a Compose file with the same project name. That's the file's `name`, or its folder's name.
+
+### What a sync changes
+
+Pyo compares only what the file sets. A setting you changed in Pyo stays when the file doesn't mention it.
+
+- Variables, ports, domains and volumes in the file are added or changed. Ones the file doesn't list stay.
+- A secret keeps the value it has in Pyo, whatever the file says.
+- A port that's public in Pyo stays public.
+- Replicas stay as they are on a service with [autoscaling](/docs/scaling#autoscaling).
+- Services whose settings change are deployed. A new domain, placement or CDN setting applies without a deploy.
+
+Some things can't change in place. Pyo lists them and leaves them as they are, for you to change by hand:
+
+- a volume that would move to another path
+- a service that would change its kind of source, like from an image to a build
+- a plain variable that the file names under `secrets`
+- a domain for a service with no public web port
+
+A sync is one change. If any part of it is refused, nothing changes.
+
+### What prune deletes
+
+Without `--prune`, a service that's no longer in the file stays. The plan only lists it.
+
+With `--prune`, Pyo deletes it, and only when it was made from this file. Its volumes are kept, detached from the service.
+
+Prune never touches:
+
+- services you made another way, or from another Compose file
+- [volumes](/docs/volumes)
+- [databases](/docs/databases)
+- [previews](/docs/deploy/previews)
+
+### Dry runs
+
+A dry run compares the file with the project. It doesn't run every check that applying does. So Pyo can still refuse the apply after a clean dry run. Two examples are a new service that has only a `build`, and a very large change in replicas.
+
+### Who can sync
+
+Developers, admins and owners can sync a project. Viewers can only see the plan with `--dry-run`. An [API key](/docs/api) has the role of the person who made it. Each sync is recorded in **Activity**.
+
+Sync works the same on Pyo Cloud and on your own Pyo.
+
+### From the API or MCP
+
+Sync isn't in the dashboard. Besides the CLI, the API has the `planComposeSync` endpoint for the plan and the `syncCompose` operation to apply it. Over [MCP](/docs/mcp), the tools are `plan_compose_sync` and `sync_compose`.
 
 ## After the import
 
