@@ -38,7 +38,7 @@ Team owners and admins change a cluster's traffic.
 
 ## Move one domain
 
-On a service's **Domains** tab, select **Switch to Tunnel**. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME record. While the record moves, the domain answers both ways, through the tunnel and directly. Once it points at the tunnel, Pyo Gateway only lets the tunnel in.
+On a service's **Domains** tab, select **Switch to Tunnel**. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME record. While the record moves, the domain answers both ways, through the tunnel and directly. Once it points at the tunnel, Pyo Gateway only lets the tunnel in. A client that connects to your server directly gets a 403.
 
 If Cloudflare already has a record for the name, Pyo shows it and asks before it replaces it. Pyo keeps a copy, so **Switch back** puts it back. Developers can switch a domain when nothing is in the way. Replacing a record, or putting one back, is for team owners and admins.
 
@@ -47,6 +47,10 @@ When you add a domain on a cluster in tunnel mode, **Through Cloudflare Tunnel**
 ## Free domains
 
 With a default domain, a cluster in tunnel mode gives each service a free name under it, like `web-shop.example.com`. Pyo makes one wildcard record, `*.example.com`, that points at the tunnel. Free names need no record of their own. A record you made for a name still comes first, so your existing sites aren't touched.
+
+A name under the default domain that no service has gets a 404.
+
+A name under the default domain always goes through the tunnel, so it has no **Switch back**. That goes for a free name and for a domain you add under it. Pyo refuses to move it back while the default domain covers it. The one exception is a name whose old record Pyo replaced. **Switch back** puts that record back, and it answers before the wildcard.
 
 The default domain must be one of your zones itself, like `example.com`. Cloudflare's free certificate covers one level below a zone, so a name like `web.apps.example.com` wouldn't work.
 
@@ -63,6 +67,8 @@ Without a default domain, a cluster in tunnel mode has no free domains. Only dom
 ## Visitors
 
 Pyo Gateway takes the visitor's address only from the connectors. Firewall rules, rate limits, the WAF, country rules, analytics and the audit log all see the real visitor. A service doesn't need [Behind Cloudflare](/docs/firewall#behind-cloudflare) for its tunnel domains.
+
+Your service gets the visitor's address in `X-Forwarded-For`, as the only address there. While a domain is still moving, a client that connects directly shows up with its own address, whatever header it sent.
 
 Visitors who type `http://` are sent to HTTPS, whatever your zone's **Always Use HTTPS** says.
 
@@ -102,7 +108,7 @@ Don't change Pyo's tunnel in Cloudflare. Pyo puts its routes back.
 
 ## Turn it off
 
-Pick **Public ports** or **Tailscale only** under **Traffic**. Domains keep using the tunnel until you move them back, so both work at once. Then select **Switch back** on each domain, and **Remove tunnel**. Pyo deletes the tunnel, its certificate and only the records it made, and puts back the records it replaced. Deleting a service or a cluster cleans up its tunnel records the same way.
+Pick **Public ports** or **Tailscale only** under **Traffic**. Domains keep using the tunnel until you move them back, so both work at once. Then select **Switch back** on each domain, and **Remove tunnel**. Names under the default domain have no **Switch back**. Pyo deletes the tunnel, its certificate and only the records it made, and puts back the records it replaced. Deleting a service or a cluster cleans up its tunnel records the same way.
 
 From the CLI:
 
