@@ -83,6 +83,8 @@ curl -fsSL https://your-pyo/install/connect.sh | bash
 
 The dashboard fills in your Pyo's address. It reads the agent's token from the agent already there. On the server Pyo runs on, the address is `http://127.0.0.1:8000`.
 
+After some updates, a cluster shows **Update needed** until you run this command. If the update moves your databases to new images, the panel says **Restarts your databases once**. See [Refresh a cluster after an update](/docs/updating-pyo#refresh-a-cluster-after-an-update).
+
 ## Reconnecting
 
 Rotating a cluster's token from its **Settings** tab stops the current token from working. Run the new command to reconnect the agent.

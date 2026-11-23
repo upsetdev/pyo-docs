@@ -51,9 +51,47 @@ Pyo updates every cluster's agent for you. There's no button per cluster.
 
 - **An agent that doesn't come back:** if it isn't on the new version within 10 minutes, it's marked failed.
 - **An offline agent:** it's skipped, and catches up on the next update.
-- **New permissions or rules for the agent:** an agent can't change its own permissions. A cluster that doesn't refresh its install on its own also keeps the rules it holds the agent to. When an update changes either, **Before you update** says so. After updating, run the connect command shown in each cluster's settings. Until then, the cluster shows **Update needed**.
+- **A cluster that needs a refresh:** some updates need a command on each cluster. Until you run it, the cluster shows **Update needed**. See [Refresh a cluster after an update](#refresh-a-cluster-after-an-update).
 
 When some agents are behind, **Settings → Updates** shows **Some agents aren't on** the new version, with **Update now**. This updates only the agents. With automatic updates, it also happens in the maintenance window.
+
+## Refresh a cluster after an update
+
+Most updates need nothing from you. Within a minute of the update, each cluster brings its own install in line with the new Pyo.
+
+Two cases need a command on each cluster:
+
+- **A release that changes the agent's permissions.** An agent can never change its own permissions, on any cluster. After such a release, every cluster waits for the command. 0.51.0 is one of these releases. **Before you update** then says "After updating, run the connect command shown in each cluster's settings."
+- **A cluster that doesn't refresh on its own.** That's a cluster connected with [`PYO_AGENT_SELF_UPDATE=false`](/docs/system-reference#connections). It waits for the command after every update that changes its install.
+
+A cluster that waits shows **Update needed** in its **Settings** tab. Run the command under **Refresh this cluster** on the cluster's first server. See [Refresh a cluster](/docs/clusters#refresh-a-cluster).
+
+Your services keep running while a cluster waits. Features that came with the update may stay off on that cluster, and its databases stay on their old images.
+
+On Pyo Cloud, we update Pyo and you never do. Your clusters don't refresh on their own, so the command is yours to run. See [Agent updates](/docs/cloud/agent-updates#refresh-a-cluster).
+
+## When databases restart
+
+A release comes with new images for your [databases](/docs/databases). A database restarts once to move to its new image.
+
+- **Postgres and KV** databases restart once after every update.
+- **MySQL** databases restart only when the release has a new MySQL image.
+
+When an update restarts databases, Pyo says **Restarts your databases once**. The line shows in the update notice, in the **Update now** dialog, and under **Refresh this cluster** on a cluster that waits.
+
+Databases restart when their cluster's install matches the new Pyo:
+
+- On a cluster that refreshes on its own, that's within about a minute of the update.
+- On a cluster that waits for the command under **Refresh this cluster**, that's when you run it. So you choose the moment.
+
+After a release that changes the agent's permissions, every cluster waits for that command. Its databases wait with it.
+
+How long a database is away depends on its replicas:
+
+- A Postgres or MySQL database with [replicas](/docs/databases#read-replicas) restarts a replica first, then switches over to it. The primary stops only for the switch.
+- A database with one instance restarts. It's away for a short time.
+
+Each restart is recorded in the team's **Activity**, like "Restarting the database main for an update".
 
 ## Update from the server
 

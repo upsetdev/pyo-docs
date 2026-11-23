@@ -19,4 +19,12 @@ A cluster whose agent is behind then shows **Update available** in its **Setting
 
 An update changes only the agent. It doesn't touch k3s, your services or the agent's limits. Those change only when you run the connect command again on the server. See [Refresh a cluster](/docs/clusters#refresh-a-cluster).
 
+## Refresh a cluster
+
+Some of our updates change more than the agent. Your cluster then shows **Update needed** in its **Settings** tab. Run the command under **Refresh this cluster** on the cluster's first server. Your services keep running until you do.
+
+Your databases don't restart when we update Pyo Cloud, or when the agent updates. They move to their new images when you run that command. The panel says **Restarts your databases once** when it will restart them, so you choose the moment. Each restart is recorded in your team's **Activity**, like "Restarting the database main for an update". See [When databases restart](/docs/updating-pyo#when-databases-restart).
+
+## Which versions
+
 Agents update only to versions we've released. The signing service refuses any other. See [Signed commands](/docs/cloud/security#signed-commands).
