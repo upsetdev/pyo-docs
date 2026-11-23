@@ -1722,7 +1722,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`connected`, and when connected `zones` (each with `id`, `name`, `canEdit` and, when it can't, `missing`: the permission the token lacks), `createdAt`, `testedAt`, and for owners and admins `hint` and `createdBy`.",
+            "description": "`connected`, and when connected `zones` (each with `id`, `name`, `canEdit` and, when it can't, `missing`: the permission the token lacks, `accountId`, `accountName`, and `tunnel`: `ready` and the tunnel permissions it lacks as `missing`), `createdAt`, `testedAt`, and for owners and admins `hint` and `createdBy`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1743,6 +1743,70 @@
           },
           "404": {
             "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/clusters/{id}/tunnel": {
+      "get": {
+        "tags": [
+          "Clusters"
+        ],
+        "summary": "A cluster's Cloudflare Tunnel",
+        "description": "The cluster's tunnel as Pyo last saw it: its state, Cloudflare's view\n(`health`, `connections`, `colos`), the connectors in the cluster\n(`connectors`: each one's server, whether it's ready, and why not), its\ndefault domain, its certificate, and `refused` when the cluster's install\nis older than Pyo's. Never a token. Cloudflare's view is read again when\nit's older than 30 seconds.\n\nAPI key access: **read**.",
+        "operationId": "getClusterTunnel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The cluster's id (`cl_…`).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`tunnel`: the cluster's tunnel, or null without one. `traffic`: \"public\", \"tailscale\" or \"tunnel\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such cluster, or it isn't yours to see.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3826,6 +3890,89 @@
           },
           "404": {
             "description": "No such team, cluster or file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GitHub couldn't be read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
+    "/compose/sync-plan": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Plan a Docker Compose sync",
+        "description": "What applying a Compose file to the project made from it would change,\nservice by service: added, changed (and what), unchanged, or not in the\nfile. Only what the file sets is compared, so settings changed in Pyo\nthat the file doesn't mention stay. A secret's value is never changed.\nWhat can't change in place is listed under `manual` and left as it is.\nNothing changes. Pass `file` to the `syncCompose` operation to apply it,\nor to `importCompose` when there's no `project` yet.\n\nBesides Compose, each service's `x-pyo` can set `domains`, `behindCdn`\n(\"cloudflare\" or \"none\"), `health` (a path like \"/healthz\", \"tcp\" or\n\"none\"), `replicas`, `placement` (`{\"servers\": [...], \"tags\": [...]}`)\nand `secrets` (variable names; their values are set in Pyo).\n\nAPI key access: **read**.",
+        "operationId": "planComposeSync",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPlan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a Compose file Pyo can read, nothing importable, or no file given.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, project, cluster or file.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6126,7 +6273,7 @@
           },
           "serverType": {
             "type": "string",
-            "description": "A server type's `name` from getCloudOptions (\"cx22\")."
+            "description": "A server type's `name` from getCloudOptions (\"cx23\")."
           },
           "edgeDomain": {
             "type": [
@@ -6785,7 +6932,7 @@
       "ConnectCloudflareOp": {
         "type": "object",
         "title": "Connect cloudflare",
-        "description": "Connect the team's Cloudflare account, or replace its token. The token needs Zone:Read and DNS:Edit on the zones Pyo may use. Pyo lists its zones, checks it can edit DNS in each (it makes and deletes a TXT record `_pyo-check.<zone>`), then keeps it encrypted. It's never shown again. Team owners and admins.\n\nAPI key access: **full**.",
+        "description": "Connect the team's Cloudflare account, or replace its token. The token needs Zone:Read and DNS:Edit on the zones Pyo may use, and for Cloudflare Tunnel also Cloudflare Tunnel:Edit and SSL and Certificates:Edit. Pyo lists its zones and their accounts, checks it can edit DNS in each (it makes and deletes a TXT record `_pyo-check.<zone>`), checks the tunnel permissions (it makes and deletes a tunnel `pyo-check-<installation id>-<hex>` once per account, and reads each zone's Origin CA certificates), then keeps it encrypted. It's never shown again. Each zone's `tunnel` says whether it can use Cloudflare Tunnel. Team owners and admins.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "teamId",
@@ -7110,7 +7257,7 @@
           },
           "serverType": {
             "type": "string",
-            "description": "A server type's `name` from getCloudOptions (\"cx22\")."
+            "description": "A server type's `name` from getCloudOptions (\"cx23\")."
           },
           "builder": {
             "type": "boolean",
@@ -7139,7 +7286,7 @@
           "location": "Singapore, SG",
           "name": "web",
           "op": "createCloudServer",
-          "serverType": "cx22"
+          "serverType": "cx23"
         },
         "examples": [
           {
@@ -7148,7 +7295,7 @@
             "location": "Singapore, SG",
             "name": "web",
             "op": "createCloudServer",
-            "serverType": "cx22"
+            "serverType": "cx23"
           }
         ],
         "x-pyo-access": "full",
@@ -8588,6 +8735,7 @@
           "op": "importCompose",
           "plan": {
             "project": {
+              "file": "compose.yaml",
               "name": "Shop",
               "namespace": "shop"
             },
@@ -8601,6 +8749,7 @@
             "op": "importCompose",
             "plan": {
               "project": {
+                "file": "compose.yaml",
                 "name": "Shop",
                 "namespace": "shop"
               },
@@ -9727,7 +9876,22 @@
             "$ref": "#/components/schemas/DeleteDnsRecordOp"
           },
           {
+            "$ref": "#/components/schemas/SetClusterTrafficOp"
+          },
+          {
+            "$ref": "#/components/schemas/SetDomainTunnelOp"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveClusterTunnelOp"
+          },
+          {
+            "$ref": "#/components/schemas/RotateTunnelTokenOp"
+          },
+          {
             "$ref": "#/components/schemas/ImportComposeOp"
+          },
+          {
+            "$ref": "#/components/schemas/SyncComposeOp"
           }
         ],
         "description": "A change, posted to `/api/v1/ops` as `{\"op\": \"<name>\", …fields}`. The doc\ncomment on each variant is its description in the API reference\n(`cargo run -p pyo-api --bin openapi`), so keep the first line plain.",
@@ -9778,6 +9942,7 @@
             "removeCertificate": "#/components/schemas/RemoveCertificateOp",
             "removeCloudflare": "#/components/schemas/RemoveCloudflareOp",
             "removeCluster": "#/components/schemas/RemoveClusterOp",
+            "removeClusterTunnel": "#/components/schemas/RemoveClusterTunnelOp",
             "removeCronJob": "#/components/schemas/RemoveCronJobOp",
             "removeDeployHook": "#/components/schemas/RemoveDeployHookOp",
             "removeFirewallRule": "#/components/schemas/RemoveFirewallRuleOp",
@@ -9806,6 +9971,7 @@
             "rotateAgentToken": "#/components/schemas/RotateAgentTokenOp",
             "rotateBuilderToken": "#/components/schemas/RotateBuilderTokenOp",
             "rotateDataKey": "#/components/schemas/RotateDataKeyOp",
+            "rotateTunnelToken": "#/components/schemas/RotateTunnelTokenOp",
             "runCronJob": "#/components/schemas/RunCronJobOp",
             "runDatabaseBackup": "#/components/schemas/RunDatabaseBackupOp",
             "runTeamBackup": "#/components/schemas/RunTeamBackupOp",
@@ -9819,9 +9985,11 @@
             "setClusterFreeDomainAddress": "#/components/schemas/SetClusterFreeDomainAddressOp",
             "setClusterPreviewDomain": "#/components/schemas/SetClusterPreviewDomainOp",
             "setClusterPublicTraffic": "#/components/schemas/SetClusterPublicTrafficOp",
+            "setClusterTraffic": "#/components/schemas/SetClusterTrafficOp",
             "setClusterWebProxyProtocol": "#/components/schemas/SetClusterWebProxyProtocolOp",
             "setDatabaseBackups": "#/components/schemas/SetDatabaseBackupsOp",
             "setDatabaseExtensions": "#/components/schemas/SetDatabaseExtensionsOp",
+            "setDomainTunnel": "#/components/schemas/SetDomainTunnelOp",
             "setObservability": "#/components/schemas/SetObservabilityOp",
             "setProjectIsolation": "#/components/schemas/SetProjectIsolationOp",
             "setServerLocation": "#/components/schemas/SetServerLocationOp",
@@ -9833,6 +10001,7 @@
             "setServiceWaf": "#/components/schemas/SetServiceWafOp",
             "setTeamBackupSelection": "#/components/schemas/SetTeamBackupSelectionOp",
             "stopService": "#/components/schemas/StopServiceOp",
+            "syncCompose": "#/components/schemas/SyncComposeOp",
             "testAlertChannel": "#/components/schemas/TestAlertChannelOp",
             "testCloudflare": "#/components/schemas/TestCloudflareOp",
             "testGitConnection": "#/components/schemas/TestGitConnectionOp",
@@ -9949,6 +10118,10 @@
           "namespace": {
             "type": "string",
             "description": "Its slug, used in service addresses: lowercase letters, digits and dashes."
+          },
+          "file": {
+            "type": "string",
+            "description": "The Compose file's name, e.g. \"compose.yaml\". Its services remember\nit, so a later sync finds them."
           }
         }
       },
@@ -10049,6 +10222,41 @@
               "type": "string"
             },
             "description": "Services it starts after."
+          },
+          "managed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What the file sets, which a sync keeps in line with it: \"source\",\n\"env\", \"ports\", \"volumes\", \"health\", \"replicas\", \"resources.cpuLimit\"\nand the other resources, \"container.command\" and the other container\nsettings, and the `x-pyo` ones (\"domains\", \"behindCdn\", \"placement\",\n\"secrets\"). The rest stays as it is in Pyo."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "`x-pyo.domains`: served on its first web port."
+          },
+          "behindCdn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`x-pyo.behindCdn`: \"cloudflare\", or none."
+          },
+          "placement": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "`x-pyo.placement`: `{\"servers\": [...], \"tags\": [...]}`."
+          },
+          "secrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "`x-pyo.secrets`: secret variables it needs, by name. Their values\nare set in Pyo, never in the file."
           }
         }
       },
@@ -10411,6 +10619,43 @@
             "force": false,
             "id": "cl_8kq2x7ad",
             "op": "removeCluster"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
+      "RemoveClusterTunnelOp": {
+        "type": "object",
+        "title": "Remove cluster tunnel",
+        "description": "Remove a cluster's Cloudflare Tunnel: its routes, the DNS records Pyo made (with `restoreRecords`, the ones they replaced come back), the connector in the cluster, its certificate and the tunnel itself. Pick Public ports or Tailscale only for the cluster first. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "clusterId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "removeClusterTunnel"
+            ]
+          },
+          "clusterId": {
+            "type": "string"
+          },
+          "restoreRecords": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "clusterId": "cl_8kq2x7ad",
+          "op": "removeClusterTunnel"
+        },
+        "examples": [
+          {
+            "clusterId": "cl_8kq2x7ad",
+            "op": "removeClusterTunnel"
           }
         ],
         "x-pyo-access": "full",
@@ -10953,6 +11198,27 @@
           "Domains"
         ]
       },
+      "RepoInput": {
+        "type": "object",
+        "required": [
+          "fullName",
+          "branch",
+          "path"
+        ],
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "description": "\"owner/repo\"."
+          },
+          "branch": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "The Compose file's path, e.g. \"compose.yml\" or \"deploy/compose.yml\"."
+          }
+        }
+      },
       "ResendInviteOp": {
         "type": "object",
         "title": "Resend invite",
@@ -11491,6 +11757,40 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Teams"
+        ]
+      },
+      "RotateTunnelTokenOp": {
+        "type": "object",
+        "title": "Rotate tunnel token",
+        "description": "Give the cluster's Cloudflare Tunnel a new token and a new certificate, and drop its old connections. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "clusterId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "rotateTunnelToken"
+            ]
+          },
+          "clusterId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "clusterId": "cl_8kq2x7ad",
+          "op": "rotateTunnelToken"
+        },
+        "examples": [
+          {
+            "clusterId": "cl_8kq2x7ad",
+            "op": "rotateTunnelToken"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
         ]
       },
       "RunCronJobOp": {
@@ -12249,6 +12549,67 @@
           "Clusters"
         ]
       },
+      "SetClusterTrafficOp": {
+        "type": "object",
+        "title": "Set cluster traffic",
+        "description": "How a cluster takes web traffic: \"public\" (ports 80 and 443 on every server but build-only ones), \"tailscale\" (only from the tailnet, or only inside the cluster without Tailscale) or \"tunnel\" (through Cloudflare Tunnel, with no ports 80 and 443 open). For \"tunnel\", the team's Cloudflare token needs Cloudflare Tunnel:Edit and SSL and Certificates:Edit, and the cluster's install must be Pyo's (run its connect command first when it's older). Domains in zones of the tunnel's account move to the tunnel. Those with a DNS record Pyo didn't make wait for `setDomainTunnel` with `replace`. Pyo does the Cloudflare work in the background: the cluster's `tunnel` shows how it's going. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "clusterId",
+          "mode"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setClusterTraffic"
+            ]
+          },
+          "clusterId": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "defaultDomain": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A zone of the token (its apex, like \"example.com\"): services get names under it, and `*.example.com` goes through the tunnel. Optional."
+          },
+          "accountId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Cloudflare account for the tunnel, when the token's zones are in more than one."
+          },
+          "portsPublic": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Public TCP and UDP ports stay on the servers in tunnel mode (they don't go through the tunnel). On by default."
+          }
+        },
+        "example": {
+          "clusterId": "cl_8kq2x7ad",
+          "mode": "example",
+          "op": "setClusterTraffic"
+        },
+        "examples": [
+          {
+            "clusterId": "cl_8kq2x7ad",
+            "mode": "example",
+            "op": "setClusterTraffic"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
       "SetClusterWebProxyProtocolOp": {
         "type": "object",
         "title": "Set cluster web proxy protocol",
@@ -12404,6 +12765,60 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Databases"
+        ]
+      },
+      "SetDomainTunnelOp": {
+        "type": "object",
+        "title": "Set domain tunnel",
+        "description": "Serve a domain through the cluster's Cloudflare Tunnel (`on`), or move it back. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME, so both paths answer while it moves. When records Pyo didn't make have the name, the domain's `dnsRecord.status` turns \"conflict\" and `existing` lists them. Send it again with `replace` to replace them (team owners and admins): Pyo keeps a copy. Moving back with `restore` puts that copy back (team owners and admins), or without one, points the name at the cluster's public IP. A name one level under the tunnel's default domain always goes through the tunnel, so moving it back is refused unless a record it replaced comes back. A new name one level under the default domain gets no record of its own when nothing else at Cloudflare answers for it: the default domain's wildcard record has it, and the answer is `status: \"active\"`. A name that's already only through the tunnel stays that way while its own record is made.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "serviceId",
+          "domainId",
+          "on"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setDomainTunnel"
+            ]
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "on": {
+            "type": "boolean"
+          },
+          "replace": {
+            "type": "boolean",
+            "description": "Replace the records in the way."
+          },
+          "restore": {
+            "type": "boolean",
+            "description": "Moving back: put back the records the tunnel replaced. On by default."
+          }
+        },
+        "example": {
+          "domainId": "dom_8kq2x7ad",
+          "on": true,
+          "op": "setDomainTunnel",
+          "serviceId": "svc_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "domainId": "dom_8kq2x7ad",
+            "on": true,
+            "op": "setDomainTunnel",
+            "serviceId": "svc_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Domains"
         ]
       },
       "SetObservabilityOp": {
@@ -12931,6 +13346,305 @@
           "Services"
         ]
       },
+      "SyncBody": {
+        "type": "object",
+        "description": "A Compose file to sync: its text, or a file in one of the team's GitHub\nrepositories, and the project it goes to.",
+        "required": [
+          "teamId"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "description": "The team it's for."
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The project to sync. Without it: the team's project made from a\nCompose file of the same name, when there's one."
+          },
+          "file": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Compose file's text, when it isn't read from a repository."
+          },
+          "env": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A .env file's text, for `${VAR}`s and `env_file: .env`."
+          },
+          "repo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RepoInput",
+                "description": "Or: a repository the team's GitHub App installations can see."
+              }
+            ]
+          },
+          "clusterId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The cluster new services go to: their public web ports get a free\ndomain on it."
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The project's name, when the file has none."
+          },
+          "fileName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The file's name, e.g. \"compose.yaml\". Services remember it."
+          }
+        }
+      },
+      "SyncChange": {
+        "type": "object",
+        "required": [
+          "field"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "What changes, e.g. \"image\", \"replicas\", \"env LOG_LEVEL\", \"domain app.example.com\"."
+          },
+          "from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "As it is now. Variables' values are never shown."
+          },
+          "to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SyncComposeOp": {
+        "type": "object",
+        "title": "Sync Docker Compose",
+        "description": "Bring a project in line with a Docker Compose file: `file` from `POST /compose/sync-plan`, which shows what this does. Only what the file says differently changes, so settings changed in Pyo that the file doesn't mention stay, and a secret's value is never changed. Services whose settings change are deployed. What can't change in place (a volume that would move, another kind of source) is left as it is.\nA service no longer in the file stays, unless `prune`.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "projectId",
+          "plan"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "syncCompose"
+            ]
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "clusterId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where services new in the file run. Where the project's services run when omitted."
+          },
+          "plan": {
+            "$ref": "#/components/schemas/ComposePlan"
+          },
+          "prune": {
+            "type": "boolean",
+            "description": "Delete the services made from this file that are no longer in it. Their volumes are kept, detached."
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "Go ahead with a very large replica change: without it, one that goes to 20 or more replicas and to more than 10 times what the service had, or more than twice what its servers have room for, is refused with 409 and `needsConfirm: true`. Ask the user before sending it."
+          }
+        },
+        "example": {
+          "op": "syncCompose",
+          "plan": {
+            "project": {
+              "file": "compose.yaml",
+              "name": "Shop",
+              "namespace": "shop"
+            },
+            "services": [],
+            "warnings": []
+          },
+          "projectId": "prj_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "op": "syncCompose",
+            "plan": {
+              "project": {
+                "file": "compose.yaml",
+                "name": "Shop",
+                "namespace": "shop"
+              },
+              "services": [],
+              "warnings": []
+            },
+            "projectId": "prj_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Projects"
+        ]
+      },
+      "SyncNote": {
+        "type": "object",
+        "required": [
+          "field",
+          "message"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SyncPlan": {
+        "type": "object",
+        "description": "What a sync would change.",
+        "required": [
+          "services",
+          "warnings",
+          "file"
+        ],
+        "properties": {
+          "project": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SyncProject",
+                "description": "The project it syncs. None when there's none for this file yet: then\n`importCompose` makes it from `file`."
+              }
+            ]
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncService"
+            },
+            "description": "The file's services in deploy order, then the project's services that\naren't in the file."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanWarning"
+            },
+            "description": "What the file has that Pyo doesn't carry over."
+          },
+          "file": {
+            "$ref": "#/components/schemas/ComposePlan",
+            "description": "The file as Pyo reads it: pass it to `syncCompose` (or `importCompose`)."
+          }
+        }
+      },
+      "SyncProject": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "namespace"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          }
+        }
+      },
+      "SyncService": {
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "changes",
+          "notes",
+          "manual",
+          "deploy"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Its name in Pyo."
+          },
+          "composeName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Its name in the file. None when it isn't in the file."
+          },
+          "serviceId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "None for a service the sync would add."
+          },
+          "status": {
+            "type": "string",
+            "description": "\"added\", \"changed\", \"unchanged\" or \"notInFile\"."
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncChange"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncNote"
+            },
+            "description": "What stays as it is in Pyo, and why."
+          },
+          "manual": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncNote"
+            },
+            "description": "What can't change in place. It's left as it is: change it by hand."
+          },
+          "deploy": {
+            "type": "boolean",
+            "description": "The sync deploys it."
+          },
+          "fromFile": {
+            "type": "boolean",
+            "description": "For a service not in the file: it was made from this file, so\n`prune` deletes it."
+          }
+        }
+      },
       "TestAlertChannelOp": {
         "type": "object",
         "title": "Test alert channel",
@@ -12968,7 +13682,7 @@
       "TestCloudflareOp": {
         "type": "object",
         "title": "Test cloudflare",
-        "description": "Check the saved Cloudflare token again: the zones it covers now, and what it's missing (`problems`). Team owners and admins.\n\nAPI key access: **full**.",
+        "description": "Check the saved Cloudflare token again: the zones it covers now, whether each can use Cloudflare Tunnel, and what it's missing (`problems`). Team owners and admins.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "teamId"
