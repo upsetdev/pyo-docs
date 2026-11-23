@@ -101,7 +101,7 @@ Apply pyo.jsonc and deploy, then follow it to the end.
 ```text
 Apply pyo.jsonc and deploy, then follow it to the end.
 
-A service built from a folder gets this folder, packed and uploaded (.gitignore and .pyoignore apply). In a folder no service is linked to, it makes one and links it. With -f, import a Docker Compose file instead: see what it makes, then deploy it.
+A service built from a folder gets this folder, packed and uploaded (.gitignore and .pyoignore apply). In a folder no service is linked to, it makes one and links it. With -f, deploy a Docker Compose file instead: the first time it makes a project of it, and after that it changes only what the file says differently.
 
 Usage: pyo deploy [OPTIONS]
 
@@ -132,10 +132,16 @@ Options:
           A new service's name. Defaults to the folder's
 
       --project <PROJECT>
-          A new service's project (name or id), made when there's none by that name
+          A new service's project (name or id), made when there's none by that name. With -f, the project the file goes to
 
   -f, --file <FILE>
-          A Docker Compose file to import as a new project (a .env next to it is read too)
+          A Docker Compose file to deploy as a project (a .env next to it is read too)
+
+      --dry-run
+          With -f: show what would change, and change nothing
+
+      --prune
+          With -f: also delete the services made from the file that are no longer in it. Their volumes are kept
 
       --team <TEAM>
           The team of a new service or Compose import (slug or id). Defaults to your first team
@@ -144,7 +150,7 @@ Options:
           The cluster to run it on (name or id). Defaults to the team's default cluster
 
   -y, --yes
-          Don't ask: import the Compose file, or go ahead with a very large replica change from pyo.jsonc
+          Don't ask: deploy the Compose file (and delete with --prune), or go ahead with a very large replica change
 
   -h, --help
           Print help (see a summary with '-h')
@@ -890,10 +896,10 @@ The servers sandboxes run on
 Usage: pyo sandbox servers [OPTIONS] <COMMAND>
 
 Commands:
-  add     Add a sandbox server: prints the command to run on it. Owners and admins
-  ls      The sandbox servers the team can use
-  rm      Remove a sandbox server (name or id). Its sandboxes end
-  help    Print this message or the help of the given subcommand(s)
+  add   Add a sandbox server: prints the command to run on it. Owners and admins
+  ls    The sandbox servers the team can use
+  rm    Remove a sandbox server (name or id). Its sandboxes end
+  help  Print this message or the help of the given subcommand(s)
 
 Options:
       --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
@@ -1133,6 +1139,7 @@ Commands:
   list    The service's domains and their status
   add     Serve the service on a hostname. It applies without a redeploy
   remove  Stop serving the service on a hostname. Deletes the DNS record Pyo made for it in Cloudflare
+  tunnel  Serve a domain through the cluster's Cloudflare Tunnel, or move it back
   dns     Create a domain's DNS record in Cloudflare, or try again. Never overwrites a record
   help    Print this message or the help of the given subcommand(s)
 
@@ -1174,7 +1181,7 @@ Arguments:
   [HOSTNAME]  e.g. app.example.com
 
 Options:
-      --free               A free nip.io domain instead (no DNS record needed)
+      --free               A free nip.io domain instead, or a tunnel domain in tunnel mode (no DNS record needed)
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --port <PORT>        The HTTP port to route to, by name or number (default: the first)
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
@@ -1203,6 +1210,29 @@ Options:
   -y, --yes                Don't ask to confirm
       --keep-dns-record    Keep the DNS record Pyo made in Cloudflare
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+### `pyo domain tunnel`
+
+Serve a domain through the cluster's Cloudflare Tunnel, or move it back
+
+```text
+Serve a domain through the cluster's Cloudflare Tunnel, or move it back
+
+Usage: pyo domain tunnel [OPTIONS] <HOSTNAME>
+
+Arguments:
+  <HOSTNAME>  e.g. app.example.com
+
+Options:
+      --replace            Replace the records in the way. Owners and admins
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --back               Move it back from the tunnel. Not for a name under the tunnel's default domain
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --no-restore         Moving back: don't put back the records the tunnel replaced
   -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
@@ -1244,6 +1274,7 @@ Commands:
   test     Check the token: the zones it covers and what it's missing
   zones    The zones Pyo can create records in
   remove   Forget the token. Records Pyo made stay in Cloudflare
+  tunnel   A cluster's Cloudflare Tunnel: websites through Cloudflare, no open ports
   help     Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1318,6 +1349,31 @@ Usage: pyo cloudflare remove [OPTIONS]
 Options:
       --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
   -y, --yes            Don't ask to confirm
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo cloudflare tunnel`
+
+A cluster's Cloudflare Tunnel: websites through Cloudflare, no open ports
+
+```text
+A cluster's Cloudflare Tunnel: websites through Cloudflare, no open ports
+
+Usage: pyo cloudflare tunnel [OPTIONS] <COMMAND>
+
+Commands:
+  status  The tunnel, its connectors and its domains
+  on      Take the cluster's websites through Cloudflare Tunnel. Owners and admins
+  off     Take websites on public ports or Tailscale only again. The tunnel stays until removed
+  remove  Remove the tunnel, its records and its connector. Owners and admins
+  rotate  A new token and certificate for the tunnel. Owners and admins
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
       --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
       --team <TEAM>    The team (slug or id). Defaults to your first team
   -h, --help           Print help
