@@ -27,3 +27,33 @@ From a server's page you can:
 - **Mark it for maintenance.**
 - **Drain it**, moving its services to other servers.
 - **Remove it** from the cluster. Then uninstall k3s on the machine, as in [Remove a server](/docs/uninstall#remove-a-server).
+
+## Low disk space
+
+A server that runs low on disk space stops some of what runs on it to free space. Pyo keeps the parts that serve and report running through it:
+
+- [Pyo Gateway](/docs/gateway), so your sites keep answering
+- the [WAF](/docs/waf) and [websites on your tailnet](/docs/tailscale#websites-on-your-tailnet)
+- the agent and the log collector, so the server keeps reporting to Pyo
+
+Your services aren't protected this way. Below 5% free disk, the server may stop some of their replicas. With other servers in the cluster, Pyo starts them there.
+
+Pyo tells you in **Activity**, like "web-1 is low on disk space", and again when the server has enough. It can also send an [alert](/docs/alerts). The server's page shows its **Disk** condition.
+
+What Pyo cleans up by itself:
+
+- Images no service uses. Cleanup starts when the disk is 85% full and goes on until it's down to 75%.
+- The stopped replicas left behind when a server was short of disk.
+
+What you should do:
+
+1. Find what fills the disk. It's often something outside Pyo, like old logs, downloads or another program's data.
+2. Free that space, or give the server a bigger disk.
+3. If a service's own data fills it, move that data to a [volume](/docs/volumes).
+
+The server counts as low on disk until it has 1 GiB more than the 5% free. Then it runs services again.
+
+A server gets these settings from its setup command. To apply them on a cluster's first server that was set up earlier, run the command under [Refresh this cluster](/docs/clusters#refresh-a-cluster).
+
+This works the same on Pyo Cloud, since it all happens on your own servers. Everyone in the team sees the activity. Team owners and admins set up alerts.
+
