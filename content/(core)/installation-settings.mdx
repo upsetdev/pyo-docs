@@ -28,4 +28,4 @@ sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_ALLOW_SIGNUP=true
 | --- | --- |
 | None | Nothing that identifies a visitor (recommended) |
 | Anonymized | The address without its last part, which points to a network, not a person |
-| Full | The whole address for 180 days, which may need consent under laws like <Term tip="The European Union's data protection law.">GDPR</Term> |
+| Full | The whole address, kept with each team's [request logs](/docs/observability#request-logs) for up to 31 days. May need consent under laws like <Term tip="The European Union's data protection law.">GDPR</Term> |
