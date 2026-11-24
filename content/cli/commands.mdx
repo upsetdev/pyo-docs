@@ -1136,12 +1136,14 @@ The service's domains
 Usage: pyo domain [OPTIONS] <COMMAND>
 
 Commands:
-  list    The service's domains and their status
-  add     Serve the service on a hostname. It applies without a redeploy
-  remove  Stop serving the service on a hostname. Deletes the DNS record Pyo made for it in Cloudflare
-  tunnel  Serve a domain through the cluster's Cloudflare Tunnel, or move it back
-  dns     Create a domain's DNS record in Cloudflare, or try again. Never overwrites a record
-  help    Print this message or the help of the given subcommand(s)
+  list      The service's domains and their status
+  add       Serve the service on a hostname, or on a path of one. It applies without a redeploy
+  redirect  Redirect a domain, or a path of it, to another hostname or path. The query is kept. Live without a redeploy
+  header    Header rules of a domain: headers to set or remove on its responses, or with --request on requests to the service. Without changes, lists them
+  remove    Stop serving the service on a hostname. Deletes the DNS record Pyo made for it in Cloudflare
+  tunnel    Serve a domain through the cluster's Cloudflare Tunnel, or move it back
+  dns       Create a domain's DNS record in Cloudflare, or try again. Never overwrites a record
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
@@ -1170,24 +1172,76 @@ Options:
 
 ### `pyo domain add`
 
-Serve the service on a hostname. It applies without a redeploy
+Serve the service on a hostname, or on a path of one. It applies without a redeploy
 
 ```text
-Serve the service on a hostname. It applies without a redeploy
+Serve the service on a hostname, or on a path of one. It applies without a redeploy
 
 Usage: pyo domain add [OPTIONS] [HOSTNAME]
 
 Arguments:
-  [HOSTNAME]  e.g. app.example.com
+  [HOSTNAME]  e.g. app.example.com, or app.example.com/api for a path
 
 Options:
-      --free               A free nip.io domain instead, or a tunnel domain in tunnel mode (no DNS record needed)
+      --path <PATH>                Only this path of the hostname, like /api. Other services of the team can serve its other paths
+      --url <URL>                  Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --strip-prefix               Send /api/x to the service as /x
+      --token <TOKEN>              An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --free                       A free nip.io domain instead, or a tunnel domain in tunnel mode (no DNS record needed)
+      --port <PORT>                The HTTP port to route to, by name or number (default: the first)
+      --wait                       Wait until it's live
+      --no-cloudflare              Don't create the DNS record in Cloudflare, even when a connected zone covers it
+      --proxied                    Proxied by Cloudflare (once its certificate is issued)
+      --redirect-to <HOST[/PATH]>  Only redirect it, like www.example.com to example.com. No port
+  -s, --service <SERVICE>          The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+      --status <STATUS>            The redirect's status: 301 (default) or 302 [possible values: 301, 302]
+  -h, --help                       Print help
+  -V, --version                    Print version
+```
+
+### `pyo domain redirect`
+
+Redirect a domain, or a path of it, to another hostname or path. The query is kept. Live without a redeploy
+
+```text
+Redirect a domain, or a path of it, to another hostname or path. The query is kept. Live without a redeploy
+
+Usage: pyo domain redirect [OPTIONS] <FROM>
+
+Arguments:
+  <FROM>  What to redirect: www.example.com, or example.com/old
+
+Options:
+      --to <TO>            Where to: example.com, example.com/new or /new
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --port <PORT>        The HTTP port to route to, by name or number (default: the first)
+      --status <STATUS>    301 (default) or 302 [possible values: 301, 302]
       --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-      --wait               Wait until it's live
-      --no-cloudflare      Don't create the DNS record in Cloudflare, even when a connected zone covers it
-      --proxied            Proxied by Cloudflare (once its certificate is issued)
+      --no-keep-path       Send every request to the target path itself, not the rest of its path
+      --remove             Remove the redirect
+  -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+### `pyo domain header`
+
+Header rules of a domain: headers to set or remove on its responses, or with --request on requests to the service. Without changes, lists them
+
+```text
+Header rules of a domain: headers to set or remove on its responses, or with --request on requests to the service. Without changes, lists them
+
+Usage: pyo domain header [OPTIONS] <HOSTNAME>
+
+Arguments:
+  <HOSTNAME>  e.g. example.com
+
+Options:
+      --set <NAME: VALUE>  "Name: value". Repeat for more
+      --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --remove <NAME>      A header to remove. Repeat for more
+      --token <TOKEN>      An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --request            On requests to the service instead of responses
+      --unset <NAME>       Stop setting or removing these headers (by name)
   -s, --service <SERVICE>  The service: a name ("api", "shop/api") or id. Default: pyo.jsonc's
   -h, --help               Print help
   -V, --version            Print version
@@ -1203,7 +1257,7 @@ Stop serving the service on a hostname. Deletes the DNS record Pyo made for it i
 Usage: pyo domain remove [OPTIONS] <HOSTNAME>
 
 Arguments:
-  <HOSTNAME>  e.g. app.example.com
+  <HOSTNAME>  e.g. app.example.com, or app.example.com/api for a path
 
 Options:
       --url <URL>          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]

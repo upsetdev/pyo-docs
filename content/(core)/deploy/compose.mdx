@@ -82,7 +82,7 @@ Some settings have no field in Compose. Set them under `x-pyo` on a service. Doc
 
 | Key | What it sets |
 | --- | --- |
-| `domains` | The service's [domains](/docs/domains), as a list. They're served on its first web port, which becomes public. |
+| `domains` | The service's [domains](/docs/domains), as a list. They're served on its first web port, which becomes public. `app.example.com/api` serves only that [path](/docs/domains#routes). |
 | `behindCdn` | `cloudflare` or `none`. See [Behind Cloudflare](/docs/firewall#behind-cloudflare). |
 | `health` | The health check. A path like `/healthz`, or `tcp`, or `none`. |
 | `replicas` | How many replicas run. A whole number, 0 or more. |

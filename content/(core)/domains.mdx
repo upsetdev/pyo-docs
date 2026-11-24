@@ -40,6 +40,21 @@ Adding or removing a domain, or changing its HTTPS settings, takes effect within
 
 Domains belong to the service, not to a deployment, so a [rollback](/docs/deploy/rollbacks) keeps the domains the service has now.
 
+## Routes
+
+Several services of a team can share one domain, each on its own path. For example, `example.com` goes to `web`, and `example.com/api` goes to `api`. A request goes to the longest path it's under, so `/api/users` goes to `api`, and `/about` and `/apix` go to `web`.
+
+To add one, open the service's **Domains** page, choose **Add domain**, enter the domain and a **Path**, like `/api`. Turn on **Strip prefix** to send `/api/users` to the service as `/users`.
+
+- The first service to add a domain holds it: its DNS record, certificate, tunnel, redirects and HTTPS settings. Paths on other services follow these. The domain list shows **Shared** on a domain other services also use.
+- Each service keeps its own [firewall](/docs/firewall), rate limits and [WAF](/docs/firewall), and its own analytics.
+- A path is used once per team. Another team can't use the domain.
+- All services on one domain run on the same cluster.
+- When the service that holds a domain removes it, or is deleted, the oldest path takes it over with its DNS record and certificate. When the last one goes, the domain is gone.
+- On Pyo Cloud, you prove you own a domain once. Its paths need no proof of their own.
+
+The team's **Domains** page lists each domain once. Open it to see which path goes to which service.
+
 ## Redirects
 
 [Pyo Gateway](/docs/gateway) can send visitors from one address to another. Open a domain's menu on the service's **Domains** page and choose **Redirects**. Each redirect has:
@@ -59,7 +74,7 @@ A domain that also serves a service can't redirect `/` as a whole. Redirect a pa
 
 ### Path redirects
 
-A path redirect goes on the domain that has the path. For example, add `/blog` to `example.com` with **To** set to `blog.example.com` to move a blog to its own domain. More specific paths win, so `/blog` answers before the service at `/`.
+A path redirect goes on the domain itself, on the service that holds it. A path can't be a redirect and a route at once. For example, add `/blog` to `example.com` with **To** set to `blog.example.com` to move a blog to its own domain. More specific paths win, so `/blog` answers before the service at `/`.
 
 Plain HTTP requests are redirected straight to HTTPS when the domain has a certificate. Redirects skip the service's firewall and WAF, since they never reach it. A domain can have up to 15 redirects.
 
@@ -81,6 +96,7 @@ The team's **Domains** page has a row per domain. It shows where the domain goes
 ## From the CLI and MCP
 
 ```bash
+pyo domain add example.com/api -s api --strip-prefix
 pyo domain add www.example.com --redirect-to example.com
 pyo domain redirect example.com/old --to /new --status 302
 pyo domain redirect example.com/old --remove
@@ -89,7 +105,7 @@ pyo domain header example.com --request --set 'X-Region: eu'
 pyo domain header example.com
 ```
 
-Over [MCP](/docs/mcp), `add_domain` takes `redirect_to`, and `set_domain_redirects` and `set_domain_headers` replace a domain's rules. Redirects and headers take effect within seconds, without a redeploy.
+Over [MCP](/docs/mcp), `add_domain` takes `path`, `strip_prefix` and `redirect_to`, and `set_domain_redirects` and `set_domain_headers` replace a domain's rules. Redirects and headers take effect within seconds, without a redeploy.
 
 ## Request timeout
 
