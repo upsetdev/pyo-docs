@@ -917,11 +917,11 @@
           "Observability"
         ],
         "summary": "Observability settings",
-        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory). For the installation's\nadmin also what it keeps of visitors' IP addresses, how long it keeps\ndata (`retention`: `analyticsMonths`, `metricsDays`, `buildLogDays`) and\n`small`: the server Pyo runs on has under 3.5 GB of memory now. The\ninstallation's admin turns it on or off with `setObservability`.\n\nAPI key access: **read**.",
+        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory), what it keeps of\nvisitors' IP addresses, and how long it keeps data (`retention`:\n`analyticsMonths`, `metricsDays`, `buildLogDays`). `small`: the server\nPyo runs on has under 3.5 GB of memory now. The installation's admin\nturns it on or off with `setObservability`.\n\nAPI key access: **read**.",
         "operationId": "getObservabilitySettings",
         "responses": {
           "200": {
-            "description": "`enabled`. For the installation's admin also `ipMode`, `retention` and `small`.",
+            "description": "`enabled`, `ipMode`, `retention` and `small`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -984,7 +984,7 @@
           {
             "name": "site",
             "in": "query",
-            "description": "Only this domain: its id, or \"all\".",
+            "description": "Only this domain: its id or hostname, or \"all\".",
             "required": false,
             "schema": {
               "type": "string"
@@ -993,7 +993,7 @@
           {
             "name": "service",
             "in": "query",
-            "description": "Only this service's domains: its id.",
+            "description": "Only this service's domains: its id or name.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1104,7 +1104,7 @@
           {
             "name": "site",
             "in": "query",
-            "description": "Only this domain: its id, or \"all\".",
+            "description": "Only this domain: its id or hostname, or \"all\".",
             "required": false,
             "schema": {
               "type": "string"
@@ -1113,7 +1113,7 @@
           {
             "name": "service",
             "in": "query",
-            "description": "Only this service's domains: its id.",
+            "description": "Only this service's domains: its id or name.",
             "required": false,
             "schema": {
               "type": "string"
@@ -13015,7 +13015,7 @@
       "SetDomainTunnelOp": {
         "type": "object",
         "title": "Set domain tunnel",
-        "description": "Serve a domain through the cluster's Cloudflare Tunnel (`on`), or move it back. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME, so both paths answer while it moves. When records Pyo didn't make have the name, the domain's `dnsRecord.status` turns \"conflict\" and `existing` lists them. Send it again with `replace` to replace them (team owners and admins): Pyo keeps a copy. Moving back with `restore` puts that copy back (team owners and admins), or without one, points the name at the cluster's public IP. A name one level under the tunnel's default domain always goes through the tunnel, so moving it back is refused unless a record it replaced comes back. A new name one level under the default domain gets no record of its own when nothing else at Cloudflare answers for it: the default domain's wildcard record has it, and the answer is `status: \"active\"`. A name that's already only through the tunnel stays that way while its own record is made.\n\nAPI key access: **full**.",
+        "description": "Serve a domain through the cluster's Cloudflare Tunnel (`on`), or move it back. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME, so both paths answer while it moves. When records Pyo didn't make have the name, the domain's `dnsRecord.status` turns \"conflict\" and `existing` lists them (at once, in the answer too, when Cloudflare can be asked). Send it again with `replace` to replace them (team owners and admins): Pyo keeps a copy. Moving back with `restore` puts that copy back (team owners and admins), or without one, points the name at the cluster's public IP. A name one level under the tunnel's default domain always goes through the tunnel, so moving it back is refused unless a record it replaced comes back. A new name one level under the default domain gets no record of its own when nothing else at Cloudflare answers for it: the default domain's wildcard record has it, and the answer is `status: \"active\"`. A name that's already only through the tunnel stays that way while its own record is made.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "serviceId",
