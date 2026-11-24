@@ -56,7 +56,7 @@ The **Workloads** tab opens on your team's **Services**, with their project, kin
 
 ## Traffic [#public-traffic]
 
-**Traffic**, on a cluster's **Settings** tab, decides how the cluster answers visitors. It's **Public ports** by default.
+**Traffic**, on a cluster's **Settings** tab, decides how the cluster answers visitors. It's **Public ports** by default. The card also shows whether the cluster is on your [tailnet](/docs/tailscale). Until Tailscale is set up, it links to **Integrations**.
 
 - **Public ports:** every server runs [Pyo Gateway](/docs/gateway) on ports 80 and 443 and your public TCP and UDP ports, except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Ports a service opens directly on the servers are open too. These are a **Port on every server**, or a [public port](/docs/domains#public-tcp-and-udp-ports) with the gateway turned off.
 - **Tailscale only:** nothing in the cluster is public. No server answers on the gateway's ports or on the ports services open directly. Services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until it's back on.
