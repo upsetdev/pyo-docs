@@ -40,6 +40,57 @@ Adding or removing a domain, or changing its HTTPS settings, takes effect within
 
 Domains belong to the service, not to a deployment, so a [rollback](/docs/deploy/rollbacks) keeps the domains the service has now.
 
+## Redirects
+
+[Pyo Gateway](/docs/gateway) can send visitors from one address to another. Open a domain's menu on the service's **Domains** page and choose **Redirects**. Each redirect has:
+
+- **Path:** the path it applies to, like `/old`. It covers everything under it, like `/old/page`. Leave it as `/` for the whole domain.
+- **To:** another hostname, like `example.com`, a path, like `/new`, or both, like `example.com/new`.
+- **Status:** 301 for a move that stays, or 302 for one that doesn't.
+- **Keep the rest of the path:** on by default, so `/old/page` goes to `/new/page`. Turn it off to send every request to the target itself.
+
+The query string is always kept.
+
+### Redirect a whole domain
+
+To send `www.example.com` to `example.com`, add `www.example.com` with **Only redirect** on, and enter `example.com` under **Redirect to**. Add it to the service that serves `example.com`, or any service of the team. The domain gets its DNS record and certificate like any other, so `https://www.example.com` works too. It has no port.
+
+A domain that also serves a service can't redirect `/` as a whole. Redirect a path instead, or add the domain with **Only redirect**.
+
+### Path redirects
+
+A path redirect goes on the domain that has the path. For example, add `/blog` to `example.com` with **To** set to `blog.example.com` to move a blog to its own domain. More specific paths win, so `/blog` answers before the service at `/`.
+
+Plain HTTP requests are redirected straight to HTTPS when the domain has a certificate. Redirects skip the service's firewall and WAF, since they never reach it. A domain can have up to 15 redirects.
+
+## Headers
+
+Pyo Gateway can set or remove headers on a domain's responses, and on requests to the service. Open a domain's menu and choose **Headers**.
+
+- **Set** adds a header, or replaces it when the service sends one.
+- **Remove** takes a header out, like `X-Powered-By`.
+
+Under **Responses**, quick buttons add common security headers: **HSTS** (`Strict-Transport-Security`), **Frame options** (`X-Frame-Options`), **No sniffing** (`X-Content-Type-Options`) and **Hide X-Powered-By**. Under **Requests to the service**, headers go to your service with each request.
+
+Some headers can't be changed, because Pyo Gateway sets or needs them: `Connection`, `Keep-Alive`, `Proxy-*`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade`, `Host`, `Content-Length`, `Forwarded`, `Via`, `X-Forwarded-*`, `X-Real-Ip`, `X-Envoy-*`, `Cf-*` and `X-Pyo-*`. Each list takes up to 16 headers.
+
+## In one place
+
+The team's **Domains** page has a row per domain. It shows where the domain goes, and whether it's live. Open one to see its routes, redirects and headers, with its DNS record and certificate.
+
+## From the CLI and MCP
+
+```bash
+pyo domain add www.example.com --redirect-to example.com
+pyo domain redirect example.com/old --to /new --status 302
+pyo domain redirect example.com/old --remove
+pyo domain header example.com --set 'Strict-Transport-Security: max-age=31536000' --remove X-Powered-By
+pyo domain header example.com --request --set 'X-Region: eu'
+pyo domain header example.com
+```
+
+Over [MCP](/docs/mcp), `add_domain` takes `redirect_to`, and `set_domain_redirects` and `set_domain_headers` replace a domain's rules. Redirects and headers take effect within seconds, without a redeploy.
+
 ## Request timeout
 
 [Pyo Gateway](/docs/gateway) waits up to 300 seconds for the service to answer a request on its domains. After that, the visitor gets a 504 error. To change it, set **Request timeout** on the service's **Networking** page, from 0 to 3600 seconds. 0 means no limit. Like a domain change, it takes effect within seconds, without a redeploy.
