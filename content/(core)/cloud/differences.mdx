@@ -44,6 +44,8 @@ Before a service takes a domain, Pyo Cloud asks for a TXT record that proves you
 
 Pyo reads the record from your domain's own name servers, so it counts as soon as they have it. No DNS cache stands in the way.
 
+With [Cloudflare](/docs/cloudflare) connected and a zone that covers the domain, Pyo adds the record for you. It deletes that record again once the domain is proven, or when you remove the domain. A record you added yourself stays.
+
 Point the domain at your servers as usual. See [Adding a domain](/docs/domains#custom-domains). Free domains need no TXT record, but they must point at your own servers.
 
 ## Images
