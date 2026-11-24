@@ -53,6 +53,8 @@ Whatever its access, an assistant acts as you, with your [role](/docs/teams#role
   `reveal_secret`, `reveal_deploy_hook` and `reveal_backup_password` return a secret in plain text. They need **Full** access, and assistants are told to use them only when you ask. Each one is recorded in the team's **Activity**.
 </Callout>
 
+Tools show the values of environment variables as `•••`. When an assistant saves a service with a value still shown as `•••`, Pyo keeps the value you saved. It never stores `•••` as the value.
+
 ## Stay in control
 
 The **MCP** page lists your **Connected assistants**, with each one's access and when it was last used. **Disconnect** one and it loses access right away.

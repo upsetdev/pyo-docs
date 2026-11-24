@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.5.5"
+    "version": "0.51.0"
   },
   "servers": [
     {
@@ -5688,6 +5688,173 @@
         "x-pyo-access": "full"
       }
     },
+    "/sandbox-servers/join-codes": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Make a sandbox server's join code",
+        "description": "On Pyo Cloud: adds a sandbox server to the team, or makes a new code for\none that hasn't joined yet, and the command to run on it. The code works\nonce, for 15 minutes. The command joins your tailnet with a key from your\nteam's Tailscale, installs Pyo's sandbox daemon and joins Pyo over\nHTTPS. The server then gets its work from Pyo, which never reaches into\nyour tailnet. Team owners and admins. Needs Tailscale on Integrations.\n\nAPI key access: **full**.",
+        "operationId": "createSandboxJoinCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJoinCode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "`server`, `command` (run it on the server as root), `expiresAt` (when the code runs out) and `pyoUrl`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A bad name, or Tailscale isn't set up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A server with that name has joined already, the cluster that keeps your Tailscale isn't connected, or this Pyo adds sandbox servers with addSandboxServer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many codes for the team in an hour.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
+    "/sandbox-servers/{id}/reset-access": {
+      "post": {
+        "tags": [
+          "Sandboxes"
+        ],
+        "summary": "Reset a sandbox server's access",
+        "description": "On Pyo Cloud: the server's key stops working at once, and its waiting\ncommands fail. Answers with a new command for the same server, which\nworks once, for 15 minutes. Run it there to join again. Team owners and\nadmins.\n\nAPI key access: **full**.",
+        "operationId": "resetSandboxServerAccess",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The sandbox server's id, `sbs_…`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`server`, `command` (run it on the server as root), `expiresAt` (when the code runs out) and `pyoUrl`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sandbox server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The server doesn't join over HTTPS, or the cluster that keeps your Tailscale isn't connected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many codes for the team in an hour.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "full"
+      }
+    },
     "/sandbox-servers/{id}": {
       "delete": {
         "tags": [
@@ -7035,7 +7202,7 @@
         "properties": {
           "url": {
             "type": "string",
-            "description": "The sandbox server's daemon, on your tailnet."
+            "description": "The sandbox server's daemon, on your tailnet. HTTPS on the server's\ntailnet name when it joined Pyo Cloud."
           },
           "sandboxId": {
             "type": "string"
@@ -7614,6 +7781,31 @@
         "x-tags": [
           "Domains"
         ]
+      },
+      "CreateJoinCode": {
+        "type": "object",
+        "required": [
+          "teamId",
+          "name"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "description": "The team whose server it is. It needs Tailscale (Integrations)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name in Pyo: lowercase letters, digits and dashes. A server of\nthat name that hasn't joined yet gets a new code."
+          },
+          "edgeDomain": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A domain whose wildcard points at the server, as for\n`addSandboxServer`."
+          }
+        },
+        "additionalProperties": false
       },
       "CreateProjectOp": {
         "type": "object",
@@ -9876,6 +10068,9 @@
             "$ref": "#/components/schemas/DeleteDnsRecordOp"
           },
           {
+            "$ref": "#/components/schemas/RemoveDomainOp"
+          },
+          {
             "$ref": "#/components/schemas/SetClusterTrafficOp"
           },
           {
@@ -9945,6 +10140,7 @@
             "removeClusterTunnel": "#/components/schemas/RemoveClusterTunnelOp",
             "removeCronJob": "#/components/schemas/RemoveCronJobOp",
             "removeDeployHook": "#/components/schemas/RemoveDeployHookOp",
+            "removeDomain": "#/components/schemas/RemoveDomainOp",
             "removeFirewallRule": "#/components/schemas/RemoveFirewallRuleOp",
             "removeGitConnection": "#/components/schemas/RemoveGitConnectionOp",
             "removeGithubInstallation": "#/components/schemas/RemoveGithubInstallationOp",
@@ -10735,6 +10931,55 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Deployments"
+        ]
+      },
+      "RemoveDomainOp": {
+        "type": "object",
+        "title": "Remove domain",
+        "description": "Remove a domain from a service. Traffic to it stops, in place, without a redeploy. A port no other domain uses stops being public. The DNS record Pyo made for it in Cloudflare is deleted too, unless `keepDnsRecord`. Only a record Pyo made, still with its comment, is deleted. For a domain through the Cloudflare Tunnel, `restoreRecords` puts back the records the tunnel replaced (team owners and admins).\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "serviceId",
+          "domainId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "removeDomain"
+            ]
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string",
+            "description": "The domain's `id`, or its hostname."
+          },
+          "keepDnsRecord": {
+            "type": "boolean",
+            "description": "Leave the DNS record Pyo made in Cloudflare."
+          },
+          "restoreRecords": {
+            "type": "boolean",
+            "description": "Put back the records the tunnel replaced."
+          }
+        },
+        "example": {
+          "domainId": "dom_8kq2x7ad",
+          "op": "removeDomain",
+          "serviceId": "svc_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "domainId": "dom_8kq2x7ad",
+            "op": "removeDomain",
+            "serviceId": "svc_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Domains"
         ]
       },
       "RemoveFirewallRuleOp": {
@@ -12074,7 +12319,7 @@
       "SaveServiceOp": {
         "type": "object",
         "title": "Save service",
-        "description": "Save a service's configuration. With `deploymentId`, roll it out too. Changes to its `domains` go live without a deploy once it has been deployed.\n\nAPI key access: **full**.",
+        "description": "Save a service's configuration. With `deploymentId`, roll it out too. Changes to its `domains` go live without a deploy once it has been deployed. A variable sent back hidden (`•••`, as reads show it) keeps its saved value. `removeDomain` removes a domain without sending the whole service.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "service"
