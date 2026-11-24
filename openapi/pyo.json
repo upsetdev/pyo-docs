@@ -917,11 +917,11 @@
           "Observability"
         ],
         "summary": "Observability settings",
-        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory), what it keeps of\nvisitors' IP addresses, and how long it keeps data (`retention`:\n`analyticsMonths`, `metricsDays`, `buildLogDays`). `small`: the server\nPyo runs on has under 3.5 GB of memory now. The installation's admin\nturns it on or off with `setObservability`.\n\nAPI key access: **read**.",
+        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory). For the installation's\nadmin also what it keeps of visitors' IP addresses, how long it keeps\ndata (`retention`: `analyticsMonths`, `metricsDays`, `buildLogDays`) and\n`small`: the server Pyo runs on has under 3.5 GB of memory now. The\ninstallation's admin turns it on or off with `setObservability`.\n\nAPI key access: **read**.",
         "operationId": "getObservabilitySettings",
         "responses": {
           "200": {
-            "description": "`enabled`, `ipMode`, `retention` and `small`.",
+            "description": "`enabled`. For the installation's admin also `ipMode`, `retention` and `small`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5538,7 +5538,7 @@
           "Sandboxes"
         ],
         "summary": "Add a sandbox server",
-        "description": "Makes a server's one-time join code and the command to run on it. The\ncode works once, for 15 minutes. The command joins your tailnet, installs\nPyo's sandbox daemon, checks what the server can run (Firecracker where it\nhas KVM, gVisor elsewhere) and joins. Adding a server that hasn't joined\nyet again makes a new code. Team owners and admins. Needs Tailscale.\n\nAPI key access: **full**.",
+        "description": "Makes a server's one-time join code and the command to run on it. The\ncode works once, for 15 minutes. The command joins your tailnet, installs\nPyo's sandbox daemon, checks what the server can run (Firecracker where it\nhas KVM, gVisor elsewhere) and joins Pyo. The server then gets its work\nfrom Pyo over HTTPS: Pyo never calls it. Adding a server that hasn't\njoined yet again makes a new code. Team owners and admins. Needs\nTailscale. On Pyo Cloud, use createSandboxJoinCode.\n\nAPI key access: **full**.",
         "operationId": "addSandboxServer",
         "requestBody": {
           "content": {
@@ -5582,7 +5582,7 @@
             }
           },
           "409": {
-            "description": "A server with that name has joined already, or Pyo isn't on the tailnet yet.",
+            "description": "A server with that name has joined already, Pyo isn't on the tailnet yet, or the server's tailnet can't reach Pyo.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5777,7 +5777,7 @@
           "Sandboxes"
         ],
         "summary": "Reset a sandbox server's access",
-        "description": "On Pyo Cloud: the server's key stops working at once, and its waiting\ncommands fail. Answers with a new command for the same server, which\nworks once, for 15 minutes. Run it there to join again. Team owners and\nadmins.\n\nAPI key access: **full**.",
+        "description": "The server's key stops working at once, and its waiting commands fail.\nAnswers with a new command for the same server, which works once, for 15\nminutes. Run it there to join again. On a self-hosted Pyo, a server that\nshows `needsUpdate` gets the command that updates it instead: it keeps\nworking until the command runs there. Team owners and admins, or the\ninstallation's admin for its own servers.\n\nAPI key access: **full**.",
         "operationId": "resetSandboxServerAccess",
         "parameters": [
           {
@@ -5822,7 +5822,7 @@
             }
           },
           "409": {
-            "description": "The server doesn't join over HTTPS, or the cluster that keeps your Tailscale isn't connected.",
+            "description": "On Pyo Cloud, the server doesn't join over HTTPS. Or the cluster that keeps your Tailscale isn't connected, or the server's tailnet can't reach Pyo.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7202,7 +7202,7 @@
         "properties": {
           "url": {
             "type": "string",
-            "description": "The sandbox server's daemon, on your tailnet. HTTPS on the server's\ntailnet name when it joined Pyo Cloud."
+            "description": "The sandbox server's daemon, on your tailnet. HTTPS on the server's\ntailnet name when it joined over HTTPS (every server added from\n0.51.1)."
           },
           "sandboxId": {
             "type": "string"
