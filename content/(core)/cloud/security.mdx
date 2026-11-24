@@ -17,9 +17,17 @@ Every command Pyo Cloud sends to your servers is signed by a separate signing se
 
 The agent checks every command before it acts. It refuses a command that's unsigned, changed, sent twice, expired or meant for another cluster. Answers the agent acts on, like a certificate, are signed too.
 
-So Pyo Cloud can't run anything on your servers that isn't signed. Even someone who broke into Pyo Cloud's web servers couldn't make your agent run a command of their own.
+Signing protects your servers from:
 
-The signing service also limits how many commands each cluster gets, and logs every signature. Agent updates are signed only for agent versions we've released. See [Agent updates](/docs/cloud/agent-updates).
+- A stolen copy of Pyo Cloud's database. It holds no key that can sign.
+- Commands changed or sent again on the way to your server.
+- A command signed for one cluster being run on another.
+- Commands that would widen what the agent may do. The signing service refuses them.
+- Agent images we haven't released. See [Agent updates](/docs/cloud/agent-updates).
+
+The signing service also limits how many commands each cluster gets, and logs every signature.
+
+Signing doesn't protect against someone who takes over Pyo Cloud's own servers or changes its database. Apart from agent updates, the signing service sees only each command's kind and hash. It signs the commands Pyo Cloud's servers ask for. So that person could get a command like a deploy signed for your cluster. The agent's own limits still apply to every command. See [What the agent may do](#what-the-agent-may-do).
 
 ## What the agent may do
 
