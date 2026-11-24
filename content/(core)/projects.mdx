@@ -11,6 +11,8 @@ You create a project while you deploy a service. Under **Project**, choose **New
 
 Each project has a slug, the lowercase name used in service addresses. The slug also appears in the project's dashboard URLs, so it can't be a name the dashboard uses for its own pages.
 
+The slug is also the project's namespace on each cluster. Names of system namespaces, like `default`, `kube-system` and `cert-manager`, are reserved. If a cluster already has a namespace with the slug's name that Pyo didn't create, Pyo leaves it alone and the deploy fails. Use a project with another name there.
+
 ## Inside a project
 
 A project's **Overview** shows its services and where they run. Its other tabs are **Deployments** and **Settings**, which has **General**, **Networking** and **Volumes**.
