@@ -20,6 +20,8 @@ On a server with KVM, each sandbox is its own <Term tip="A very small virtual ma
 
 Your code asks Pyo to create a sandbox, then talks to the sandbox server directly to run commands and move files, with a short-lived token Pyo signs. Pyo isn't in the way of each command, and sandboxes keep working while Pyo itself restarts.
 
+The sandbox server gets its work from Pyo over HTTPS. Pyo never connects to it. See [How Pyo and the server talk](#how-pyo-and-the-server-talk).
+
 The sandbox server answers on your [tailnet](/docs/tailscale). So the code that runs commands in a sandbox, and the browser you open its terminal in, need to be on your tailnet too. Only the ports you open are on the web.
 
 ### KVM or gVisor
@@ -71,7 +73,7 @@ Pyo makes the server in your team's [Hetzner](/docs/hetzner) project, the same w
 3. Pick a location and a server type. Pyo reads the types, their vCPUs, memory, disk and monthly prices from Hetzner as you pick. Prices are before VAT and include the IPv4 address.
 4. Choose **Create**. Pyo shows the monthly price and asks once more.
 
-The page then follows the server: **Creating**, **Booting**, **Joining**, **Ready**. On its first boot the server joins your tailnet with a single-use key, gets a one-time join code from Pyo over the tailnet and runs `sandbox.sh` with it. Nothing else secret is in its setup. If your tailnet has Tailnet Lock on, Pyo shows the command to sign the server. You can leave the page while it sets up. The **Sandboxes** page shows its progress too.
+The page then follows the server: **Creating**, **Booting**, **Joining**, **Ready**. On its first boot the server joins your tailnet with a single-use key, gets a one-time join code from Pyo over the tailnet and runs `sandbox.sh` with it. Then it joins Pyo over HTTPS, like a server you add from the command line. Nothing else secret is in its setup. If your tailnet has Tailnet Lock on, Pyo shows the command to sign the server. You can leave the page while it sets up. The **Sandboxes** page shows its progress too.
 
 Hetzner Cloud servers have no KVM, so they run sandboxes on [gVisor](#what-gvisor-cant-do). Pyo puts them behind a Hetzner firewall that lets in only the web (80 and 443) and Tailscale, and they run nothing else.
 
@@ -94,14 +96,18 @@ pyo sandbox servers add sbx-1
 Pyo gives you a command to run on the new machine as root. It looks like this:
 
 ```bash
-curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- \
-  --pyo pyo.tail1234.ts.net:5006 --server sbs_abc123 --name sbx-1 \
-  --code 9f2c... --tailscale-key tskey-auth-... --version 0.4.2
+curl -fsSL https://pyo.dev/v/0.51.1/sandbox.sh | bash -s -- \
+  --pyo-url https://pyo.tail1234.ts.net --server sbs_abc123 --name sbx-1 \
+  --code 9f2c... --tailscale-key tskey-auth-... --command-key Qm9h... --version 0.51.1
 ```
 
-It joins your tailnet, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. A server without KVM gets gVisor too, and is checked again. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
+It joins your tailnet, gets an HTTPS certificate for its name there, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. A server without KVM gets gVisor too, and is checked again. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
 
-The server's daemon answers only on your tailnet. Only ports 80 and 443 are public, for the edge proxy that serves sandbox ports.
+The server reaches Pyo at Pyo's address on your tailnet. A team with a tailnet of its own reaches Pyo at its public address instead. If Pyo has none, adding the server says so. Turn on **Public dashboard** on the [Tailscale](/docs/tailscale#closing-the-public-dashboard) card first.
+
+Your tailnet needs HTTPS certificates turned on in its DNS settings. Pyo's own names on your tailnet use them too.
+
+The server's daemon answers only on your tailnet, at `https://<name>.<tailnet>.ts.net:7443`. Only ports 80 and 443 are public, for the edge proxy that serves sandbox ports.
 
 Sandbox servers show on the **Clusters** page as their own group, with their runtime, CPUs, memory, disk and sandboxes.
 
@@ -126,13 +132,24 @@ The dashboard fills in the options that join the server. These change how it ins
 
 To update the daemon, run the command again with a newer `--version`. A server that has joined needs no code then, and running sandboxes keep running. A gVisor server gets the release's gVisor too.
 
-To take Pyo off the server, remove it on the **Clusters** page or with `pyo sandbox servers rm`, then run this on it:
+To take Pyo off the server, remove it on the **Clusters** page or with `pyo sandbox servers rm`. Pyo stops taking the server's key at once. Its sandboxes keep running there until their lifetime ends, or until you run this on it:
 
 ```bash
 curl -fsSL https://your-pyo/install/sandbox.sh | bash -s -- --uninstall
 ```
 
 Its sandboxes end. Tailscale stays.
+
+### How Pyo and the server talk
+
+- **The join.** The server makes a key of its own and joins Pyo with the one-time code. Pyo takes the join only from a server your tailnet lists as one of Pyo's.
+- **Its work.** The server asks Pyo for its commands and sends back their results and a report every 15 seconds. It signs each request with its key. The key opens only that server's commands, and lasts a day. The server renews it by itself.
+- **Signed commands.** Pyo signs each command with its own key, for that one server. The server checks the signature, the server it names and that it's new before it runs it. It takes Pyo's key from the command you ran.
+- **Reset access.** Choose **Reset access** on the server's menu on the **Clusters** page. Pyo stops taking the server's key at once, and gives you a new command for the same server. Its sandboxes keep running. Run the command on the server to join it again.
+
+### Update a server
+
+A sandbox server that joined before Pyo 0.51.1 shows **Run sandbox.sh again to update this server.** It keeps working as it is until then. Choose **Update** for its command, and run it on the server as root. The server then joins over HTTPS, and its sandboxes keep running.
 
 ## Edge domain
 
@@ -178,7 +195,7 @@ Commands run as root in `/root`. pip installs into the system Python, since a sa
 
 `desktop` is `base` with a desktop and a browser, for agents that use a browser and for people who want to watch them. Its sandboxes get 2 CPUs and 2 GiB of memory unless you ask for more.
 
-- **The screen:** a desktop you watch and use in your browser, served by voxl on port 6080 inside the sandbox. Choose **Desktop** in the sandboxes list or **Open desktop** on the sandbox's page. It opens over HTTPS at `sandboxes.<tailnet>.ts.net`, which Pyo passes on to the sandbox server, so it needs [Tailscale](/docs/tailscale) set up in Pyo. Until then, **Open desktop** is greyed out.
+- **The screen:** a desktop you watch and use in your browser, served by voxl on port 6080 inside the sandbox. Choose **Desktop** in the sandboxes list or **Open desktop** on the sandbox's page. It opens over HTTPS on your tailnet, so it needs [Tailscale](/docs/tailscale) set up in Pyo. Until then, **Open desktop** is greyed out.
 - **The browser:** Google Chrome on x86-64 and Chromium on arm64. Drive it over the Chrome DevTools Protocol at `127.0.0.1:9222` inside the sandbox, with Playwright or Puppeteer. **Browser** in the sandboxes list opens the screen with the browser in front.
 
 Nothing starts until it's used: the first look at the screen or the first CDP connection starts the desktop, then the browser.
