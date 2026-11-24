@@ -13,6 +13,8 @@ Pyo can run databases for you on your clusters: **Postgres**, **MySQL** or **KV*
 
 Databases are built into Pyo. The first database on a cluster sets them up there, which takes a minute or two. Until then, its status says **Setting up databases on this cluster**. Pyo keeps them up to date when it updates itself.
 
+If the cluster already runs CloudNativePG or a MySQL operator that Pyo didn't install, Pyo doesn't set up databases there, and doesn't change it. The database says so. Remove it, or make the database on another cluster.
+
 ## Create a database
 
 Open **Databases** in the sidebar, then **Postgres**, **MySQL** or **KV**. Choose **New database** and pick:

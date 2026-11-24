@@ -25,6 +25,14 @@ If something on the machine already serves sites on ports 80 and 443, like nginx
 ● Ports 80 and 443 are in use by Traefik. Public traffic stays off, so your sites keep working.
 ```
 
+Pyo installs its own cert-manager and Pyo Gateway. If the machine already runs cert-manager or Envoy Gateway that Pyo didn't install, the command stops before it changes anything. Pyo won't change them:
+
+```text
+This server already runs cert-manager that Pyo didn't install. Pyo won't change it. Remove it, or connect a server without it.
+```
+
+Remove it and run the command again, or connect another server.
+
 Pyo can also make the cluster's first server at [Hetzner](/docs/hetzner).
 
 ## Inside a cluster
