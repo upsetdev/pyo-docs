@@ -917,11 +917,11 @@
           "Observability"
         ],
         "summary": "Observability settings",
-        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory), what it keeps of\nvisitors' IP addresses, and how long it keeps data (`retention`:\n`analyticsMonths`, `metricsDays`, `buildLogDays`). `small`: the server\nPyo runs on has under 3.5 GB of memory now. The installation's admin\nturns it on or off with `setObservability`.\n\nAPI key access: **read**.",
+        "description": "Whether observability is on for this installation (it's off on a new\ninstall on a server with under 3.5 GB of memory). For the installation's\nadmin also what it keeps of visitors' IP addresses, how long it keeps\ndata (`retention`: `analyticsMonths`, `metricsDays`, `buildLogDays`) and\n`small`: the server Pyo runs on has under 3.5 GB of memory now. The\ninstallation's admin turns it on or off with `setObservability`.\n\nAPI key access: **read**.",
         "operationId": "getObservabilitySettings",
         "responses": {
           "200": {
-            "description": "`enabled`, `ipMode`, `retention` and `small`.",
+            "description": "`enabled`. For the installation's admin also `ipMode`, `retention` and `small`.",
             "content": {
               "application/json": {
                 "schema": {
