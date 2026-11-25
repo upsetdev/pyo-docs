@@ -59,7 +59,7 @@ Each record Pyo makes has the comment `Made by Pyo (<installation id>)`. The dom
 - **Cloudflare already has a record for it:** another A, AAAA or CNAME record has the name. Pyo never overwrites a record. It shows you what's there, and a team owner or admin can choose to replace it.
 - An error, with Cloudflare's reason and **Try again**.
 
-When you remove the domain, Pyo offers to delete its record too. It only deletes a record it made, and only while that record still has its comment.
+When you remove the domain, Pyo offers to delete its record too. It only deletes a record it made, and only while that record still has its comment. While other [paths](/docs/domains#routes) still use the domain, the record stays.
 
 With the CLI, `pyo domain add` creates the record when a connected zone covers the hostname. Add `--no-cloudflare` to skip it, or `--proxied` to proxy it. `pyo domain dns <hostname>` tries again, with `--replace` to replace what's in the way. `pyo domain remove` deletes the record Pyo made, unless you add `--keep-dns-record`.
 

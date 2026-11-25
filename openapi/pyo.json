@@ -8360,7 +8360,7 @@
       "DeleteDnsRecordOp": {
         "type": "object",
         "title": "Delete dns record",
-        "description": "Delete the DNS record Pyo made for a domain in Cloudflare. Only a record Pyo made, still with its comment, is deleted. Remove the domain after this.\n\nAPI key access: **full**.",
+        "description": "Delete the DNS record Pyo made for a domain in Cloudflare. Only a record Pyo made, still with its comment, is deleted. Refused while other paths of the hostname still use it. Remove the domain after this.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "serviceId",

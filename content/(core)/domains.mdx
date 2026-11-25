@@ -50,7 +50,7 @@ To add one, open the service's **Domains** page, choose **Add domain**, enter th
 - Each service keeps its own [firewall](/docs/firewall), rate limits and [WAF](/docs/firewall), and its own analytics.
 - A path is used once per team. Another team can't use the domain.
 - All services on one domain run on the same cluster.
-- When the service that holds a domain removes it, or is deleted, the oldest path takes it over with its DNS record and certificate. When the last one goes, the domain is gone.
+- When the service that holds a domain removes it, or is deleted, the oldest path takes it over with its DNS record and certificate. Pyo offers to delete the DNS record only when the last one goes. Then the domain is gone.
 - On Pyo Cloud, you prove you own a domain once. Its paths need no proof of their own.
 
 ### Edit routes
