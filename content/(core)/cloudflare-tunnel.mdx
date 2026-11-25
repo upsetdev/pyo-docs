@@ -42,6 +42,8 @@ It works the same on Pyo Cloud. Your Cloudflare token stays with Pyo, and your c
 
 On a service's **Domains** tab, select **Switch to Tunnel**. Pyo adds the tunnel's route first, then points the name at the tunnel with a proxied CNAME record. While the record moves, the domain answers both ways, through the tunnel and directly. Once it points at the tunnel, Pyo Gateway only lets the tunnel in. A client that connects to your server directly gets a 403.
 
+Hover the Cloudflare logo before the name to see the record it points at. To move it back, open the domain's menu and choose **Switch back from Tunnel**. The domain's own page has a **Switch back** button too.
+
 If Cloudflare already has a record for the name, Pyo shows it and asks before it replaces it. Pyo keeps a copy, so **Switch back** puts it back. Developers can switch a domain when nothing is in the way. Replacing a record, or putting one back, is for team owners and admins.
 
 When you add a domain on a cluster in tunnel mode, **Through Cloudflare Tunnel** is on in the dialog and in the new service wizard.
@@ -63,7 +65,7 @@ Without a default domain, a cluster in tunnel mode has no tunnel domains. Only d
 1. Connect the server to Pyo. Pick **Cloudflare Tunnel** for the cluster.
 2. Deploy each site as a service in Pyo and add its domain.
 3. Select **Switch to Tunnel** on the domain. Traefik keeps serving until Cloudflare points at the tunnel.
-4. Check the site. If something's wrong, select **Switch back**.
+4. Check the site. If something's wrong, choose **Switch back from Tunnel** in the domain's menu.
 5. When every site has moved, stop Traefik.
 
 ## Visitors
