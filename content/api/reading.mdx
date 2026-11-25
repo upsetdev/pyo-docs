@@ -48,6 +48,8 @@ To follow them, open a WebSocket at `/services/{id}/logs/follow` with the same q
 
 If the installation has no ClickHouse set up, it returns `503`.
 
+`GET /observability/domains?team=...` returns each domain's requests over a `range` (default `24h`) with a `series` over time, busiest first. It lists only domains that had requests. While observability is off, the list is empty.
+
 ## Request logs
 
 `GET /access-logs` returns the requests your sites served, newest first. It takes `team`, `project`, `service`, `site` and `range` like observability, plus `status`, `method`, `limit` and `before` for paging back.

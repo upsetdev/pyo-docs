@@ -1074,6 +1074,79 @@
         "x-pyo-access": "read"
       }
     },
+    "/observability/domains": {
+      "get": {
+        "tags": [
+          "Observability"
+        ],
+        "summary": "Domain traffic",
+        "description": "Requests per domain of a team over a range, each with its series: a\npoint per minute for an hour, per half hour for a day, per four hours\nfor a week, per day for 30 days. Only domains that had requests are\nlisted, busiest first. No domains while observability is off.\n\nAPI key access: **read**.",
+        "operationId": "getDomainTraffic",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "description": "The team's id.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "description": "\"1h\", \"24h\" (the default), \"7d\" or \"30d\".",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`range`, `step` (seconds per point), `start` (ms, the first point) and `domains`: `host`, `requests` and `series` for each.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key, or not a valid one (revoked, expired or mistyped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such team, or you aren't in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Pyo's side. It's logged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "x-pyo-access": "read"
+      }
+    },
     "/access-logs": {
       "get": {
         "tags": [
