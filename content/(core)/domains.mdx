@@ -99,7 +99,7 @@ Some headers can't be changed, because Pyo Gateway sets or needs them: `Connecti
 
 ## In one place
 
-The team's **Domains** page has a row per domain. A green lock after the hostname means HTTPS works. A domain that needs attention shows a short note there instead, such as **Waiting for DNS** or **Certificate failed**. Hover the lock or the note for details. Each row also shows:
+The team's **Domains** page has a row per domain. A green lock after the hostname means HTTPS works. A domain that needs attention shows a short note there instead, such as **Waiting for DNS** or **Certificate failed**. Hover the lock or the note for details. A service's **Domains** tab shows the same lock and notes. Each row on the team's page also shows:
 
 - **Routed to:** the service and project the domain goes to, how many services share it, or where it redirects.
 - **Requests, 24h:** the domain's requests over the last 24 hours, as a small chart and a total. It shows a dash when the domain had no requests, or when [observability](/docs/observability#turning-it-on-or-off) is off. On a phone, this column is hidden.
@@ -139,7 +139,7 @@ You can also use [your own certificate](/docs/certificates), including wildcards
 
 ### When a certificate isn't issued
 
-While Let's Encrypt works on a certificate, the domain shows **Issuing certificate**. If it fails, or is still pending after 10 minutes, the domain shows **Certificate failed** with the reason. On the team's **Domains** list, hover over it to read the reason. Pyo keeps trying on its own.
+While Let's Encrypt works on a certificate, the domain shows **Issuing certificate**. If it fails, or is still pending after 10 minutes, the domain shows **Certificate failed** with the reason. On the team's **Domains** page or the service's **Domains** tab, hover over it to read the reason. Pyo keeps trying on its own.
 
 | Message | What it means |
 | --- | --- |
