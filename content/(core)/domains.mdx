@@ -53,7 +53,15 @@ To add one, open the service's **Domains** page, choose **Add domain**, enter th
 - When the service that holds a domain removes it, or is deleted, the oldest path takes it over with its DNS record and certificate. When the last one goes, the domain is gone.
 - On Pyo Cloud, you prove you own a domain once. Its paths need no proof of their own.
 
-The team's **Domains** page lists each domain once. Open it to see which path goes to which service.
+### Edit routes
+
+The team's **Domains** page lists each domain once. Open a domain to see which path goes to which service under **Routes**.
+
+- **Add a path:** choose **Add path**, enter the **Path** and pick the service.
+- **Change a route:** open the route's menu and choose **Edit**. You can change its path, **Strip prefix** and port. For a path, you can also pick another service on the same cluster. The route that holds the domain stays on its service.
+- **Remove a route:** open the route's menu and choose **Remove**. Removing the route that holds the domain hands it to another path. Removing the last route removes the domain.
+
+If a move to another service stops halfway, an error says which service each path goes to now. Viewers can see routes but can't change them.
 
 ## Redirects
 
