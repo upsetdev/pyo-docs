@@ -99,10 +99,9 @@ Some headers can't be changed, because Pyo Gateway sets or needs them: `Connecti
 
 ## In one place
 
-The team's **Domains** page has a row per domain. Each row shows:
+The team's **Domains** page has a row per domain. A green lock after the hostname means HTTPS works. A domain that needs attention shows a short note there instead, such as **Waiting for DNS** or **Certificate failed**. Hover the lock or the note for details. Each row also shows:
 
 - **Routed to:** the service and project the domain goes to, how many services share it, or where it redirects.
-- **Status:** whether the domain is live, or what it's waiting for.
 - **Requests, 24h:** the domain's requests over the last 24 hours, as a small chart and a total. It shows a dash when the domain had no requests, or when [observability](/docs/observability#turning-it-on-or-off) is off. On a phone, this column is hidden.
 
 Search, filter and sort the list. Open a domain to see its routes, redirects and headers, with its DNS record and certificate.
