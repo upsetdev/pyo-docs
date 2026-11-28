@@ -96,8 +96,10 @@ The firewall doesn't cover **Port on every server** ports, or your servers' own 
 
 Pyo finds a visitor's country with an IP-location database (GeoLite2 Country) built into the gateway. The gateway doesn't download anything for it.
 
+Country rules work on every website domain. On a domain behind Cloudflare or through Cloudflare Tunnel, Pyo uses the country Cloudflare sends with each request. Cloudflare's IP geolocation must be on (it is by default). If it's off, country rules match no one there, and "is not in" rules block everyone. Visitors that Cloudflare can't place count as country XX.
+
 <Callout type="warn">
-  Websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They don't trust the `X-Forwarded-For` header, because a client could put any address there. So behind a tunnel or a CDN, every visitor looks like the tunnel or the CDN, and country rules see its location. Behind Cloudflare, turn on [Behind Cloudflare](#behind-cloudflare) to see the visitor.
+  Elsewhere, websites identify visitors by the address they connect from, or by the [PROXY protocol](/docs/gateway#proxy-protocol-on-websites) header. They don't trust the `X-Forwarded-For` header, because a client could put any address there. So behind another CDN or proxy, every visitor looks like that proxy, and country rules see its location.
 </Callout>
 
 ## See what was turned away
