@@ -96,9 +96,9 @@ pyo sandbox servers add sbx-1
 Pyo gives you a command to run on the new machine as root. It looks like this:
 
 ```bash
-curl -fsSL https://pyo.dev/v/0.51.1/sandbox.sh | bash -s -- \
+curl -fsSL https://pyo.dev/v/0.52.0/sandbox.sh | bash -s -- \
   --pyo-url https://pyo.tail1234.ts.net --server sbs_abc123 --name sbx-1 \
-  --code 9f2c... --tailscale-key tskey-auth-... --command-key Qm9h... --version 0.51.1
+  --code 9f2c... --tailscale-key tskey-auth-... --command-key Qm9h... --version 0.52.0
 ```
 
 It joins your tailnet, gets an HTTPS certificate for its name there, installs the daemon, Firecracker and the guest kernel, checks what the server can run and joins Pyo. A server without KVM gets gVisor too, and is checked again. The join code works once, for 15 minutes. When it expires, the dashboard says **This command expired**. Choose **Get a new command** for a fresh one, and the old one stops working.
@@ -108,6 +108,8 @@ The server reaches Pyo at Pyo's address on your tailnet. A team with a tailnet o
 Your tailnet needs HTTPS certificates turned on in its DNS settings. Pyo's own names on your tailnet use them too.
 
 The server's daemon answers only on your tailnet, at `https://<name>.<tailnet>.ts.net:7443`. Only ports 80 and 443 are public, for the edge proxy that serves sandbox ports.
+
+With ufw active, `sandbox.sh` opens 7443 on `tailscale0` and closes 7070, which Pyo used before 0.52.0.
 
 Sandbox servers show on the **Clusters** page as their own group, with their runtime, CPUs, memory, disk and sandboxes.
 
@@ -149,7 +151,11 @@ Its sandboxes end. Tailscale stays.
 
 ### Update a server
 
-A sandbox server that joined before Pyo 0.51.1 shows **Run sandbox.sh again to update this server.** It keeps working as it is until then. Choose **Update** for its command, and run it on the server as root. The server then joins over HTTPS, and its sandboxes keep running.
+A sandbox server that joined before Pyo 0.52.0 needs an update. Pyo no longer reaches it the old way, so it takes no commands until you update it. The **Clusters** page shows **Needs update** and "This server needs an update. Press Update to reconnect it." Each sandbox on it shows the same. Until then, creating, deleting, pausing or resuming its sandboxes, opening their ports, the terminal, files and the desktop all say so. Its sandboxes keep running.
+
+Choose **Update** on the server or on one of its sandboxes. Pyo shows a command for the same server. Run it on the server as root. The server joins over HTTPS and takes commands again, and its sandboxes keep running. `pyo sandbox servers ls` shows **needs update** for such a server.
+
+A command with `--pyo` no longer works. Running it, or updating such a server with `--version` alone, says to press **Update** in Pyo.
 
 ## Edge domain
 
