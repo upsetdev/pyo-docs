@@ -24,9 +24,9 @@ When you change it, the cluster's free domains move to the new address within se
 
 ### In tunnel mode
 
-A cluster that takes its websites through [Cloudflare Tunnel](/docs/cloudflare-tunnel) gives each service a tunnel domain instead of a free one. Choose **Tunnel domain** when you add a domain. It's a name under the tunnel's default domain, like `shop-web.example.com`. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no tunnel domain, and the dialog says to pick one.
+A cluster with [Cloudflare Tunnel](/docs/cloudflare-tunnel) on gives each service a tunnel domain instead of a free one. Choose **Tunnel domain** when you add a domain. It's a name under the tunnel's default domain, like `shop-web.example.com`. One wildcard record covers them, so they need no record of their own. A record you made for a name comes first. Without a default domain, the cluster has no tunnel domain, and the dialog says to pick one.
 
-Its nip.io domains stop answering from the internet in tunnel mode. They answer again when the cluster goes back to public ports, with nothing to move.
+Its nip.io domains stop answering from the internet while public ports are off. They answer again when public ports are back on, with nothing to move.
 
 ## Custom domains
 
@@ -39,6 +39,10 @@ Is your DNS on Cloudflare? [Connect Cloudflare](/docs/cloudflare) and Pyo create
 Adding or removing a domain, or changing its HTTPS settings, takes effect within seconds. You don't need to redeploy, and the service keeps running. A service that hasn't been deployed yet gets its domains with its first deploy.
 
 Domains belong to the service, not to a deployment, so a [rollback](/docs/deploy/rollbacks) keeps the domains the service has now.
+
+## Traffic path
+
+When a cluster has both public ports and Cloudflare Tunnel on, pick the domain's **Path**: **Direct** (ports 80 and 443 of the servers) or **Cloudflare Tunnel**. A new domain is Direct unless public ports are off. Moving a domain drops its open connections once. A domain shows **Not served** while its path is off on its cluster. See [Traffic](/docs/clusters#public-traffic).
 
 ## Routes
 

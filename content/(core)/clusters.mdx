@@ -64,18 +64,17 @@ The **Workloads** tab opens on your team's **Services**, with their project, kin
 
 ## Traffic [#public-traffic]
 
-**Traffic**, on a cluster's **Settings** tab, decides how the cluster answers visitors. It's **Public ports** by default. The card also shows whether the cluster is on your [tailnet](/docs/tailscale). Until Tailscale is set up, it links to **Integrations**.
+Traffic reaches your cluster's websites on up to three paths. Turn each on or off under **Settings › Traffic**. A cluster always keeps one on. Until Tailscale is set up, the card links to **Integrations**.
 
-- **Public ports:** every server runs [Pyo Gateway](/docs/gateway) on ports 80 and 443 and your public TCP and UDP ports, except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Ports a service opens directly on the servers are open too. These are a **Port on every server**, or a [public port](/docs/domains#public-tcp-and-udp-ports) with the gateway turned off.
-- **Tailscale only:** nothing in the cluster is public. No server answers on the gateway's ports or on the ports services open directly. Services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until it's back on.
+- **Public ports**: ports 80 and 443 on every server except [build-only servers](/docs/builders#where-a-builder-can-run). Point your domains at any of them. Every server runs [Pyo Gateway](/docs/gateway) there, with your public TCP and UDP ports. **Accept PROXY protocol** only if every connection comes through a load balancer that sends it. Saving it drops open connections once. With public ports off, **Publish TCP and UDP ports** keeps your services' TCP and UDP ports on the servers.
+- **Cloudflare Tunnel**: websites through Cloudflare, with no open ports. See [Cloudflare Tunnel](/docs/cloudflare-tunnel).
+- **Tailscale**: websites on ts.net names and on your servers' Tailscale addresses. Servers stay on your tailnet when it's off. See [Tailscale switch](/docs/tailscale#tailscale-switch).
 
-With [free domains](/docs/domains#free-domains) on **Tailscale**, services' websites are reachable from your tailnet on ports 80 and 443, whether public traffic is on or off. Each server's Tailscale address answers, except on build-only servers. Nothing else opens. A service's [firewall](/docs/firewall) and [WAF](/docs/waf) apply there too, and they see each device's own tailnet address.
+Each domain takes one path. When you turn off a path that domains use, Pyo lists them first. A domain whose path is off shows **Not served** and keeps its settings. Turn the path on again to serve it.
 
-- **Cloudflare Tunnel:** websites come in through [Cloudflare Tunnel](/docs/cloudflare-tunnel), with no ports 80 and 443 open. Public TCP and UDP ports stay on the servers unless you turn them off. They don't go through the tunnel.
+With public ports off, services keep running without a restart. They still reach each other inside the cluster on all their ports. On the server Pyo runs on, the dashboard and registry stay reachable over your [tailnet](/docs/tailscale). Let's Encrypt can't renew certificates over HTTP until public ports are back on.
 
-Going back to **Public ports** opens the same ports again. A **Port on every server** keeps the number it had.
-
-If another program in the cluster still holds ports 80 and 443 on a server, like k3s's Traefik, the gateway can't get them there. The cluster's **Networking** tab and its setup checklist then say `Ports 80 and 443 are in use on <server>`, and so does `pyo status`. Your services' sites don't answer on that server until you stop that program. The gateway takes the ports once they're free. Or pick **Cloudflare Tunnel**, which needs neither port.
+If another program in the cluster still holds ports 80 and 443 on a server, like k3s's Traefik, the gateway can't get them there. The cluster's **Networking** tab and its setup checklist then say `Ports 80 and 443 are in use on <server>`, and so does `pyo status`. Your services' sites don't answer on that server until you stop that program. The gateway takes the ports once they're free. Or use **Cloudflare Tunnel**, which needs neither port.
 
 Pyo doesn't check whether a server can be reached from the internet. A server with only a private or tailnet address runs the gateway too. It answers anyone who can reach that address.
 

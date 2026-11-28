@@ -135,8 +135,12 @@ On a self-hosted Pyo, a team without its own Tailscale still adds servers over t
 
 ## Websites on your tailnet
 
-A cluster's [free domains](/docs/domains#free-domains) can use its servers' Tailscale addresses, like `shop-web.100.64.0.2.nip.io`. Then your services' websites are reachable from your tailnet on ports 80 and 443, even while the cluster's [traffic](/docs/clusters#public-traffic) is **Tailscale only** or **Cloudflare Tunnel**. A server behind NAT uses this by default.
+A cluster's [free domains](/docs/domains#free-domains) can use its servers' Tailscale addresses, like `shop-web.100.64.0.2.nip.io`. Then your services' websites are reachable from your tailnet on ports 80 and 443, whatever the cluster's other [traffic paths](/docs/clusters#public-traffic) are. Each server's Tailscale address answers, except on build-only servers. A service's [firewall](/docs/firewall) and [WAF](/docs/waf) apply there too, and they see each device's own tailnet address. A server behind NAT uses this by default.
 
 <Callout type="warn">
   HTTPS certificates are public. Names on your tailnet show up in public <Term tip="Public logs of every certificate issued, so anyone can check which ones exist.">Certificate Transparency</Term> logs. They stay reachable only from your tailnet. Still, to keep the names from giving much away, give your tailnet a random name with **Rename tailnet** under **DNS** in the admin console.
 </Callout>
+
+## Tailscale switch
+
+**Settings › Traffic › Tailscale** decides whether your services' websites answer on the tailnet. Off, their ts.net names and free domains on Tailscale addresses stop answering. Your servers, Pyo's own tailnet names and the registry stay on the tailnet. On the cluster Pyo runs on, turning it off or on drops open connections to Pyo on the tailnet once. Not once the cluster's connect command has run for Pyo 0.52.0.
