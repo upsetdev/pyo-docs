@@ -58,21 +58,53 @@ Options:
 
 ## `pyo observability`
 
-Whether observability (analytics, request logs, usage history) is on for this Pyo, or turn it on or off. Turning it is for the installation's admin, with a full-access key
+Whether observability (analytics, request logs, usage history) is on for this Pyo, or turn it on or off. Turning it is for the installation's admin, with a full-access key.
 
 ```text
-Whether observability (analytics, request logs, usage history) is on for this Pyo, or turn it on or off. Turning it is for the installation's admin, with a full-access key
+Whether observability (analytics, request logs, usage history) is on for this Pyo, or turn it on or off. Turning it is for the installation's admin, with a full-access key.
+
+With --team, the team's: whether its servers collect, whether they keep request logs, and what they keep of visitors' IP addresses and query strings. Changing those is for the team's owners and admins.
 
 Usage: pyo observability [OPTIONS] [STATE]
 
 Arguments:
-  [STATE]  [possible values: on, off]
+  [STATE]
+          [possible values: on, off]
 
 Options:
-      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
-      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
-  -h, --help           Print help
-  -V, --version        Print version
+      --team <TEAM>
+          Show or change this team's settings (slug or id) instead of the installation's
+
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to)
+          
+          [env: PYO_URL]
+
+      --request-logs <REQUEST_LOGS>
+          Whether the team's servers keep its request logs
+          
+          [possible values: on, off]
+
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved)
+          
+          [env: PYO_API_KEY]
+
+      --ip <IP>
+          What the team keeps of visitors' IP addresses, up to the installation's limit
+          
+          [possible values: none, anonymized, full, default]
+
+      --query-strings <QUERY_STRINGS>
+          What the team keeps of query strings, up to the installation's limit
+          
+          [possible values: keep, names, none, default]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 ```
 
 ## `pyo link`
@@ -1432,6 +1464,104 @@ Options:
       --team <TEAM>    The team (slug or id). Defaults to your first team
   -h, --help           Print help
   -V, --version        Print version
+```
+
+## `pyo cluster`
+
+A cluster's settings: its traffic paths
+
+```text
+A cluster's settings: its traffic paths
+
+Usage: pyo cluster [OPTIONS] <COMMAND>
+
+Commands:
+  paths    Show or turn the cluster's traffic paths on and off: public ports 80 and 443, Cloudflare Tunnel and websites on the tailnet. Turning one off that domains use lists them first. Owners and admins
+  gateway  Show or change the cluster's gateway: HTTP/3, compression, the TLS minimum and the timeout defaults for services without their own. HTTP/3 and the TLS minimum drop open connections once. Owners and admins
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+      --url <URL>      Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>  An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>    The team (slug or id). Defaults to your first team
+  -h, --help           Print help
+  -V, --version        Print version
+```
+
+### `pyo cluster paths`
+
+Show or turn the cluster's traffic paths on and off: public ports 80 and 443, Cloudflare Tunnel and websites on the tailnet. Turning one off that domains use lists them first. Owners and admins
+
+```text
+Show or turn the cluster's traffic paths on and off: public ports 80 and 443, Cloudflare Tunnel and websites on the tailnet. Turning one off that domains use lists them first. Owners and admins
+
+Usage: pyo cluster paths [OPTIONS] <CLUSTER>
+
+Arguments:
+  <CLUSTER>  The cluster, by name or id
+
+Options:
+      --public <PUBLIC>
+          Ports 80 and 443 on the servers: on or off
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --tunnel <TUNNEL>
+          Cloudflare Tunnel: on or off. Off removes it at Cloudflare
+      --tailnet <TAILNET>
+          Websites on the tailnet: on or off. Servers stay on the tailnet
+      --team <TEAM>
+          The team (slug or id). Defaults to your first team
+      --ports <PORTS>
+          TCP and UDP ports on the servers while public ports are off: on or off
+      --move-to-tunnel <MOVE_TO_TUNNEL>
+          Turning public ports off: move domains in the tunnel's Cloudflare account to the tunnel first (on by default): on or off
+      --restore-records <RESTORE_RECORDS>
+          Turning the tunnel off: put back the records it replaced (on by default): on or off
+  -y, --yes
+          Go ahead when domains move or stop
+  -h, --help
+          Print help
+  -V, --version
+          Print version
+```
+
+### `pyo cluster gateway`
+
+Show or change the cluster's gateway: HTTP/3, compression, the TLS minimum and the timeout defaults for services without their own. HTTP/3 and the TLS minimum drop open connections once. Owners and admins
+
+```text
+Show or change the cluster's gateway: HTTP/3, compression, the TLS minimum and the timeout defaults for services without their own. HTTP/3 and the TLS minimum drop open connections once. Owners and admins
+
+Usage: pyo cluster gateway [OPTIONS] <CLUSTER>
+
+Arguments:
+  <CLUSTER>  The cluster, by name or id
+
+Options:
+      --http3 <HTTP3>
+          HTTP/3 on UDP port 443: on or off. Needs public ports, and UDP 443 open in the servers' firewall
+      --url <URL>
+          Your Pyo, e.g. https://pyo.example.com (default: the one you signed in to) [env: PYO_URL]
+      --compression <COMPRESSION>
+          Zstd, Brotli and Gzip on services' HTTPS domains: on or off
+      --token <TOKEN>
+          An API key, for CI (default: the one `pyo login` saved) [env: PYO_API_KEY]
+      --team <TEAM>
+          The team (slug or id). Defaults to your first team
+      --tls-min <TLS_MIN>
+          The oldest TLS version HTTPS accepts: 1.2 or 1.3
+      --request-timeout <REQUEST_TIMEOUT>
+          Seconds a request may take, 1 to 3600, or 0 for no limit
+      --idle-timeout <IDLE_TIMEOUT>
+          Seconds a WebSocket or stream may stay quiet, 60 to 86400
+  -y, --yes
+          Go ahead when open connections drop
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 
 ## `pyo firewall`
