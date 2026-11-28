@@ -43,6 +43,39 @@ The [firewall](/docs/firewall) works on top of these, per service. It also cover
 
 A port with the gateway turned off is opened directly on the servers. Your service sees each visitor's address itself, but the port has no analytics or options.
 
+## Gateway settings
+
+Each cluster has a **Gateway** panel on its **Settings** tab, under **Traffic**. It shows the gateway on each server and a few settings for every service on the cluster. Team owners and admins change them. Developers and viewers see them.
+
+### Status
+
+- **Controller**: Envoy Gateway's controller. It turns your services' routes into the proxies' settings.
+- **Proxy**: the proxy on each server, with its version and when it last started. A server that should run one and doesn't is listed as not ready. Build-only servers run none.
+- **Firewall**: the [WAF](/docs/waf) on each server, while a service has it on.
+
+### Settings
+
+| Setting | What it does | Open connections when you save |
+|---|---|---|
+| HTTP/2 | Always on for HTTPS. | |
+| HTTP/3 | Websites also answer HTTP/3, on UDP port 443. Needs public ports on. Browsers use HTTP/2 where UDP is blocked. | Drop once on each server's public ports, one server at a time |
+| Compression | Zstd, Brotli and Gzip on HTTPS answers, whichever the browser accepts first. Images, video and answers that are already compressed are left as they are. | Stay open |
+| TLS minimum | 1.2 or 1.3. With 1.3, clients that only speak TLS 1.2 can't connect. | Every HTTPS connection drops once |
+| Request timeout | How long a request may take, for services without their own. 300 seconds unless you change it, 0 for no limit. | Stay open |
+| Idle timeout | How long a WebSocket or stream may stay quiet, for every service. 1 hour unless you change it. | Stay open |
+
+The dashboard asks before a save that drops connections. Visitors reconnect by themselves. WebSockets and uploads still running are cut.
+
+<Callout type="warn">
+  HTTP/3 needs UDP port 443 open to every server. Open it in your provider's firewall: Pyo can't see that firewall. If a service publishes UDP port 443 itself, free it first.
+</Callout>
+
+With compression on, the gateway compresses answers itself and asks your service for uncompressed ones. Files your service keeps compressed (`.br`, `.gz`) aren't used then. Plain HTTP isn't compressed.
+
+These settings need the cluster's agent from Pyo 0.52.0, with the cluster's connect command run once. Until then the panel says what to do. The request timeout works with any agent.
+
+From the CLI: [`pyo cluster gateway`](/docs/cli/commands#pyo-cluster-gateway).
+
 ## The problem with most proxies
 
 Most web proxies for clusters, including Traefik and ingress-nginx, work the same way by default. Traefik's standard install, which comes with k3s, is one example. Here's why that matters for Pyo:
