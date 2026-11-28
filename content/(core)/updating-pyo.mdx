@@ -62,7 +62,7 @@ Most updates need nothing from you. Within a minute of the update, each cluster 
 Some cases need a command on a cluster:
 
 - **The update to 0.51.0, once.** Before 0.51.0, an agent couldn't update its own permissions. So after this update, each cluster waits for the command once. After that, the agent keeps its permissions current by itself.
-- **A release that brings something the agent can't add by itself**, like a new set of permissions. The release notes then say "After updating, run the connect command shown in each cluster's settings."
+- **A release that brings something the agent can't add by itself**, like a new set of permissions or a new Envoy Gateway chart, as in 0.52.0. The release notes then say "After updating, run the connect command shown in each cluster's settings."
 - **A cluster that doesn't refresh on its own.** That's a cluster connected with [`PYO_AGENT_SELF_UPDATE=false`](/docs/system-reference#connections). It waits for the command after every update that changes its install.
 
 The cluster Pyo runs on never waits for you. Its server runs the command by itself within a few minutes of the update, 0.51.0 included. So if that's your only cluster, there's nothing to run.
