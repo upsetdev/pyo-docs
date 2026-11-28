@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
     },
-    "version": "0.51.0"
+    "version": "0.52.0-rc.1"
   },
   "servers": [
     {
@@ -4706,7 +4706,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`sandboxes`, newest first, each with `id`, `name`, `teamId`, `projectId`, `serverId`, `server`, `template`, `templateId`, `state` (\"creating\", \"running\", \"pausing\", \"paused\", \"resuming\", \"stopping\", \"stopped\" or \"failed\"), `preparing` (true while it waits for its server to make its template), `runtime` (\"firecracker\" or \"gvisor\"), `cpus`, `memoryMib`, `diskMib`, `network`, `isolation`, `labels`, `env` (names only), `url` (its server's daemon), `edgeUrl` (its server's edge proxy, or null), `ports` (each `port`, `public` and `url`), `error`, `createdBy`, `createdAt`, `startedAt`, `expiresAt` (null when it runs until it's deleted), `pausedAt` and `endedAt`. Also `limits` (the team's, `maxTtlSecs` null when there's no limit) and `inUse` (what its sandboxes take now).",
+            "description": "`sandboxes`, newest first, each with `id`, `name`, `teamId`, `projectId`, `serverId`, `server`, `template`, `templateId`, `state` (\"creating\", \"running\", \"pausing\", \"paused\", \"resuming\", \"stopping\", \"stopped\" or \"failed\"), `preparing` (true while it waits for its server to make its template), `runtime` (\"firecracker\" or \"gvisor\"), `cpus`, `memoryMib`, `diskMib`, `network`, `isolation`, `labels`, `env` (names only), `url` (its server's daemon, HTTPS on the server's tailnet name, or null while `serverNeedsUpdate`), `serverNeedsUpdate` (its server joined before 0.52.0 and takes no commands until it's updated), `edgeUrl` (its server's edge proxy, or null), `ports` (each `port`, `public` and `url`), `error`, `createdBy`, `createdAt`, `startedAt`, `expiresAt` (null when it runs until it's deleted), `pausedAt` and `endedAt`. Also `limits` (the team's, `maxTtlSecs` null when there's no limit) and `inUse` (what its sandboxes take now).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4817,7 +4817,7 @@
             }
           },
           "409": {
-            "description": "No sandbox server can run it: none yet, none with the template, or none with KVM for `isolation: vm`.",
+            "description": "No sandbox server can run it: none yet, none with the template, none with KVM for `isolation: vm`, or the servers need an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4881,7 +4881,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The sandbox, with `connection` (as in `createSandbox`) when you may use sandboxes and it lives. Otherwise `connection` is null and `connectionNote` says why: a read-only key, a viewer, or a sandbox that has ended.",
+            "description": "The sandbox, with `connection` (as in `createSandbox`) when you may use sandboxes and it lives. Otherwise `connection` is null and `connectionNote` says why: a read-only key, a viewer, a sandbox that has ended, or a server that needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4964,6 +4964,16 @@
           },
           "404": {
             "description": "No such sandbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Its server needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5119,7 +5129,7 @@
             }
           },
           "409": {
-            "description": "It has ended, or isn't running.",
+            "description": "It has ended, isn't running, or its server needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5193,7 +5203,7 @@
             }
           },
           "409": {
-            "description": "It has ended, or isn't paused.",
+            "description": "It has ended, isn't paused, or its server needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5351,7 +5361,7 @@
             }
           },
           "409": {
-            "description": "It has ended.",
+            "description": "It has ended, or its server needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5435,7 +5445,7 @@
             }
           },
           "409": {
-            "description": "It has ended, or its server has no edge proxy.",
+            "description": "It has ended, its server has no edge proxy, or its server needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5520,7 +5530,7 @@
             }
           },
           "409": {
-            "description": "It has ended.",
+            "description": "It has ended, or its server needs an update.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5564,7 +5574,7 @@
         ],
         "responses": {
           "200": {
-            "description": "`servers`, each with `id`, `teamId` (null for the installation's), `name`, `address`, `state` (\"joining\", \"ready\", \"unreachable\" or \"refused\"), `enabled`, `runtime` (\"firecracker\" or \"gvisor\", what runs its sandboxes, null until it reports), `capability` (`runtime`, `kvm`, `bootMs`, `arch`, `cpus`, `memory`, `disk`, `gvisorVersion` and the checks), `summary` (one line about it), `capacity`, `templates`, `daemonVersion`, `lastReportAt`, `error`, `sandboxes` (how many run there), `createdAt`, `edgeDomain` and, with an edge domain, `edge`: its `domain`, `https` (whether it serves HTTPS), `cert` (`state`: \"none\", \"issuing\", \"ready\" or \"failed\", `notAfter`, `issuedAt`, `error`, `served`), `cloudflare` (the connected zone that covers it: `teamId`, `zone`, `canEdit`, or null) and `dns` (`name`, the `records` to point it at the server, and what Pyo `made`).",
+            "description": "`servers`, each with `id`, `teamId` (null for the installation's), `name`, `address`, `state` (\"joining\", \"ready\", \"unreachable\" or \"refused\"), `enabled`, `runtime` (\"firecracker\" or \"gvisor\", what runs its sandboxes, null until it reports), `capability` (`runtime`, `kvm`, `bootMs`, `arch`, `cpus`, `memory`, `disk`, `gvisorVersion` and the checks), `summary` (one line about it), `capacity`, `templates`, `daemonVersion`, `lastReportAt`, `error`, `sandboxes` (how many run there), `createdAt`, `outbound` (it gets its work over its channel), `tailnetName` (its name on the team's tailnet), `needsUpdate` (it joined before 0.52.0 and takes no commands until resetSandboxServerAccess gives the command that updates it), `edgeDomain` and, with an edge domain, `edge`: its `domain`, `https` (whether it serves HTTPS), `cert` (`state`: \"none\", \"issuing\", \"ready\" or \"failed\", `notAfter`, `issuedAt`, `error`, `served`), `cloudflare` (the connected zone that covers it: `teamId`, `zone`, `canEdit`, or null) and `dns` (`name`, the `records` to point it at the server, and what Pyo `made`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5850,7 +5860,7 @@
           "Sandboxes"
         ],
         "summary": "Reset a sandbox server's access",
-        "description": "The server's key stops working at once, and its waiting commands fail.\nAnswers with a new command for the same server, which works once, for 15\nminutes. Run it there to join again. On a self-hosted Pyo, a server that\nshows `needsUpdate` gets the command that updates it instead: it keeps\nworking until the command runs there. Team owners and admins, or the\ninstallation's admin for its own servers.\n\nAPI key access: **full**.",
+        "description": "The server's key stops working at once, and its waiting commands fail.\nAnswers with a new command for the same server, which works once, for 15\nminutes. Run it there to join again. On a self-hosted Pyo, a server that\nshows `needsUpdate` gets the command that updates it instead (Update):\nit takes no commands until the command runs there. Its sandboxes keep\nrunning. Team owners and admins, or the installation's admin for its own\nservers.\n\nAPI key access: **full**.",
         "operationId": "resetSandboxServerAccess",
         "parameters": [
           {
@@ -7275,7 +7285,7 @@
         "properties": {
           "url": {
             "type": "string",
-            "description": "The sandbox server's daemon, on your tailnet. HTTPS on the server's\ntailnet name when it joined over HTTPS (every server added from\n0.51.1)."
+            "description": "The sandbox server's daemon, on your tailnet: HTTPS on the server's\ntailnet name."
           },
           "sandboxId": {
             "type": "string"
@@ -7295,7 +7305,7 @@
               "string",
               "null"
             ],
-            "description": "Where its ports' web pages open over HTTPS on your tailnet, like the\ndesktop's screen: `<webUrl>/v1/sandboxes/{id}/web/{port}/`, with the\ntoken once as `?pyo_token=`. Missing until Tailscale is set up and\nthat name is ready."
+            "description": "Where its ports' web pages open over HTTPS on your tailnet, like the\ndesktop's screen: `<webUrl>/v1/sandboxes/{id}/web/{port}/`, with the\ntoken once as `?pyo_token=`. The same as `url`."
           }
         }
       },
@@ -9808,6 +9818,9 @@
             "$ref": "#/components/schemas/DeleteTeamOp"
           },
           {
+            "$ref": "#/components/schemas/SetTeamObservabilityOp"
+          },
+          {
             "$ref": "#/components/schemas/InviteMemberOp"
           },
           {
@@ -10153,6 +10166,12 @@
             "$ref": "#/components/schemas/RemoveClusterTunnelOp"
           },
           {
+            "$ref": "#/components/schemas/SetClusterPathsOp"
+          },
+          {
+            "$ref": "#/components/schemas/SetClusterGatewayOp"
+          },
+          {
             "$ref": "#/components/schemas/RotateTunnelTokenOp"
           },
           {
@@ -10252,6 +10271,8 @@
             "scaleService": "#/components/schemas/ScaleServiceOp",
             "setAutoscale": "#/components/schemas/SetAutoscaleOp",
             "setClusterFreeDomainAddress": "#/components/schemas/SetClusterFreeDomainAddressOp",
+            "setClusterGateway": "#/components/schemas/SetClusterGatewayOp",
+            "setClusterPaths": "#/components/schemas/SetClusterPathsOp",
             "setClusterPreviewDomain": "#/components/schemas/SetClusterPreviewDomainOp",
             "setClusterPublicTraffic": "#/components/schemas/SetClusterPublicTrafficOp",
             "setClusterTraffic": "#/components/schemas/SetClusterTrafficOp",
@@ -10269,6 +10290,7 @@
             "setServiceBehindCdn": "#/components/schemas/SetServiceBehindCdnOp",
             "setServiceWaf": "#/components/schemas/SetServiceWafOp",
             "setTeamBackupSelection": "#/components/schemas/SetTeamBackupSelectionOp",
+            "setTeamObservability": "#/components/schemas/SetTeamObservabilityOp",
             "stopService": "#/components/schemas/StopServiceOp",
             "syncCompose": "#/components/schemas/SyncComposeOp",
             "testAlertChannel": "#/components/schemas/TestAlertChannelOp",
@@ -10898,7 +10920,7 @@
       "RemoveClusterTunnelOp": {
         "type": "object",
         "title": "Remove cluster tunnel",
-        "description": "Remove a cluster's Cloudflare Tunnel: its routes, the DNS records Pyo made (with `restoreRecords`, the ones they replaced come back), the connector in the cluster, its certificate and the tunnel itself. Pick Public ports or Tailscale only for the cluster first. Team owners and admins.\n\nAPI key access: **full**.",
+        "description": "Remove a cluster's Cloudflare Tunnel: its routes, the DNS records Pyo made (with `restoreRecords`, the ones they replaced come back), the connector in the cluster, its certificate and the tunnel itself. Pick Public ports or Tailscale only for the cluster first. Team owners and admins. Prefer setClusterPaths.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId"
@@ -12080,7 +12102,7 @@
       "RotateTunnelTokenOp": {
         "type": "object",
         "title": "Rotate tunnel token",
-        "description": "Give the cluster's Cloudflare Tunnel a new token and a new certificate, and drop its old connections. Team owners and admins.\n\nAPI key access: **full**.",
+        "description": "Give the cluster's Cloudflare Tunnel a new token and a new certificate. The old token can't connect from then on. Its connectors still connected are cut once the new ones are, or after 5 minutes. Team owners and admins.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId"
@@ -12785,6 +12807,168 @@
           "Clusters"
         ]
       },
+      "SetClusterGatewayOp": {
+        "type": "object",
+        "title": "Set cluster gateway",
+        "description": "A cluster's gateway settings. Unset fields stay as they are. `http3`: HTTP/3 on UDP port 443 next to HTTPS. It needs public ports on and UDP port 443 free on the servers, and the servers' firewalls must let UDP 443 in. Turning it on or off drops open connections on each server's public ports once, one server at a time. `tlsMin`: \"1.2\" or \"1.3\". Changing it drops every open HTTPS connection once. `compression`: Zstd, Brotli and Gzip on services' HTTPS domains. `requestTimeout` (seconds, 1 to 3600, or 0 for no limit) and `idleTimeout` (how long a WebSocket or stream may stay quiet, 60 to 86400 seconds, at least the request timeout): the defaults for services without their own. Compression and the defaults change routes only, without dropping connections. `drops` in the answer says whether open connections drop once. Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "clusterId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setClusterGateway"
+            ]
+          },
+          "clusterId": {
+            "type": "string"
+          },
+          "http3": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "compression": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "tlsMin": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestTimeout": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "idleTimeout": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        },
+        "example": {
+          "clusterId": "cl_8kq2x7ad",
+          "op": "setClusterGateway"
+        },
+        "examples": [
+          {
+            "clusterId": "cl_8kq2x7ad",
+            "op": "setClusterGateway"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
+      "SetClusterPathsOp": {
+        "type": "object",
+        "title": "Set cluster paths",
+        "description": "Turn a cluster's traffic paths on or off: public ports 80 and 443 (`public`), Cloudflare Tunnel (`tunnel`, with `defaultDomain` and `accountId` as for setClusterTraffic) and websites on the tailnet (`tailnet`: ts.net names and free domains on the servers' Tailscale addresses; the servers stay on the tailnet). Unset fields stay as they are. At least one path stays on. Each domain takes one path, and a domain whose path is off isn't served. When a path turned off still has domains, nothing changes: `status` is \"confirm\" and `domains` lists them, each with `outcome` \"moves\" or \"stops\". Send it again with `confirm` to go ahead. Turning public ports off with the tunnel on moves the domains in the tunnel's Cloudflare account to the tunnel first (`moveToTunnel`, on by default), and the ports close once every one of them is on it (`status` \"moving\"): its record has moved and Cloudflare has had time to serve it. Published TCP and UDP ports pause for a few seconds when public ports go on or off, as they move between Services. Turning the tunnel off with public ports on switches its domains back first, then removes the tunnel at Cloudflare. `dashboardDrops`: switching Tailnet drops open connections to Pyo's dashboard on the tailnet once (the cluster Pyo runs on, with ts.net names, until its connect command has run for this release). Team owners and admins.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "clusterId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setClusterPaths"
+            ]
+          },
+          "clusterId": {
+            "type": "string"
+          },
+          "public": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "tunnel": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "tailnet": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "publicPorts": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "TCP and UDP ports on the servers while public ports are off."
+          },
+          "proxyProtocol": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read the visitor's address from a PROXY protocol header on ports 80 and 443. Saving drops open web connections once."
+          },
+          "defaultDomain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accountId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "moveToTunnel": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "restoreRecords": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "With turning the tunnel off: put back the records its domains replaced. On by default."
+          },
+          "confirm": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "clusterId": "cl_8kq2x7ad",
+          "op": "setClusterPaths"
+        },
+        "examples": [
+          {
+            "clusterId": "cl_8kq2x7ad",
+            "op": "setClusterPaths"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Clusters"
+        ]
+      },
       "SetClusterPreviewDomainOp": {
         "type": "object",
         "title": "Set cluster preview domain",
@@ -12830,7 +13014,7 @@
       "SetClusterPublicTrafficOp": {
         "type": "object",
         "title": "Set cluster public traffic",
-        "description": "Whether a cluster takes public traffic: the gateway answers on every\nserver but build-only ones (ports 80 and 443, and public TCP and UDP\nports through it). Off: services are only reachable inside the cluster.\n\nAPI key access: **full**.",
+        "description": "Whether a cluster takes public traffic: the gateway answers on every\nserver but build-only ones (ports 80 and 443, and public TCP and UDP\nports through it). Off: services are only reachable inside the cluster. Prefer setClusterPaths.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId",
@@ -12870,7 +13054,7 @@
       "SetClusterTrafficOp": {
         "type": "object",
         "title": "Set cluster traffic",
-        "description": "How a cluster takes web traffic: \"public\" (ports 80 and 443 on every server but build-only ones), \"tailscale\" (only from the tailnet, or only inside the cluster without Tailscale) or \"tunnel\" (through Cloudflare Tunnel, with no ports 80 and 443 open). For \"tunnel\", the team's Cloudflare token needs Cloudflare Tunnel:Edit and SSL and Certificates:Edit, and the cluster's install must be Pyo's (run its connect command first when it's older). Domains in zones of the tunnel's account move to the tunnel. Those with a DNS record Pyo didn't make wait for `setDomainTunnel` with `replace`. Pyo does the Cloudflare work in the background: the cluster's `tunnel` shows how it's going. Team owners and admins.\n\nAPI key access: **full**.",
+        "description": "How a cluster takes web traffic: \"public\" (ports 80 and 443 on every server but build-only ones), \"tailscale\" (only from the tailnet, or only inside the cluster without Tailscale) or \"tunnel\" (through Cloudflare Tunnel, with no ports 80 and 443 open). For \"tunnel\", the team's Cloudflare token needs Cloudflare Tunnel:Edit and SSL and Certificates:Edit, and the cluster's install must be Pyo's (run its connect command first when it's older). Domains in zones of the tunnel's account move to the tunnel. Those with a DNS record Pyo didn't make wait for `setDomainTunnel` with `replace`. Pyo does the Cloudflare work in the background: the cluster's `tunnel` shows how it's going. Team owners and admins. Prefer setClusterPaths.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId",
@@ -12931,7 +13115,7 @@
       "SetClusterWebProxyProtocolOp": {
         "type": "object",
         "title": "Set cluster web proxy protocol",
-        "description": "Read the visitor's address from a PROXY protocol header on the\ncluster's websites (ports 80 and 443), for a cluster behind another\nload balancer. Connections without one still work.\n\nAPI key access: **full**.",
+        "description": "Read the visitor's address from a PROXY protocol header on the\ncluster's websites (ports 80 and 443), for a cluster behind another\nload balancer. Connections without one still work. Prefer setClusterPaths.\n\nAPI key access: **full**.",
         "required": [
           "op",
           "clusterId",
@@ -13579,6 +13763,95 @@
         "x-pyo-access": "full",
         "x-tags": [
           "Backups"
+        ]
+      },
+      "SetTeamObservabilityOp": {
+        "type": "object",
+        "title": "Set team observability",
+        "description": "A team's observability: what its servers collect and keep. Owners and admins. Left out, a setting stays as it is.\n\nAddress and query string settings are at most the installation's limit, and \"default\" follows the installation's default. Passwords, tokens and other sensitive query values are never kept.\n\nAPI key access: **full**.",
+        "required": [
+          "op",
+          "teamId"
+        ],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "setTeamObservability"
+            ]
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the team's servers collect analytics, request logs and usage history. Off keeps what was collected."
+          },
+          "requestLogs": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the team's servers keep its requests and connections (the request log). Off still counts them in analytics."
+          },
+          "ipMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What's kept of visitors' IP addresses: \"anonymized\", \"none\", \"full\" or \"default\"."
+          },
+          "queryStrings": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What's kept of query strings: \"names\" (parameter names only), \"keep\", \"none\" or \"default\"."
+          },
+          "requestLogMaxMb": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Most of the request log each of the team's clusters keeps, in MB: 100 to 20480.",
+            "minimum": 0
+          },
+          "requestLogMaxDays": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Most days of the request log each of the team's clusters keeps: 1 to 31.",
+            "minimum": 0
+          },
+          "analyticsMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Keep the team's analytics 3, 6 or 12 months, at most as long as the installation. 0 keeps them as long as the installation does.",
+            "minimum": 0
+          }
+        },
+        "example": {
+          "op": "setTeamObservability",
+          "teamId": "team_8kq2x7ad"
+        },
+        "examples": [
+          {
+            "op": "setTeamObservability",
+            "teamId": "team_8kq2x7ad"
+          }
+        ],
+        "x-pyo-access": "full",
+        "x-tags": [
+          "Teams"
         ]
       },
       "StartImport": {
@@ -14699,7 +14972,7 @@
               "object",
               "null"
             ],
-            "description": "The team's dashboard preferences, saved as given."
+            "description": "The team's dashboard preferences, saved as given. Its `requestLogs` (`maxMb`, `maxDays`) still works but is deprecated: use `setTeamObservability`'s `requestLogMaxMb` and `requestLogMaxDays`."
           },
           "agentUpdates": {
             "type": [
@@ -14714,7 +14987,8 @@
               "null"
             ],
             "format": "int32",
-            "description": "Keep the team's analytics 3, 6 or 12 months, at most as long as the installation. 0 keeps them as long as the installation does.",
+            "description": "Deprecated: use `setTeamObservability`'s `analyticsMonths`. Keep the team's analytics 3, 6 or 12 months, at most as long as the installation. 0 keeps them as long as the installation does.",
+            "deprecated": true,
             "minimum": 0
           }
         },
