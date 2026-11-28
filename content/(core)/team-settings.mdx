@@ -7,10 +7,30 @@ Find these under **Settings**, in the sidebar's **Team** section:
 
 - **Team name and slug:** the <Term tip="A short, URL-friendly version of the name, like acme-inc.">slug</Term> appears in your dashboard URLs.
 - **Default target cluster:** where new deploys go.
-- **Logs:** how many days and how much space each cluster keeps for your team's [request logs](/docs/observability#request-logs). 7 days and 1 GB by default. Each cluster's storage for them grows to fit. Where it can't grow, the cluster keeps what fits.
-- **Analytics:** how long your team's [analytics](/docs/observability#how-long-its-kept) are kept, up to as long as the installation keeps them.
+- **Observability:** what your team's servers collect and keep. See [below](#observability).
 - **Agents:** on Pyo Cloud, whether your clusters' agents update automatically. See [Agent updates](/docs/cloud/agent-updates).
 
 Owners and admins change these settings. Other members see them read only.
 
 Only owners can delete a team. Other members don't see **Delete team**. Deleting a team removes its projects and clusters from Pyo. Nothing on the clusters is touched.
+
+## Observability
+
+Find it under **Settings → Observability**, in the sidebar's **Team** section. Owners and admins change it. Other members see the values.
+
+- **Observability:** whether Pyo collects analytics, request logs and usage history for your team. Off, Pyo stops collecting for your team. What was collected is kept.
+- **Request logs:** whether your servers keep every request. Off, requests still count in analytics.
+- **IP addresses:** Don't store, Anonymized or Full. Options above your installation's limit can't be picked. Your installation's admin can allow more.
+- **Query strings:** Keep, Names only or Don't keep, up to your installation's limit. Passwords and tokens are always hidden.
+- **Logs:** how many days and how much space each cluster keeps for your [request logs](/docs/observability#request-logs). 7 days and 1 GB by default. Each cluster's storage for them grows to fit. Where it can't grow, the cluster keeps what fits.
+- **Analytics:** how long your [analytics](/docs/observability#how-long-its-kept) are kept, up to as long as the installation keeps them.
+
+When the installation lowers a limit, your team keeps less from then on and gets an entry in its [activity](/docs/activity). Addresses already kept are hidden at once and expire with your request logs. Your own choice is kept, and applies again if the limit goes back up.
+
+With the CLI:
+
+```bash
+pyo observability --team acme
+pyo observability off --team acme
+pyo observability --team acme --ip anonymized --query-strings names --request-logs off
+```

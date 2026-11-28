@@ -22,10 +22,22 @@ Only people you invite can sign up. To let anyone with access to the dashboard c
 sudo k3s kubectl -n pyo-system set env deployment/pyo PYO_ALLOW_SIGNUP=true
 ```
 
-## Visitor IP addresses
+## Visitors
 
-| Setting | What's kept |
+Each team chooses what its servers keep of visitors, under its **Settings → Observability**. The admin sets a default for teams that didn't choose, and a limit no team can go above, under **Settings → Observability**.
+
+| IP addresses | What's kept |
 | --- | --- |
-| None | Nothing that identifies a visitor (recommended) |
+| Don't store | Nothing that identifies a visitor (recommended, and the default) |
 | Anonymized | The address without its last part, which points to a network, not a person |
 | Full | The whole address, kept with each team's [request logs](/docs/observability#request-logs) for up to 31 days. May need consent under laws like <Term tip="The European Union's data protection law.">GDPR</Term> |
+
+| Query strings | What's kept |
+| --- | --- |
+| Keep | Parameter names and values (the default) |
+| Names only | Parameter names, like `?q&page` |
+| Don't keep | Nothing after the path |
+
+Passwords, tokens and other sensitive values are always hidden.
+
+Until the admin sets a limit for IP addresses, the default is also the limit. Lowering a limit applies at once: addresses are hidden when read, and new requests follow within about a minute. Each team that keeps less gets an entry in its activity. Changing a default moves only the teams that didn't choose.
